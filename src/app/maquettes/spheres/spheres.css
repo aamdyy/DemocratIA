@@ -1,0 +1,639 @@
+/*
+ * Propositions de rendu pour les sphères (maquette). Toutes les tailles internes sont en cqw :
+ * chaque sphère est un conteneur, son rendu suit donc sa largeur.
+ */
+
+/* ---------- Commun ---------- */
+.msph-racine {
+  position: relative;
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+.msph-disque {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  clip-path: circle(50%);
+  overflow: hidden;
+  isolation: isolate;
+}
+.msph-couche {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.msph-grain {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0.3;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+.msph-volume {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.5), transparent 42%),
+    radial-gradient(circle at 50% 50%, transparent 60%, rgb(20 10 30 / 0.12) 100%);
+}
+@keyframes msph-tourne {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes msph-houle {
+  to {
+    translate: var(--houle);
+  }
+}
+
+/* ---------- 2. Aquarelle vivante ---------- */
+.msph-aqLavis {
+  position: absolute;
+  inset: 0;
+}
+.msph-aqDisque {
+  background: var(--s1);
+}
+.msph-aqPigment {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: multiply;
+  /* Le pigment s'accumule sur le bord en séchant : le liseré est plus dense que le cœur. */
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--c) 34%, transparent) 0%,
+    color-mix(in srgb, var(--c) 52%, transparent) 58%,
+    color-mix(in srgb, var(--c) 72%, transparent) 84%,
+    transparent 100%
+  );
+  transform-origin: var(--pivot);
+  animation:
+    msph-tourne var(--tour) linear infinite var(--sens, normal),
+    msph-houle var(--vague) ease-in-out infinite alternate;
+  transition: scale 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-aqPigment:nth-child(1) {
+  --c: var(--s2);
+  inset: -8% 32% 30% -10%;
+  --pivot: 60% 62%;
+  --tour: 58s;
+  --vague: 23s;
+  --houle: 9% 7%;
+}
+.msph-aqPigment:nth-child(2) {
+  --c: var(--s3);
+  inset: 36% -10% -6% 38%;
+  opacity: 0.8;
+  --pivot: 30% 36%;
+  --tour: 71s;
+  --sens: reverse;
+  --vague: 29s;
+  --houle: -10% 6%;
+}
+.msph-aqPigment:nth-child(3) {
+  --c: var(--s4);
+  inset: 42% 28% -14% -6%;
+  --pivot: 58% 30%;
+  --tour: 49s;
+  --vague: 19s;
+  --houle: 8% -10%;
+}
+.msph-aqPigment:nth-child(4) {
+  --c: var(--s2);
+  inset: 16% 14% 44% 48%;
+  opacity: 0.55;
+  --pivot: 20% 80%;
+  --tour: 41s;
+  --sens: reverse;
+  --vague: 17s;
+  --houle: -12% 12%;
+}
+/* La réserve : le blanc du papier laissé sans peinture. */
+.msph-aqReserve {
+  position: absolute;
+  inset: 12% 46% 54% 14%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.5) 60%, transparent);
+  transform-origin: 80% 90%;
+  animation: msph-tourne 37s linear infinite reverse;
+  transition:
+    scale 1.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 1s ease-out;
+}
+.msph-aqPapier {
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.42 0 0 0 0 0.4 0 0 0 1.1 -0.2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+}
+@media (hover: hover) {
+  .msph-aquarelle:hover .msph-aqPigment {
+    scale: 1.2;
+  }
+  .msph-aquarelle:hover .msph-aqReserve {
+    scale: 0.6;
+    opacity: 0.6;
+  }
+}
+
+/* ---------- 3. Bille de verre ---------- */
+.msph-verreOmbre {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -8%;
+  height: 12%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(28 30 48 / 0.3), rgb(28 30 48 / 0.1) 62%, transparent);
+  filter: blur(1.4cqw);
+  transition:
+    scale 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.9s ease-out;
+}
+/* La lumière qui traverse le verre coloré dépose une tache teintée dans l'ombre. */
+.msph-verreCaustiqueSol {
+  position: absolute;
+  left: 40%;
+  right: 22%;
+  bottom: -6.5%;
+  height: 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--s4) 75%, transparent), transparent);
+  filter: blur(1cqw);
+  transition:
+    scale 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.9s ease-out;
+}
+.msph-verreBille {
+  position: absolute;
+  inset: 0;
+  transition: translate 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-verreCorps {
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--s1) 45%, white) 0 48%,
+    color-mix(in srgb, var(--s1) 85%, var(--s4)) 76%,
+    color-mix(in srgb, var(--s4) 60%, var(--s2)) 95%,
+    color-mix(in srgb, var(--s3) 80%, white) 100%
+  );
+}
+.msph-verreCoeur {
+  position: absolute;
+  inset: 22%;
+  animation: msph-flotte 7.5s ease-in-out infinite alternate;
+  transition: scale 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-verreMatiere {
+  position: absolute;
+  inset: 0;
+  animation: msph-tourne 38s linear infinite;
+}
+.msph-verreMatiere > span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(4.5cqw);
+}
+.msph-verreMatiere > span:nth-child(1) {
+  inset: 0 30% 25% 0;
+  background: var(--s2);
+}
+.msph-verreMatiere > span:nth-child(2) {
+  inset: 30% 0 0 28%;
+  background: var(--s3);
+  opacity: 0.85;
+}
+.msph-verreMatiere > span:nth-child(3) {
+  inset: 45% 40% -5% 5%;
+  background: var(--s4);
+}
+@keyframes msph-flotte {
+  from {
+    translate: 0 3%;
+  }
+  to {
+    translate: 0 -4%;
+  }
+}
+/* La réfraction : sur les bords, on voit la matière agrandie et renversée, comme dans une vraie bille. */
+.msph-verreLentille {
+  position: absolute;
+  inset: 0;
+  opacity: 0.7;
+  mask-image: radial-gradient(circle, transparent 56%, #000 74%, #000 90%, transparent 99%);
+}
+.msph-verreRenverse {
+  position: absolute;
+  inset: 0;
+  rotate: 180deg;
+  scale: 1.5;
+}
+.msph-verreSurface {
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.55),
+    inset 1.6cqw 2cqw 3cqw rgb(255 255 255 / 0.75),
+    inset -3cqw -4cqw 8cqw color-mix(in srgb, var(--s3) 28%, transparent);
+  background: radial-gradient(circle at 68% 80%, rgb(255 255 255 / 0.6), transparent 16%);
+}
+.msph-verreSpeculaire {
+  position: absolute;
+  left: 19%;
+  top: 13%;
+  width: 24%;
+  height: 12%;
+  border-radius: 50%;
+  rotate: -34deg;
+  background: radial-gradient(closest-side, #fff 0 52%, rgb(255 255 255 / 0) 100%);
+  pointer-events: none;
+}
+.msph-verrePoint {
+  position: absolute;
+  left: 46%;
+  top: 9%;
+  width: 4.5%;
+  height: 3%;
+  border-radius: 50%;
+  rotate: -14deg;
+  background: rgb(255 255 255 / 0.9);
+  pointer-events: none;
+}
+.msph-verreArc {
+  position: absolute;
+  inset: 5%;
+  border-radius: 50%;
+  border-bottom: 1.1cqw solid rgb(255 255 255 / 0.55);
+  rotate: 34deg;
+  filter: blur(0.5cqw);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .msph-verre:hover .msph-verreBille {
+    translate: 0 -6%;
+  }
+  .msph-verre:hover .msph-verreOmbre {
+    scale: 0.8;
+    opacity: 0.55;
+  }
+  .msph-verre:hover .msph-verreCaustiqueSol {
+    scale: 0.75;
+    opacity: 0.5;
+  }
+  .msph-verre:hover .msph-verreCoeur {
+    scale: 1.1;
+  }
+}
+
+/* ---------- 4. Nacre ---------- */
+.msph-nacre {
+  perspective: 900px;
+}
+.msph-nacreCorps {
+  background: var(--s1);
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-nacreConique {
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(from 20deg, var(--s2), var(--s4), var(--s1), var(--s4), var(--s3), var(--s2));
+  filter: blur(12cqw);
+  animation: msph-tourne 26s linear infinite;
+}
+.msph-nacreIrisation {
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(
+    #ffd9ec,
+    #d6ebff,
+    #d9fbe8,
+    #fff1c4,
+    #e8d9ff,
+    #ffd9ec,
+    #d6ebff,
+    #d9fbe8,
+    #fff1c4,
+    #e8d9ff,
+    #ffd9ec
+  );
+  mix-blend-mode: screen;
+  opacity: 0.35;
+  filter: blur(4cqw);
+  animation: msph-tourne 19s linear infinite reverse;
+  transition: opacity 0.8s ease-out;
+}
+.msph-nacreLustre {
+  background: radial-gradient(circle at 50% 50%, transparent 52%, rgb(255 255 255 / 0.3) 88%, rgb(255 255 255 / 0.5) 100%);
+}
+.msph-nacreReflet {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  translate: var(--dx, -16cqw) var(--dy, -19cqw);
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.32) 38%, transparent 72%);
+  transition: translate 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .msph-nacre:hover .msph-nacreIrisation {
+    opacity: 0.65;
+  }
+}
+
+/* ---------- 5 et 6. Canvas ---------- */
+.msph-toile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.msph-toileFloue {
+  position: absolute;
+  inset: -8%;
+  width: 116%;
+  height: 116%;
+  display: block;
+  filter: blur(2.4cqw);
+}
+.msph-canvasRacine {
+  transition: scale 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (hover: hover) {
+  .msph-canvasRacine:hover {
+    scale: 1.025;
+  }
+}
+
+/* ---------- 7. Planète ---------- */
+.msph-planete {
+  --nuit: color-mix(in oklab, var(--s3) 55%, #0a0e2a);
+}
+.msph-planeteAtmo {
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 48%, color-mix(in srgb, var(--s4) 70%, transparent) 52%, transparent 70%);
+  filter: blur(2.5cqw);
+  opacity: 0.55;
+  transition:
+    opacity 1.2s ease-out,
+    scale 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-planeteGlobe {
+  background: var(--s1);
+}
+.msph-planeteAxe {
+  position: absolute;
+  inset: -25%;
+  rotate: -18deg;
+}
+/* La surface est deux fois plus large que l'axe : elle glisse d'une demi-largeur, puis recommence. */
+.msph-planeteSurface {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  background-size: 50% 100%;
+  background-repeat: repeat-x;
+  background-image:
+    radial-gradient(ellipse 16% 5% at 28% 42%, var(--s3), transparent),
+    radial-gradient(ellipse 22% 4% at 72% 57%, var(--s1), transparent),
+    radial-gradient(ellipse 10% 7% at 54% 33%, var(--s4), transparent),
+    radial-gradient(ellipse 20% 6% at 12% 64%, var(--s2), transparent),
+    radial-gradient(ellipse 14% 4% at 86% 38%, var(--s3), transparent),
+    linear-gradient(
+      180deg,
+      var(--s3) 0 18%,
+      var(--s2) 26%,
+      var(--s4) 35%,
+      var(--s1) 43%,
+      var(--s4) 50%,
+      var(--s2) 58%,
+      var(--s4) 65%,
+      var(--s3) 72%,
+      var(--s4) 79%,
+      var(--s1) 86%,
+      var(--s2) 100%
+    );
+  filter: blur(1.8cqw);
+  animation: msph-defile 46s linear infinite;
+}
+.msph-planeteNuages {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  background-size: 50% 100%;
+  background-repeat: repeat-x;
+  background-image:
+    radial-gradient(ellipse 18% 3% at 20% 47%, rgb(255 255 255 / 0.85), transparent),
+    radial-gradient(ellipse 12% 2.5% at 64% 62%, rgb(255 255 255 / 0.75), transparent),
+    radial-gradient(ellipse 15% 3% at 82% 31%, rgb(255 255 255 / 0.7), transparent);
+  filter: blur(1.2cqw);
+  opacity: 0.6;
+  animation: msph-defile 29s linear infinite;
+}
+@keyframes msph-defile {
+  to {
+    translate: -50% 0;
+  }
+}
+.msph-planeteRelief {
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 40%, transparent 46%, color-mix(in srgb, var(--nuit) 32%, transparent) 100%);
+  box-shadow: inset 1.4cqw 0.6cqw 2.4cqw rgb(255 255 255 / 0.5);
+}
+.msph-planeteNuit {
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(
+    100deg,
+    transparent 0 46%,
+    color-mix(in srgb, var(--nuit) 40%, transparent) 58%,
+    color-mix(in srgb, var(--nuit) 74%, transparent) 72%,
+    color-mix(in srgb, var(--nuit) 84%, transparent) 100%
+  );
+  transition: translate 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.msph-planeteJour {
+  background: radial-gradient(circle at 27% 32%, rgb(255 255 255 / 0.42), transparent 34%);
+}
+@media (hover: hover) {
+  .msph-planete:hover .msph-planeteNuit {
+    translate: 18% 0;
+  }
+  .msph-planete:hover .msph-planeteAtmo {
+    opacity: 0.9;
+    scale: 1.04;
+  }
+}
+
+/* ---------- 8. Respiration ---------- */
+.msph-souffleHaloSurvol {
+  position: absolute;
+  inset: 0;
+  opacity: 0.85;
+  transition:
+    opacity 1.2s ease-out,
+    transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-souffleHalo {
+  position: absolute;
+  inset: -16%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--s4) 70%, transparent) 58%,
+    color-mix(in srgb, var(--s4) 22%, transparent) 80%,
+    transparent 100%
+  );
+  animation: msph-halo 6.4s ease-in-out infinite alternate;
+}
+@keyframes msph-halo {
+  from {
+    scale: 0.88;
+    opacity: 0.3;
+  }
+  to {
+    scale: 1.04;
+    opacity: 0.75;
+  }
+}
+.msph-souffleCorps {
+  position: absolute;
+  inset: 0;
+  transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-souffleSphere {
+  background: var(--s1);
+  animation: msph-souffle 6.4s ease-in-out infinite alternate;
+}
+@keyframes msph-souffle {
+  from {
+    scale: 0.97;
+  }
+  to {
+    scale: 1.03;
+  }
+}
+.msph-souffleMatiere {
+  position: absolute;
+  inset: -15%;
+  background:
+    radial-gradient(circle at 30% 35%, var(--s2) 0, transparent 38%),
+    radial-gradient(circle at 70% 60%, var(--s3), transparent 36%),
+    radial-gradient(circle at 40% 78%, var(--s4), transparent 40%);
+  filter: blur(5cqw);
+  animation: msph-tourne 34s linear infinite;
+}
+.msph-souffleLumiere {
+  background: radial-gradient(circle at 50% 45%, rgb(255 255 255 / 0.75), transparent 70%);
+  opacity: 0;
+  animation: msph-lueur 6.4s ease-in-out infinite alternate;
+}
+@keyframes msph-lueur {
+  to {
+    opacity: 0.45;
+  }
+}
+.msph-souffleOrbites {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.msph-orbite {
+  position: absolute;
+  inset: 0;
+  /* Angle de repos, visible seulement quand les animations sont coupées. */
+  rotate: var(--angle, 0deg);
+  animation: msph-tourne var(--d) linear infinite var(--sens, normal);
+  animation-delay: var(--delai);
+}
+.msph-particule {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--t);
+  height: var(--t);
+  margin: calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+  translate: var(--r) 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--s2) 85%, white) 0 30%, color-mix(in srgb, var(--s2) 40%, transparent) 55%, transparent 72%);
+  box-shadow: 0 0 2.4cqw color-mix(in srgb, var(--s4) 85%, transparent);
+  animation: msph-scintille var(--sc) ease-in-out infinite alternate;
+  animation-delay: var(--delai);
+}
+@keyframes msph-scintille {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (hover: hover) {
+  .msph-souffle:hover .msph-souffleCorps {
+    transform: scale(1.06);
+  }
+  .msph-souffle:hover .msph-souffleHaloSurvol {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  .msph-souffle:hover .msph-souffleOrbites {
+    transform: scale(0.84);
+  }
+}
+
+/* ---------- Moins d'animations : tout se fige dans un état composé. ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .msph-aqPigment,
+  .msph-aqReserve,
+  .msph-verreCoeur,
+  .msph-verreMatiere,
+  .msph-nacreConique,
+  .msph-nacreIrisation,
+  .msph-planeteSurface,
+  .msph-planeteNuages,
+  .msph-souffleHalo,
+  .msph-souffleSphere,
+  .msph-souffleMatiere,
+  .msph-souffleLumiere,
+  .msph-orbite,
+  .msph-particule {
+    animation: none;
+  }
+  .msph-souffleHalo {
+    opacity: 0.55;
+  }
+  .msph-souffleLumiere {
+    opacity: 0.2;
+  }
+  .msph-aqPigment,
+  .msph-aqReserve,
+  .msph-verreBille,
+  .msph-verreOmbre,
+  .msph-verreCaustiqueSol,
+  .msph-verreCoeur,
+  .msph-nacreCorps,
+  .msph-nacreReflet,
+  .msph-nacreIrisation,
+  .msph-canvasRacine,
+  .msph-planeteNuit,
+  .msph-planeteAtmo,
+  .msph-souffleCorps,
+  .msph-souffleHaloSurvol,
+  .msph-souffleOrbites {
+    transition: none;
+  }
+}
