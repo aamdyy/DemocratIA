@@ -5,6 +5,7 @@ import { Audio } from "@remotion/media";
 import { C, DUREE, FPS, entre, EGAL } from "./commun.js";
 import { EnTete, SousTitres } from "./elements.jsx";
 import { ACCENTS, SCENES, SEGMENTS, voixActive } from "./temps.js";
+import { Format } from "./format.js";
 import NIVEAUX from "../public/musique-niveaux.json";
 import { Ouverture } from "./scenes/Ouverture.jsx";
 import { Candidates } from "./scenes/Candidates.jsx";
@@ -54,11 +55,13 @@ const accent = (t) =>
     return somme + (dt < 0.1 ? dt / 0.1 : Math.exp(-(dt - 0.1) / 0.28));
   }, 0);
 
-export function Democratia() {
+/** La vidéo ; `vertical` la recompose au format téléphone (9:16) sans changer ni la voix ni le montage. */
+export function Democratia({ vertical = false }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
   return (
+    <Format.Provider value={{ vertical }}>
     <AbsoluteFill style={{ background: C.fond }}>
       <AbsoluteFill style={{ scale: String(1 + 0.014 * Math.min(1.4, accent(t))) }}>
         {LISTE.map(([cle, Scene], i) => {
@@ -88,5 +91,6 @@ export function Democratia() {
         </Sequence>
       ))}
     </AbsoluteFill>
+    </Format.Provider>
   );
 }

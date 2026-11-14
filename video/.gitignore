@@ -3,3 +3,4 @@ node_modules/
 # Rendus intermédiaires ; seul le rendu final est gardé.
 out/*
 !out/democratia.mp4
+!out/democratia-vertical.mp4
