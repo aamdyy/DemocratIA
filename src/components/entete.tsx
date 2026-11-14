@@ -128,7 +128,7 @@ function Attente() {
 }
 
 /**
- * L'en-tête retenu (proposition 4 « République » de /maquettes/entete) : un liseré tricolore,
+ * L'en-tête retenu (proposition 4 « République » de /maquettes/entete), souligné d'un liseré tricolore :
  * la marque et la mention « République française, an 2050 » à gauche, le parcours à droite.
  * Au survol (ou au focus clavier) d'un lien, une petite présentation illustrée apparaît dessous.
  * Sous 1024 px, le parcours passe sur une seconde ligne pleine largeur, sans aperçu.
@@ -140,12 +140,7 @@ export function Entete() {
 
   return (
     // Nommé pour les transitions de page : l'en-tête reste immobile pendant que le contenu change (transitions.css).
-    <header className="relative z-40 border-b border-trait bg-fond" style={{ viewTransitionName: "entete" }}>
-      <div aria-hidden className="flex h-1">
-        <span className="flex-1 bg-pour" />
-        <span className="flex-1 bg-trait" />
-        <span className="flex-1 bg-contre" />
-      </div>
+    <header className="relative z-40 bg-fond" style={{ viewTransitionName: "entete" }}>
       <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -216,6 +211,12 @@ export function Entete() {
             })}
           </ul>
         </nav>
+      </div>
+      {/* Le liseré tricolore souligne l'en-tête, à la place d'un simple filet. */}
+      <div aria-hidden className="flex h-1">
+        <span className="flex-1 bg-pour" />
+        <span className="flex-1 bg-trait" />
+        <span className="flex-1 bg-contre" />
       </div>
     </header>
   );
