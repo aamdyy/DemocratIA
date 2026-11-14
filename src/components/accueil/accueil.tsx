@@ -6,7 +6,6 @@ import { MotionConfig } from "motion/react";
 import { FiltreSphere } from "@/components/sphere";
 import { Faconner } from "./faconner";
 import { FaceAFace } from "./face-a-face";
-import { HemicycleSphere } from "./hemicycle-sphere";
 import { PremierEcran } from "./premier-ecran";
 import { BOUTON_PILULE, Reveal } from "./reveal";
 
@@ -22,7 +21,6 @@ export function Accueil() {
         <PremierEcran />
         <Faconner />
         <FaceAFace />
-        <HemicycleSphere />
         <Reveal className="flex justify-center pb-8 sm:pb-16">
           <Link href="/test" className={BOUTON_PILULE}>
             Trouver mon IA
