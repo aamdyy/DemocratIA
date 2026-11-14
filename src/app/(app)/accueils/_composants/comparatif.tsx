@@ -64,16 +64,16 @@ function Comparatif() {
           <Reveal className="flex flex-col items-start gap-4">
             <Image
               src="/president-2026.png"
-              alt="Portrait officiel du président de la République en 2026"
+              alt="Portrait officiel du dernier président humain"
               width={640}
               height={640}
               className="size-24 rounded-full object-cover grayscale sm:size-32"
             />
-            <p className="font-medium">Le président de 2026</p>
+            <p className="font-medium">Le dernier président humain</p>
           </Reveal>
           <Reveal delai={0.15} className="flex flex-col items-start gap-4">
             <Sphere teintes={MAELLE.teintes} className="size-24 sm:size-32" />
-            <p className="font-medium">Une IA candidate de 2050</p>
+            <p className="font-medium">La première présidente IA</p>
           </Reveal>
         </div>
 
