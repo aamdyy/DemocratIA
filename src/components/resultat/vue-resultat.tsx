@@ -7,10 +7,7 @@ import { useEffect, useState } from "react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { FiltreSphere, Sphere } from "@/components/sphere";
-import { SourceBadge } from "@/components/source-badge";
 import { useScrutins } from "@/lib/api";
-import { DEFINITION_AFFINITE } from "@/lib/candidates";
-import { sourceCalcul } from "@/lib/concordance";
 import { pourcent } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { mandat, useMandat } from "@/lib/mandat";
@@ -82,9 +79,6 @@ export function VueResultat() {
     return (
       <div role="alert" className="mx-auto max-w-2xl py-16 text-center">
         <h1 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h1>
-        <p className="mx-auto mt-4 max-w-md text-lg leading-8 text-attenue">
-          Sans eux, impossible de comparer vos réponses aux candidates. Vérifiez votre connexion.
-        </p>
         <p className="mt-8">
           <button type="button" onClick={() => void lecture.mutate()} className={BOUTON_SECONDAIRE}>
             Réessayer
@@ -98,9 +92,6 @@ export function VueResultat() {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
         <h1 className={TITRE}>Votre IA vous attend.</h1>
-        <p className="mt-4 max-w-md text-lg leading-8 text-attenue">
-          Pour la trouver, tranchez quelques textes de loi et réglez vos priorités. Deux étapes, quelques minutes.
-        </p>
         <p className="mt-10">
           <Link href="/test" className={BOUTON_PRINCIPAL}>
             Passer le test
@@ -110,7 +101,7 @@ export function VueResultat() {
     );
   }
 
-  const [meilleure, ...autres] = classement;
+  const [meilleure] = classement;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -155,7 +146,6 @@ export function VueResultat() {
 
           <motion.div variants={ETAPE} className="flex flex-col items-center lg:items-start">
             <p className="mt-6 max-w-md text-balance text-xl leading-8 tracking-[-0.01em]">{meilleure.candidate.doctrine}</p>
-            <p className="mt-3 max-w-md text-base leading-7 text-attenue">{meilleure.candidate.portrait}</p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link href="/seance" className={BOUTON_PRINCIPAL}>
@@ -173,22 +163,13 @@ export function VueResultat() {
                 Sa fiche complète
               </Link>
             </p>
-            <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-4 max-w-[52ch]" />
           </motion.div>
         </div>
       </motion.section>
 
       <div className="mx-auto max-w-2xl">
+        <AutresCandidates classement={classement} />
         <Pourquoi affinite={meilleure} mandat={reglages} />
-        <AutresCandidates autres={autres} />
-        <div className="mt-20 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/seance" className={BOUTON_PRINCIPAL}>
-            La voir au pouvoir
-          </Link>
-          <button type="button" onClick={refaire} className={BOUTON_SECONDAIRE}>
-            Refaire le test
-          </button>
-        </div>
       </div>
 
       <p role="status" aria-live="polite" className="sr-only">

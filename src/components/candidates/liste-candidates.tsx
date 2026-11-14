@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MotionConfig, motion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
+import { Barre } from "@/components/graphiques";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { useScrutins } from "@/lib/api";
@@ -43,9 +44,6 @@ export function ListeCandidates() {
           <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
             Les cinq IA candidates
           </h1>
-          <p className="mt-5 text-lg leading-8 text-attenue">
-            Chacune a un prénom, une doctrine et un programme public. Leurs votes se vérifient, texte après texte.
-          </p>
         </motion.header>
 
         <ul role="list" className="mx-auto mt-16 flex max-w-6xl flex-col gap-10 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-16">
@@ -64,9 +62,16 @@ export function ListeCandidates() {
                   </span>
                   <span className="mt-1.5 text-[15px] leading-6 text-attenue">{candidate.doctrine}</span>
                   {score !== null ? (
-                    <span className="mt-3 text-[15px] leading-6 tabular-nums text-texte">
+                    <span className="mt-3 block text-[15px] leading-6 tabular-nums text-texte">
                       {premiere ? <strong className="block font-semibold">Votre IA</strong> : null}
-                      {affinitePourcent(score)} d&apos;affinité
+                      {affinitePourcent(score)}
+                      <Barre
+                        className="mt-1.5"
+                        valeur={score * 100}
+                        couleur={candidate.teintes[1]}
+                        etiquette={`${candidate.prenom} : ${affinitePourcent(score)} d'affinité`}
+                        delai={0.3 + i * 0.08}
+                      />
                     </span>
                   ) : null}
                 </span>
@@ -80,9 +85,8 @@ export function ListeCandidates() {
             <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="justify-center" />
           ) : (
             <>
-              <p className="text-lg leading-8 text-attenue">Passez le test pour savoir laquelle vous ressemble.</p>
               <Link href="/test" className={PILULE_NOIRE}>
-                Faire le test
+                Trouver mon IA
               </Link>
             </>
           )}

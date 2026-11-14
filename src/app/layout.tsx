@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Mono, DM_Sans } from "next/font/google";
+import { DM_Mono, Public_Sans } from "next/font/google";
 
 import { URL_SITE } from "./_og/site";
 import "./globals.css";
 
-// DM Sans pour l'interface et les titres, DM Mono pour ce que la machine calcule ou rédige.
+// Public Sans (police libre, sobre et administrative) pour l'interface et les titres, DM Mono pour ce que la machine calcule ou rédige.
 // Les variables sont posées sur <html> : les jetons de globals.css, déclarés sur :root, doivent les voir.
-const dmSans = DM_Sans({ variable: "--police-dm-sans", subsets: ["latin"] });
+const publicSans = Public_Sans({ variable: "--police-public-sans", subsets: ["latin"] });
 const dmMono = DM_Mono({ variable: "--police-dm-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 const NOM = "DemocratIA";
@@ -48,7 +48,7 @@ const SCHEMA = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}>
+    <html lang="fr" className={`${publicSans.variable} ${dmMono.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
         <script

@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from "react";
 import { MotionConfig, motion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
+import { BarreEmpilee, type Segment } from "@/components/graphiques";
 import { Hemicycle, NOMBRE_SIEGES } from "@/components/hemicycle";
 import { deCandidate } from "@/components/candidates/prenom";
 import { PositionLibelle } from "@/components/position";
@@ -13,7 +14,7 @@ import { SourceBadge } from "@/components/source-badge";
 import { useResultat, useScrutins } from "@/lib/api";
 import { CANDIDATES, REGLE_POSITION, positionCandidate, type Candidate } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
-import { dateLongue, nombre, titreLisible } from "@/lib/format";
+import { nombre, titreLisible } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { useMandat } from "@/lib/mandat";
 import type { Position, ResultatScrutin, Scrutin } from "@/lib/types";
@@ -30,7 +31,6 @@ const PILULE_NOIRE =
 const PILULE_CLAIRE =
   "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-texte px-6 text-[15px] font-medium text-texte outline-none transition-colors duration-150 hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
-const H3 = "font-titre text-xl font-semibold leading-7 tracking-[-0.02em] text-texte";
 
 const sansAbonnement = () => () => {};
 /** Faux pendant le rendu serveur : le mandat vit dans le navigateur, on ne conclut rien avant de l'avoir lu. */
@@ -79,7 +79,7 @@ function ChoixTexte({
   return (
     <div className="mx-auto max-w-4xl">
       <label htmlFor="seance-texte" className="text-sm text-attenue">
-        Texte examiné en séance
+        Texte examiné
       </label>
       <select
         id="seance-texte"
@@ -169,46 +169,49 @@ function ScenePublique({
   );
 }
 
-/** Un chiffre en grand, son libellé en petit : ce qu'on lit en premier, de loin. */
-function Chiffre({ libelle, children, machine = false }: { libelle: string; children: React.ReactNode; machine?: boolean }) {
+/** Une ligne de comparaison : un titre, sa barre empilée, ses chiffres lisibles en toutes lettres. */
+function LigneDecompte({
+  titre,
+  issue,
+  segments,
+  machine = false,
+  children,
+}: {
+  titre: string;
+  issue: string;
+  segments: Segment[];
+  machine?: boolean;
+  children?: React.ReactNode;
+}) {
+  const lisible = segments.filter((s) => s.valeur > 0).map((s) => `${s.valeur} ${s.libelle.toLowerCase()}`);
   return (
     <div>
-      <dt className="text-sm leading-5 text-attenue">{libelle}</dt>
-      <dd
-        className={cn(
-          "mt-1 text-2xl leading-8 font-semibold sm:text-3xl sm:leading-9 tracking-[-0.03em] tabular-nums",
-          machine ? "font-donnee font-medium tracking-[-0.02em] text-machine" : "text-texte",
-        )}
-      >
-        {children}
-      </dd>
-    </div>
-  );
-}
-
-/** Le décompte réel de 2026, tel que publié. */
-function DecompteReel({ resultat }: { resultat: ResultatScrutin }) {
-  const { decompte, source } = resultat.scrutin;
-  return (
-    <div>
-      <h3 className={H3}>Séance de 2026 : {adopte(resultat.scrutin.resultat).toLowerCase()}</h3>
-      <p className="mt-2 text-[15px] leading-6 text-attenue">
-        Scrutin n° {resultat.scrutin.numero} du {dateLongue(resultat.scrutin.date)}. Chaque siège porte le vote réel de son
-        député ; les sièges éteints n&apos;ont pas voté.
+      <p className={cn("flex flex-wrap items-baseline justify-between gap-x-4 text-[15px] leading-6", machine && "font-donnee text-machine")}>
+        <span className="font-medium">{titre}</span>
+        <span className="font-semibold">{issue}</span>
       </p>
-      <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
-        <Chiffre libelle="Pour">{nombre(decompte.pour)}</Chiffre>
-        <Chiffre libelle="Contre">{nombre(decompte.contre)}</Chiffre>
-        <Chiffre libelle="Abstention">{nombre(decompte.abstention)}</Chiffre>
-        <Chiffre libelle="Non-votants">{nombre(decompte.non_votants)}</Chiffre>
-      </dl>
-      <SourceBadge source={source} className="mt-8" />
+      <BarreEmpilee
+        className="mt-3 h-5"
+        segments={segments}
+        etiquette={`${titre} : ${issue.toLowerCase()}, ${lisible.join(", ")}`}
+      />
+      <ul role="list" className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-attenue">
+        {segments
+          .filter((s) => s.valeur > 0)
+          .map((s) => (
+            <li key={s.libelle} className="inline-flex items-center gap-1.5">
+              <span aria-hidden className={cn("size-2 rounded-full", s.fond)} />
+              {nombre(s.valeur)} {s.libelle.toLowerCase()}
+            </li>
+          ))}
+      </ul>
+      {children}
     </div>
   );
 }
 
-/** La séance de 2050 : une hypothèse, présentée comme telle, avec ses compteurs de machine. */
-function Hypothese2050({
+/** Le décompte réel de 2026 face au résultat simulé de 2050, en deux barres empilées de même échelle. */
+function Decomptes({
   candidate,
   position,
   simulation,
@@ -222,49 +225,45 @@ function Hypothese2050({
   dateCalcul: string | null;
 }) {
   const { prenom } = candidate;
+  const fondPosition = position === "pour" ? "bg-pour" : position === "contre" ? "bg-contre" : "bg-abstention";
+  const issue2050 = simulation.adopte ? "Adopté" : "Rejeté";
   return (
-    <div>
-      <h3 className={H3}>577 sièges, une seule voix</h3>
-      <p className="mt-2 max-w-3xl text-[15px] leading-6 text-attenue">
-        En 2050, {prenom} préside. Les {nombre(NOMBRE_SIEGES)} sièges sont tenus par des sphères qui votent comme elle. C&apos;est
-        un scénario, pas un fait : il montre ce que donnerait une présidence où une seule IA décide.
-      </p>
-
-      <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
-        <Chiffre libelle={`${prenom} vote`} machine>
-          <PositionLibelle position={position} machine />
-        </Chiffre>
-        <Chiffre libelle="Durée du débat" machine>
-          0 seconde
-        </Chiffre>
-        <Chiffre libelle="Issue simulée" machine>
-          {simulation.adopte ? "Adopté" : "Rejeté"}
-        </Chiffre>
-        <Chiffre libelle="Pour" machine>
-          {nombre(simulation.pour)}
-        </Chiffre>
-        <Chiffre libelle="Contre" machine>
-          {nombre(simulation.contre)}
-        </Chiffre>
-        <Chiffre libelle="Abstention" machine>
-          {nombre(simulation.abstention)}
-        </Chiffre>
-      </dl>
-
-      <p className="mt-8 text-[15px] leading-6 text-texte">
-        La position {deCandidate(prenom)} se déduit de son programme : {REGLE_POSITION.charAt(0).toLowerCase()}
-        {REGLE_POSITION.slice(1)}
-      </p>
+    <div className="space-y-12">
       {reel ? (
-        <p className="mt-2 text-[15px] leading-6 text-texte">
-          En 2026, ce texte a été {reel.scrutin.resultat === "adopte" ? "adopté" : "rejeté"}
-          {" : "}
-          {reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete")
-            ? "la séance de 2050 aboutirait à la même issue, sans débat."
-            : "la séance de 2050 aboutirait à l'issue inverse, sans débat."}
-        </p>
+        <LigneDecompte
+          titre="Assemblée de 2026"
+          issue={adopte(reel.scrutin.resultat)}
+          segments={[
+            { libelle: "Pour", valeur: reel.scrutin.decompte.pour, fond: "bg-pour" },
+            { libelle: "Abstention", valeur: reel.scrutin.decompte.abstention, fond: "bg-abstention" },
+            { libelle: "Contre", valeur: reel.scrutin.decompte.contre, fond: "bg-contre" },
+            { libelle: "Non-votants", valeur: reel.scrutin.decompte.non_votants, fond: "bg-absent" },
+          ]}
+        >
+          <SourceBadge source={reel.scrutin.source} className="mt-4" />
+        </LigneDecompte>
       ) : null}
-      <SourceBadge source={sourceCalcul(`${definitionSimulation(prenom)} ${REGLE_POSITION}`, dateCalcul)} className="mt-6" />
+
+      <LigneDecompte
+        titre={`${NOMBRE_SIEGES} sièges de 2050, ${prenom} préside`}
+        issue={issue2050}
+        machine
+        segments={[
+          { libelle: "Pour", valeur: simulation.pour, fond: fondPosition },
+          { libelle: "Abstention", valeur: simulation.abstention, fond: fondPosition },
+          { libelle: "Contre", valeur: simulation.contre, fond: fondPosition },
+        ]}
+      >
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-attenue">
+          <span>{prenom} vote</span>
+          <PositionLibelle position={position} machine className="text-texte" />
+          <span>
+            · débat de 0 seconde
+            {reel ? (reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete") ? " · même issue qu'en 2026" : " · issue inverse de 2026") : ""}
+          </span>
+        </p>
+        <SourceBadge source={sourceCalcul(`${definitionSimulation(prenom)} ${REGLE_POSITION}`, dateCalcul)} className="mt-4" />
+      </LigneDecompte>
     </div>
   );
 }
@@ -331,22 +330,20 @@ export function VueSeance() {
             <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
               Au pouvoir
             </h1>
-            <p aria-live="polite" className="mt-5 text-lg leading-8 text-attenue">
+            <p aria-live="polite" className="mt-4 text-lg leading-8 text-attenue">
               {testFait ? (
                 <>
-                  Votre IA, <strong className="font-medium text-texte">{candidate.prenom}</strong>, préside. Elle tranche un vrai
-                  texte de loi, puis rédige un amendement.
+                  Votre IA, <strong className="font-medium text-texte">{candidate.prenom}</strong>, préside.
                 </>
               ) : (
                 <>
-                  Vous n&apos;avez pas encore passé le test. En attendant, <strong className="font-medium text-texte">{candidate.prenom}</strong>,
-                  la première candidate, préside.
+                  <strong className="font-medium text-texte">{candidate.prenom}</strong> préside.
                 </>
               )}
             </p>
             {!testFait ? (
-              <Link href="/test" className={`${PILULE_NOIRE} mt-8`}>
-                Faire le test
+              <Link href="/test" className={`${PILULE_NOIRE} mt-6`}>
+                Trouver mon IA
               </Link>
             ) : null}
           </div>
@@ -368,7 +365,6 @@ export function VueSeance() {
           ) : !texte || !position || !simulation ? (
             <div className="rounded-md bg-relief px-5 py-6">
               <p className="font-medium text-texte">Aucun texte à examiner pour le moment.</p>
-              <p className="mt-1 text-[15px] leading-6 text-attenue">La liste des scrutins est vide. Revenez dans un instant.</p>
             </div>
           ) : (
             <>
@@ -381,35 +377,24 @@ export function VueSeance() {
                 <ScenePublique etats={etats} description={description} seance={seance} candidate={candidate} />
               </div>
 
-              <div className="mx-auto mt-12 max-w-4xl" aria-live="polite">
-                <motion.div
-                  key={seance}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  {seance === "2026" ? (
-                    resultat.error ? (
-                      <Panne
-                        titre="Le détail de ce scrutin n'est pas disponible."
-                        detail={`${(resultat.error as Error).message} Choisissez un autre texte, ou réessayez.`}
-                        onReessayer={() => void resultat.mutate()}
-                      />
-                    ) : !reel ? (
-                      <Attente libelle="Lecture des votes du scrutin…" hauteur="h-48" />
-                    ) : (
-                      <DecompteReel resultat={reel} />
-                    )
-                  ) : (
-                    <Hypothese2050
-                      candidate={candidate}
-                      position={position}
-                      simulation={simulation}
-                      reel={reel}
-                      dateCalcul={resultat.data?.meta.recuLe ?? null}
-                    />
-                  )}
-                </motion.div>
+              <div className="mx-auto mt-14 max-w-4xl" aria-busy={resultat.isLoading}>
+                {resultat.error ? (
+                  <Panne
+                    titre="Le détail de ce scrutin n'est pas disponible."
+                    detail={`${(resultat.error as Error).message} Choisissez un autre texte, ou réessayez.`}
+                    onReessayer={() => void resultat.mutate()}
+                  />
+                ) : !reel ? (
+                  <Attente libelle="Lecture des votes du scrutin…" hauteur="h-48" />
+                ) : (
+                  <Decomptes
+                    candidate={candidate}
+                    position={position}
+                    simulation={simulation}
+                    reel={reel}
+                    dateCalcul={resultat.data?.meta.recuLe ?? null}
+                  />
+                )}
               </div>
             </>
           )}
@@ -417,26 +402,18 @@ export function VueSeance() {
 
         {texte && position ? (
           <section aria-labelledby="seance-amendement" className="mx-auto mt-28 max-w-4xl">
-            <h2 id="seance-amendement" className={H2}>
+            <h2 id="seance-amendement" className={`mb-10 ${H2}`}>
               L&apos;amendement {deCandidate(candidate.prenom)}
             </h2>
-            <p className="mt-2 mb-10 max-w-3xl text-[15px] leading-6 text-attenue">
-              {candidate.prenom} rédige en direct un amendement fidèle à son programme sur ce texte. C&apos;est une fiction, écrite
-              par un modèle de langage : elle n&apos;a aucune valeur juridique.
-            </p>
             <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
           </section>
         ) : null}
 
         {texte && position ? (
           <section aria-labelledby="seance-groupes" className="mx-auto mt-28 max-w-4xl">
-            <h2 id="seance-groupes" className={H2}>
-              Les groupes de 2026 sur ce texte
+            <h2 id="seance-groupes" className={`mb-8 ${H2}`}>
+              Les groupes en 2026
             </h2>
-            <p className="mt-2 mb-8 max-w-3xl text-[15px] leading-6 text-attenue">
-              Les groupes de l&apos;Assemblée, leurs votes publiés et leur position majoritaire, comparés à la position{" "}
-              {deCandidate(candidate.prenom)} sur « {titreLisible(texte.titre)} ».
-            </p>
             {reel ? (
               <>
                 <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
@@ -444,7 +421,7 @@ export function VueSeance() {
               </>
             ) : resultat.error ? (
               <p className="rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">
-                Les groupes de ce scrutin ne sont pas disponibles. Choisissez un autre texte.
+                Groupes indisponibles pour ce scrutin.
               </p>
             ) : (
               <Attente libelle="Lecture des groupes…" hauteur="h-56" />

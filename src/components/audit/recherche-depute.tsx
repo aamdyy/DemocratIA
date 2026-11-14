@@ -34,21 +34,19 @@ export function RechercheDepute({
   const assezLong = saisie.trim().length >= 2;
 
   const etat = !assezLong
-    ? "Saisissez au moins deux lettres du nom."
+    ? ""
     : erreur
       ? `La recherche n'a pas abouti. ${erreur}`
       : enAttente || !resultats
         ? "Recherche en cours…"
         : resultats.length === 0
-          ? "Aucun député ne porte ce nom. Vérifiez l'orthographe ou essayez un nom plus court."
-          : resultats.length === 1
-            ? "1 député trouvé. Choisissez-le pour lancer la comparaison."
-            : `${resultats.length} députés trouvés. Choisissez-en un pour lancer la comparaison.`;
+          ? "Aucun député ne porte ce nom."
+          : `${resultats.length} ${resultats.length === 1 ? "député trouvé" : "députés trouvés"}.`;
 
   return (
     <div>
       <label htmlFor={champ} className="block text-sm font-medium text-texte">
-        Nom du député à auditer
+        Nom du député
       </label>
       <input
         id={champ}
@@ -58,7 +56,7 @@ export function RechercheDepute({
         aria-describedby={aide}
         autoComplete="off"
         spellCheck={false}
-        placeholder="Par exemple : Dupont"
+        placeholder="Dupont"
         className={cn(
           "mt-2 h-12 w-full max-w-xl rounded-md border border-trait bg-surface px-4 text-base text-texte transition-colors duration-150 placeholder:text-attenue hover:border-attenue",
           FOCUS,

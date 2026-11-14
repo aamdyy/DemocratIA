@@ -178,20 +178,18 @@ export function Amendement({
               {etat.statut === "erreur"
                 ? "Réessayer"
                 : aDuTexte
-                  ? `Faire réécrire l'amendement par ${prenom}`
-                  : `Faire rédiger l'amendement par ${prenom}`}
+                  ? "Réécrire l'amendement"
+                  : "Rédiger l'amendement"}
             </button>
           )}
           <p role="status" className="text-[15px] leading-6 text-attenue">
             {ecrit
-              ? `${prenom} rédige son amendement…`
+              ? `${prenom} rédige…`
               : etat.statut === "termine"
-                ? `Amendement déposé. ${prenom} l'a dicté en direct.`
+                ? "Amendement déposé."
                 : etat.statut === "arrete"
-                  ? "Dictée arrêtée : le texte ci-dessous est incomplet."
-                  : !demande
-                    ? "Choisissez un texte pour que la rédaction soit possible."
-                    : null}
+                  ? "Dictée arrêtée : texte incomplet."
+                  : null}
           </p>
         </div>
 
@@ -206,11 +204,7 @@ export function Amendement({
           >
             {etat.texte}
           </div>
-        ) : etat.statut === "erreur" ? null : (
-          <p className="mt-8 border-l-2 border-trait pl-6 text-[15px] leading-7 text-attenue">
-            L&apos;amendement s&apos;écrira ici, mot après mot, dès que vous le demandez.
-          </p>
-        )}
+        ) : null}
 
         {etat.statut === "erreur" ? (
           <p role="alert" className="mt-6 rounded-md bg-relief px-4 py-3 text-[15px] leading-6 text-texte">

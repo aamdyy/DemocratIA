@@ -5,7 +5,6 @@ import { useEffect, useEffectEvent, useRef } from "react";
 
 import { PositionLibelle } from "@/components/position";
 import { SourceBadge } from "@/components/source-badge";
-import { sourceCalcul } from "@/lib/concordance";
 import { dateLongue, titreLisible } from "@/lib/format";
 import { libelleTheme, themeDe } from "@/lib/themes";
 import type { Position, Scrutin } from "@/lib/types";
@@ -15,8 +14,6 @@ const SEUIL = 120;
 
 /** Sens de la dernière réponse : la carte sort de ce côté. « passe » la fait partir vers le haut. */
 export type Geste = Position | "passe" | null;
-
-const DEFINITION_THEME = "Thème déduit des mots de l'intitulé du texte. Une estimation, pas un classement officiel.";
 
 const REPONSES: { position: Position; touche: string }[] = [
   { position: "contre", touche: "ArrowLeft" },
@@ -144,9 +141,6 @@ export function PileTextes({
               Passer ce texte
             </button>
           </div>
-          <p className="mt-4 text-center text-sm leading-6 text-attenue">
-            Glissez la carte vers la droite ou la gauche, ou utilisez les flèches du clavier.
-          </p>
         </>
       ) : peutAnnuler ? (
         <p className="mt-2">
@@ -206,10 +200,7 @@ function CarteTexte({ scrutin, onArbitrer }: { scrutin: Scrutin; onArbitrer: (po
       <h3 className={`mt-3 ${TITRE}`}>{titreLisible(scrutin.titre)}</h3>
 
       <div className="mt-auto space-y-3 pt-6">
-        <div>
-          <p className="font-donnee text-sm text-machine">Thème estimé : {libelleTheme(themeDe(scrutin.titre))}</p>
-          <SourceBadge source={sourceCalcul(DEFINITION_THEME)} className="mt-1" />
-        </div>
+        <p className="font-donnee text-sm text-machine">Thème estimé : {libelleTheme(themeDe(scrutin.titre))}</p>
         <SourceBadge source={scrutin.source} />
       </div>
     </motion.article>
@@ -237,9 +228,6 @@ function CarteFin({
       <h3 ref={titre} tabIndex={-1} className={`${TITRE} outline-none`}>
         {total > 1 ? `Vous avez parcouru les ${total} textes.` : "Vous avez parcouru le texte."}
       </h3>
-      <p className="mt-3 max-w-md text-base leading-7 text-attenue">
-        Il reste une dernière étape : dire ce qui compte le plus pour vous.
-      </p>
       <p className="mt-auto pt-8">
         <button
           type="button"
@@ -274,7 +262,7 @@ export function PileEnErreur({ message, onReessayer }: { message: string | null;
     <div role="alert" className={CADRE}>
       <h2 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h2>
       <p className="mt-3 max-w-md text-base leading-7 text-attenue">
-        {message ?? "Vérifiez votre connexion."} Vos réponses déjà enregistrées sont conservées.
+        {message ?? "Vérifiez votre connexion."}
       </p>
       <p className="mt-auto pt-8">
         <button
@@ -293,10 +281,6 @@ export function PileVide({ onTerminer }: { onTerminer: () => void }) {
   return (
     <div className={CADRE}>
       <h2 className={TITRE}>Aucun texte à trancher pour le moment.</h2>
-      <p className="mt-3 max-w-md text-base leading-7 text-attenue">
-        L&apos;Assemblée n&apos;a publié aucun vote sur l&apos;ensemble d&apos;un texte dans la période lue. Vous pouvez
-        déjà régler vos priorités.
-      </p>
       <p className="mt-auto pt-8">
         <button
           type="button"

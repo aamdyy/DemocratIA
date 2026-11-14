@@ -2,7 +2,7 @@
 
 import { PositionLibelle } from "@/components/position";
 import { SourceBadge } from "@/components/source-badge";
-import { dateLongue, titreLisible } from "@/lib/format";
+import { titreLisible } from "@/lib/format";
 import { REGLE_POSITION, type Candidate } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
 
@@ -48,10 +48,6 @@ function Ligne({ ligne }: { ligne: LigneAudit }) {
     <tr className="border-b border-trait">
       <th scope="row" className={`${CELLULE} pl-0 text-left font-normal`}>
         <span className="block font-medium text-texte">{titreLisible(ligne.scrutin.titre)}</span>
-        <span className={NOTE}>
-          Scrutin n° {ligne.scrutin.numero} du {dateLongue(ligne.scrutin.date)}
-        </span>
-        <SourceBadge source={ligne.scrutin.source} className="mt-2" />
         {ligne.etat === "echec" ? (
           <span role="alert" className="mt-2 block text-sm leading-5 text-texte">
             Le détail de ce scrutin n&apos;a pas pu être lu. {ligne.erreur}
@@ -118,7 +114,10 @@ export function TableauComparaison({ lignes, nomElu, candidate }: { lignes: Lign
         </tbody>
       </table>
     </div>
-    <SourceBadge source={sourceCalcul(REGLE_POSITION)} className="mt-6 max-w-4xl" />
+    <div className="mt-6 max-w-4xl space-y-2">
+      {lignes[0] ? <SourceBadge source={lignes[0].scrutin.source} /> : null}
+      <SourceBadge source={sourceCalcul(REGLE_POSITION)} />
+    </div>
     </>
   );
 }

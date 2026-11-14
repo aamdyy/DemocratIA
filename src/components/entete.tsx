@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useMaSphere } from "@/components/accueil/ma-sphere";
+import { Logo } from "@/components/logo";
 import { Sphere } from "@/components/sphere";
 import { useEtat } from "@/lib/api";
-import { nombre } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Les trois temps du parcours : passer le test, découvrir les candidates, voir l'IA au pouvoir. */
@@ -35,8 +35,7 @@ export function Entete() {
           className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
         >
           <Sphere teintes={teintes} duree={12} className="size-6 shrink-0" />
-          <span className="font-titre text-[17px] font-semibold tracking-[-0.03em]">DemocratIA</span>
-          <span className="text-sm text-attenue max-md:hidden">République française, 2050</span>
+          <Logo className="text-[18px]" point={teintes[1]} />
           {candidate ? <span className="sr-only">Votre IA : {candidate.prenom}</span> : null}
         </Link>
 
@@ -88,23 +87,11 @@ function EtatDonnees() {
             aria-hidden
             className={cn("size-2 shrink-0 rounded-full", reel ? "bg-texte" : "border border-dashed border-attenue")}
           />
-          {reel ? (
-            <span>
-              Hémicycle connecté
-              {etat.hemicycle.cle === "test" ? <span className="max-sm:hidden"> (clé de test)</span> : null}
-              {etat.hemicycle.credits !== null ? (
-                <span className="tabular-nums max-sm:hidden">, {nombre(etat.hemicycle.credits)} crédits</span>
-              ) : null}
-            </span>
-          ) : (
-            <span>Données d&apos;exemple</span>
-          )}
+          {reel ? "Hémicycle connecté" : "Données d'exemple"}
         </>
       ) : erreur ? (
-        "État des données inconnu"
-      ) : (
-        "Vérification des données…"
-      )}
+        "Données inconnues"
+      ) : null}
     </p>
   );
 }

@@ -68,17 +68,12 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
   );
 }
 
-function AucunTexte({ prenom }: { prenom: string | null }) {
+function AucunTexte() {
   return (
     <div className="rounded-md bg-relief px-5 py-6">
       <p className="font-medium text-texte">Vous n&apos;avez encore tranché aucun texte.</p>
-      <p className="mt-1 max-w-2xl text-[15px] leading-6 text-attenue">
-        {prenom
-          ? `La comparaison se fait sur les textes de loi que vous avez tranchés. Passez le test : ${prenom} et l'élu de votre choix seront alors comparés texte par texte.`
-          : "Passez le test pour découvrir votre IA : l'audit compare un élu à elle, texte par texte."}
-      </p>
       <Link href="/test" className={`${LIEN} mt-5`}>
-        Passer le test
+        Trouver mon IA
       </Link>
     </div>
   );
@@ -126,10 +121,7 @@ export function VueAudit() {
         <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
           Un élu suit son groupe. {candidate ? candidate.prenom : "Votre IA"} suit son programme.
         </h1>
-        <p className="mt-5 text-lg leading-8 text-attenue">
-          Choisissez un député de l&apos;ancien régime. DemocratIA place ses votes publiés à côté de la position de votre IA
-          {candidate ? `, ${candidate.prenom},` : ""} sur les textes que vous avez tranchés. Rien d&apos;autre que des votes : à vous de juger.
-        </p>
+        <p className="mt-5 text-lg leading-8 text-attenue">Choisissez un député : ses votes publiés, face à votre IA.</p>
       </header>
 
       <section aria-labelledby="audit-recherche" className="mt-14">
@@ -157,14 +149,11 @@ export function VueAudit() {
       ) : null}
 
       <section aria-labelledby="audit-comparaison" className="mt-20">
-        <h2 id="audit-comparaison" className={H2}>
-          Comparaison texte par texte
-        </h2>
-        <p className="mt-2 mb-8 text-[15px] leading-6 text-attenue">
+        <h2 id="audit-comparaison" className={`mb-8 ${H2}`}>
           {pret && textes.length > 0
-            ? `${textes.length > 1 ? `${textes.length} textes tranchés` : "1 texte tranché"} dans le test.`
-            : "Sur les textes que vous avez tranchés dans le test."}
-        </p>
+            ? `Comparaison sur ${textes.length > 1 ? `${textes.length} textes` : "1 texte"}`
+            : "Comparaison texte par texte"}
+        </h2>
 
         {!pret ? (
           <Attente lignes={3} libelle="Lecture de votre test et des textes…" />
@@ -175,12 +164,8 @@ export function VueAudit() {
             onReessayer={() => void scrutins.mutate()}
           />
         ) : !candidate || textes.length === 0 ? (
-          <AucunTexte prenom={candidate?.prenom ?? null} />
-        ) : !depute ? (
-          <p className="rounded-md bg-relief px-5 py-6 text-[15px] leading-6 text-attenue">
-            Cherchez un député ci-dessus et choisissez-le : ses votes s&apos;afficheront ici, face à la position de {candidate.prenom}.
-          </p>
-        ) : lectures.error ? (
+          <AucunTexte />
+        ) : !depute ? null : lectures.error ? (
           <Panne
             titre="Le détail des scrutins n'a pas pu être lu."
             detail={lectures.error.message}

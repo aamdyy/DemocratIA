@@ -1,6 +1,7 @@
+import { Barre } from "@/components/graphiques";
 import { PositionLibelle } from "@/components/position";
 import { SourceBadge } from "@/components/source-badge";
-import { DEFINITION_AFFINITE, REGLE_POSITION, positionCandidate, type Affinite } from "@/lib/candidates";
+import { REGLE_POSITION, positionCandidate, type Affinite } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
 import { pourcent, titreLisible } from "@/lib/format";
 import { prioriteDe, type Mandat } from "@/lib/mandat";
@@ -9,83 +10,84 @@ import type { Scrutin } from "@/lib/types";
 
 const SOUS_TITRE = "font-titre text-lg font-semibold tracking-[-0.02em]";
 
-/** « Pourquoi elle » : les textes où vous votez pareil, le principal désaccord, les thèmes en commun. */
+/** « Pourquoi elle » : l'accord décomposé en deux barres, les textes communs, le principal désaccord, les thèmes partagés. */
 export function Pourquoi({ affinite, mandat }: { affinite: Affinite; mandat: Mandat }) {
   const { candidate } = affinite;
+  const couleur = candidate.teintes[1];
   // Le désaccord qui compte le plus est celui sur le thème que le citoyen a le plus priorisé.
   const desaccord =
     [...affinite.textesDivergents].sort(
       (a, b) => prioriteDe(mandat, themeDe(b.titre)) - prioriteDe(mandat, themeDe(a.titre)),
     )[0] ?? null;
-  const nombreTranches = Object.keys(mandat.votes).length;
+  const mesures = [
+    ...(affinite.accordTextes === null ? [] : [{ libelle: "Accord sur les textes", valeur: affinite.accordTextes }]),
+    { libelle: "Priorités proches", valeur: affinite.accordPriorites },
+  ];
+  const premier = affinite.textesCommuns[0] ?? desaccord;
 
   return (
-    <section aria-labelledby="titre-pourquoi" className="mt-28">
+    <section aria-labelledby="titre-pourquoi" className="mt-24">
       <h2 id="titre-pourquoi" className="font-titre text-3xl font-semibold leading-[1.1] tracking-[-0.03em] sm:text-4xl">
         Pourquoi {candidate.prenom}
       </h2>
-      <p className="mt-4 max-w-xl text-base leading-7 text-attenue">
-        {affinite.accordTextes === null
-          ? "Vous n'avez tranché aucun texte : l'affinité repose uniquement sur vos priorités."
-          : `L'affinité mêle votre accord sur les textes (${pourcent(affinite.accordTextes)}) et la proximité de vos priorités (${pourcent(affinite.accordPriorites)}).`}
-      </p>
-      <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-3" />
 
-      <div className="mt-14">
-        <h3 className={SOUS_TITRE}>Les textes où vous votez pareil</h3>
-        {affinite.textesCommuns.length === 0 ? (
-          <p className="mt-3 max-w-xl text-[15px] leading-6 text-attenue">
-            {nombreTranches === 0
-              ? "Aucun texte tranché pour l'instant."
-              : `Aucun des textes que vous avez tranchés n'est voté dans le même sens par ${candidate.prenom}.`}
-          </p>
-        ) : (
+      <ul role="list" className="mt-8 grid gap-6 sm:grid-cols-2 sm:gap-10">
+        {mesures.map((m, i) => (
+          <li key={m.libelle}>
+            <p className="flex items-baseline justify-between gap-4 text-[15px] leading-6">
+              <span>{m.libelle}</span>
+              <span className="font-semibold tabular-nums">{pourcent(m.valeur)}</span>
+            </p>
+            <Barre
+              className="mt-2"
+              valeur={m.valeur * 100}
+              couleur={couleur}
+              etiquette={`${m.libelle} avec ${candidate.prenom} : ${pourcent(m.valeur)}`}
+              delai={i * 0.12}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {affinite.textesCommuns.length > 0 ? (
+        <div className="mt-14">
+          <h3 className={SOUS_TITRE}>Les textes où vous votez pareil</h3>
           <ul className="mt-4 border-t border-trait">
             {affinite.textesCommuns.map((scrutin) => (
               <LigneTexte key={scrutin.id} scrutin={scrutin} affinite={affinite} mandat={mandat} />
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="mt-14">
-        <h3 className={SOUS_TITRE}>Votre principal désaccord</h3>
-        {desaccord ? (
+      {desaccord ? (
+        <div className="mt-14">
+          <h3 className={SOUS_TITRE}>Votre principal désaccord</h3>
           <ul className="mt-4 border-t border-trait">
             <LigneTexte scrutin={desaccord} affinite={affinite} mandat={mandat} />
           </ul>
-        ) : (
-          <p className="mt-3 max-w-xl text-[15px] leading-6 text-attenue">
-            {nombreTranches === 0
-              ? "Aucun texte tranché pour l'instant."
-              : `Sur les textes que vous avez tranchés, ${candidate.prenom} ne vous contredit jamais frontalement.`}
-          </p>
-        )}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="mt-14">
-        <h3 className={SOUS_TITRE}>Les thèmes que vous partagez</h3>
-        {affinite.themesCommuns.length === 0 ? (
-          <p className="mt-3 max-w-xl text-[15px] leading-6 text-attenue">
-            Réglez au moins un thème à 60 ou plus pour voir ce que vous partagez avec {candidate.prenom}.
-          </p>
-        ) : (
+      {affinite.themesCommuns.length > 0 ? (
+        <div className="mt-14">
+          <h3 className={SOUS_TITRE}>Les thèmes que vous partagez</h3>
           <ul className="mt-4 flex flex-wrap gap-3">
             {affinite.themesCommuns.map((theme) => (
               <li key={theme.theme} className="inline-flex min-h-11 flex-wrap items-center rounded-full border border-trait px-5 py-2 text-[15px] font-medium">
                 {theme.libelle}
                 <span className="ml-2 text-sm font-normal tabular-nums text-attenue">
-                  {prioriteDe(mandat, theme.theme)} sur 100, elle : {candidate.poids[theme.theme]}
+                  vous {prioriteDe(mandat, theme.theme)}, elle {candidate.poids[theme.theme]}
                 </span>
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="mt-14 max-w-xl">
-        <h3 className={SOUS_TITRE}>Comment {candidate.prenom} vote</h3>
-        <SourceBadge source={sourceCalcul(REGLE_POSITION)} className="mt-3 text-sm leading-6" />
+      <div className="mt-10 space-y-2">
+        {premier ? <SourceBadge source={premier.source} /> : null}
+        <SourceBadge source={sourceCalcul(REGLE_POSITION)} />
       </div>
     </section>
   );
@@ -105,7 +107,6 @@ function LigneTexte({ scrutin, affinite, mandat }: { scrutin: Scrutin; affinite:
           <PositionLibelle position={elle} machine />
         </dd>
       </dl>
-      <SourceBadge source={scrutin.source} className="mt-3" />
     </li>
   );
 }

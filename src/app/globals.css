@@ -73,7 +73,7 @@
   --republique: #1d3fd8;
   --machine: #9c1f6b;
   --police-titre: var(--police-interface);
-  --police-interface: var(--police-dm-sans), system-ui, sans-serif;
+  --police-interface: var(--police-public-sans), system-ui, sans-serif;
   --police-donnee: var(--police-dm-mono), ui-monospace, monospace;
 
   --background: var(--fond);
@@ -323,3 +323,59 @@
 }
 
 /* Fin des styles de la sphère (matière ralentie). */
+
+/*
+ * Survol d'une sphère : la matière s'éveille. Les nuages gonflent et se resserrent, le courant
+ * s'éclaire et les couleurs s'intensifient, puis tout retombe doucement quand le pointeur s'en va.
+ * Seulement avec une souris : sur écran tactile, il n'y a pas de survol.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .sphere {
+    transition: scale 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .sphere .sphere-nuage {
+    transition: scale 900ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease-out;
+  }
+  .sphere .sphere-courant {
+    transition: opacity 600ms ease-out;
+  }
+  .sphere-nuages {
+    transition: filter 700ms ease-out;
+  }
+  :is(.sphere, a, button):hover > .sphere,
+  .sphere:hover {
+    scale: 1.035;
+  }
+  :is(a, button):hover .sphere .sphere-nuage:nth-child(1),
+  .sphere:hover .sphere-nuage:nth-child(1) {
+    scale: calc(var(--p1, 1) * 1.32);
+  }
+  :is(a, button):hover .sphere .sphere-nuage:nth-child(2),
+  .sphere:hover .sphere-nuage:nth-child(2) {
+    scale: calc(var(--p2, 1) * 0.78);
+  }
+  :is(a, button):hover .sphere .sphere-nuage:nth-child(3),
+  .sphere:hover .sphere-nuage:nth-child(3) {
+    scale: calc(var(--p3, 1) * 1.28);
+  }
+  :is(a, button):hover .sphere .sphere-nuage:nth-child(4),
+  .sphere:hover .sphere-nuage:nth-child(4) {
+    scale: 1.45;
+    opacity: 0.85;
+  }
+  :is(a, button):hover .sphere .sphere-courant,
+  .sphere:hover .sphere-courant {
+    opacity: 1;
+    filter: blur(4cqw) brightness(1.25);
+  }
+  .sphere:not([data-aquarelle]):hover .sphere-nuages,
+  :is(a, button):hover .sphere:not([data-aquarelle]) .sphere-nuages {
+    filter: saturate(1.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sphere,
+  .sphere .sphere-nuage {
+    transition: none;
+  }
+}

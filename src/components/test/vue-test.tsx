@@ -25,8 +25,7 @@ const STYLE_SPHERE = `
 @media (prefers-reduced-motion: reduce) { .sphere-test .sphere-nuage { transition: none; } }
 `;
 
-const DEFINITION_SPHERE =
-  "Les couleurs de la sphère viennent des thèmes de vos réponses et de vos priorités. Elle reste grise tant que vous n'avez rien répondu.";
+const DEFINITION_SPHERE = "Les couleurs de la sphère viennent des thèmes de vos réponses et de vos priorités.";
 
 const TITRE = "font-titre text-[clamp(1.75rem,3.6vw,2.5rem)] font-semibold leading-[1.08] tracking-[-0.03em]";
 
@@ -154,11 +153,7 @@ export function VueTest() {
             <h1 ref={titreEtape} tabIndex={-1} className={`text-balance outline-none ${TITRE}`}>
               {etape === 1 ? "Tranchez de vrais textes de loi." : "Qu'est-ce qui compte le plus ?"}
             </h1>
-            <p className="mt-3 max-w-xl text-base leading-7 text-attenue sm:text-lg">
-              {etape === 1
-                ? "Pour, contre ou abstention. Le vote réel de l'Assemblée reste caché."
-                : "Déplacez les curseurs. Plus un thème pèse, plus les textes de ce thème comptent pour trouver votre IA."}
-            </p>
+            {etape === 1 ? <p className="mt-3 text-base leading-7 text-attenue sm:text-lg">Pour, contre ou abstention.</p> : null}
           </div>
 
           {etape === 1 ? (

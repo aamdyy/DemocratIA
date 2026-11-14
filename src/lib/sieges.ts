@@ -23,7 +23,9 @@ export function placerSieges(total = 577, rangs = 12): Siege[] {
   const effectifs = exacts.map(Math.floor);
   // Les sièges restants vont aux rangs dont la part entière a le plus tronqué.
   const restes = exacts.map((exact, i) => ({ i, reste: exact - effectifs[i] })).sort((a, b) => b.reste - a.reste);
-  for (let k = 0; k < total - effectifs.reduce((a, b) => a + b, 0); k++) effectifs[restes[k].i]++;
+  // Le manque se calcule une fois : recalculé à chaque tour, il diminuait pendant qu'on le comblait.
+  const manque = total - effectifs.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < manque; k++) effectifs[restes[k].i]++;
 
   const sieges: (Siege & { angle: number; rayon: number })[] = [];
   rayons.forEach((rayon, rang) => {

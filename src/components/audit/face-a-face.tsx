@@ -27,13 +27,7 @@ export function FaceAFace({ depute, candidate }: { depute: Depute; candidate: Ca
             {depute.civilite ? `${depute.civilite} ` : ""}
             {nomComplet(depute)}
           </h3>
-          <p className="mt-1 text-sm leading-6 text-attenue">Élu humain, discipline de groupe</p>
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
-            <dt className="text-attenue">Groupe</dt>
-            <dd>{depute.groupe ?? "Non renseigné"}</dd>
-            <dt className="text-attenue">Profession</dt>
-            <dd>{depute.profession ?? "Non renseignée"}</dd>
-          </dl>
+          <p className="mt-1 text-sm leading-6 text-attenue">{depute.groupe ?? "Groupe non renseigné"}</p>
           {depute.hatvpUrl ? (
             <p className="mt-3">
               <a
@@ -55,18 +49,10 @@ export function FaceAFace({ depute, candidate }: { depute: Depute; candidate: Ca
         <Sphere teintes={candidate.teintes} className="size-24 shrink-0 sm:size-28" />
         <div className="min-w-0">
           <h3 className="font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte">{candidate.prenom}</h3>
-          <p className="mt-1 font-donnee text-sm leading-6 text-machine">Votre IA, candidate à la présidence</p>
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
-            <dt className="text-attenue">Groupe</dt>
-            <dd>Aucun</dd>
-            <dt className="text-attenue">Profession</dt>
-            <dd>Applique son programme, texte par texte</dd>
-          </dl>
+          <p className="mt-1 font-donnee text-sm leading-6 text-machine">Votre IA, sans groupe</p>
           <SourceBadge
-            className="mt-3"
-            source={sourceCalcul(
-              `${candidate.prenom} est une candidate de fiction : sa sphère est la sienne, et son programme est public. Elle est la mieux placée pour vous selon le test.`,
-            )}
+            className="mt-4"
+            source={sourceCalcul(`${candidate.prenom} est une candidate de fiction, la mieux placée pour vous selon le test.`)}
           />
         </div>
       </article>
