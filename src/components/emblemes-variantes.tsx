@@ -172,7 +172,7 @@ function GaiaGlobe() {
     <>
       <Cercle cx={60} cy={68} r={32} rang={0} />
       <Trace d="M28 68 H92" rang={1} />
-      <Vivant variants={vivant({ scaleX: [1, 0.06, 1, 0.06, 1] }, 1.6, { scaleX: 1 })}>
+      <Vivant variants={vivant({ rotate: [0, 18, -12, 6, 0] }, 1.6, { rotate: 0 })}>
         <Trace d="M60 36 A14 32 0 0 1 60 100 A14 32 0 0 1 60 36" rang={1.5} />
       </Vivant>
       <Vivant variants={vivant({ rotate: [0, 10, -4, 0] }, 1.4, { rotate: 0 })} ox={0} oy={1}>
@@ -251,10 +251,10 @@ function HygieMaison() {
 /* Plutus                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Une clé ; au survol, elle tourne dans la serrure. */
+/** Une clé ; au survol, elle tourne dans la serrure (un quart de tour aller-retour, sans jamais disparaître). */
 function PlutusCle() {
   return (
-    <Vivant variants={vivant({ scaleX: [1, -1, 1] }, 1.1, { scaleX: 1 })}>
+    <Vivant variants={vivant({ rotate: [0, -24, 16, -8, 0] }, 1.4, { rotate: 0 })} ox={0.5} oy={0.27}>
       <Cercle cx={60} cy={32} r={18} rang={0} />
       <Cercle cx={60} cy={32} r={6} rang={0.6} />
       <Trace d="M60 50 V106" rang={1} />
