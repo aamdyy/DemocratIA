@@ -9,10 +9,10 @@ import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { useScrutins } from "@/lib/api";
-import { nombreDeDilemmes, selectionEnregistree } from "@/lib/dilemmes";
 import { pourcent } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { mandat, useMandat } from "@/lib/mandat";
+import { resumeDuMandat } from "@/lib/questions/poids";
 
 import { AutresCandidates } from "./autres-candidates";
 import { Pourquoi } from "./pourquoi";
@@ -105,14 +105,16 @@ export function VueResultat() {
   const [meilleure, deuxieme] = classement;
 
   // Sur quoi repose le calcul, et ce qui sépare la première de la deuxième (en points d'affinité affichés).
-  const nbTextes = (lecture.data?.data ?? []).filter((s) => reglages.votes[s.id]).length;
-  const nbDilemmes = nombreDeDilemmes(reglages.dilemmes);
-  const nbPriorites = selectionEnregistree(reglages.priorites).length;
+  const resume = resumeDuMandat(reglages, lecture.data?.data ?? []);
   const elements = [
-    nbTextes > 0 ? pluriel(nbTextes, "texte") : null,
-    nbDilemmes > 0 ? pluriel(nbDilemmes, "dilemme") : null,
-    nbPriorites > 0 ? pluriel(nbPriorites, "priorité") : null,
+    resume.textes > 0 ? pluriel(resume.textes, "texte") : null,
+    resume.accords > 0 ? pluriel(resume.accords, "affirmation") : null,
+    resume.budget ? "votre budget" : null,
+    resume.scenarios > 0 ? pluriel(resume.scenarios, "scénario") : null,
+    resume.dilemmes > 0 ? pluriel(resume.dilemmes, "dilemme") : null,
+    resume.classement ? "votre classement des thèmes" : null,
   ].filter((e): e is string => e !== null);
+  const { justes, total: paris } = resume.pronostics;
   const calcule =
     elements.length > 1
       ? `${elements.slice(0, -1).join(", ")} et ${elements[elements.length - 1]}`
@@ -177,6 +179,14 @@ export function VueResultat() {
               </>
             ) : null}
           </motion.p>
+          {paris > 0 ? (
+            <motion.p variants={ETAPE} className="mt-2 text-[15px] text-attenue">
+              Devinez l&apos;Assemblée :{" "}
+              <span className="font-semibold tabular-nums text-texte">
+                {justes} pronostic{justes > 1 ? "s" : ""} juste{justes > 1 ? "s" : ""} sur {paris}
+              </span>
+            </motion.p>
+          ) : null}
 
           <motion.div variants={ETAPE} className="flex flex-col items-center lg:items-start">
             <p className="mt-6 max-w-md text-balance text-xl leading-8 tracking-[-0.01em]">{meilleure.candidate.doctrine}</p>
