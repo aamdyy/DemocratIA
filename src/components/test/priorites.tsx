@@ -1,84 +1,156 @@
 "use client";
 
-import { mandat, prioriteDe, type Mandat } from "@/lib/mandat";
-import { COULEUR_THEME } from "@/lib/sphere-mandat";
-import { THEMES, type ThemeId } from "@/lib/themes";
+import Link from "next/link";
+import { motion } from "motion/react";
+import { useState } from "react";
 
-/** Curseur natif, redessiné : un trait de 2 pixels, une poignée ronde, 44 px de hauteur pour le doigt. */
-const STYLE_CURSEUR = `
-.reglage-priorite { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer; }
-.reglage-priorite::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(to right, var(--c) var(--v), var(--trait) var(--v)); }
-.reglage-priorite::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; margin-top: -10px; border-radius: 50%; background: var(--c); border: 4px solid var(--fond); outline: 1px solid var(--c); }
-.reglage-priorite::-moz-range-track { height: 2px; background: var(--trait); }
-.reglage-priorite::-moz-range-progress { height: 2px; background: var(--c); }
-.reglage-priorite::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 4px solid var(--fond); outline: 1px solid var(--c); }
-.reglage-priorite:focus-visible { outline: 2px solid var(--republique); outline-offset: 2px; }
-.reglage-priorite:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--republique); outline-offset: 2px; }
-.reglage-priorite:focus-visible::-moz-range-thumb { outline: 2px solid var(--republique); outline-offset: 2px; }
-`;
+import { mandat, type Mandat } from "@/lib/mandat";
+import { PRIORITE_PAR_DEFAUT, THEMES, type ThemeId } from "@/lib/themes";
 
-/** Un curseur par thème. Un thème que vous avez déplacé prend sa couleur : c'est elle qui colore la sphère. */
-export function Priorites({ reglages }: { reglages: Mandat }) {
-  return (
-    <div>
-      <style>{STYLE_CURSEUR}</style>
-      <div className="grid gap-x-12 gap-y-3 sm:grid-cols-2">
-        {THEMES.map((theme) => (
-          <Curseur
-            key={theme.id}
-            theme={theme.id}
-            libelle={theme.libelle}
-            valeur={prioriteDe(reglages, theme.id)}
-            touche={reglages.priorites[theme.id] !== undefined}
-          />
-        ))}
-      </div>
-    </div>
-  );
+/** Poids donné à la 1re, 2e et 3e priorité. Les autres thèmes pèsent AUTRES. */
+const POIDS_RANG = [95, 85, 75] as const;
+const AUTRES = 40;
+const MAXIMUM = POIDS_RANG.length;
+
+const FOCUS =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-republique";
+
+/**
+ * Traduit la sélection en mandat. Les dix thèmes sont réglés d'un coup : les anciens réglages
+ * (curseurs d'une session précédente) sont ainsi effacés. Sans sélection, tout revient au neutre.
+ */
+function appliquer(choix: ThemeId[]) {
+  for (const theme of THEMES) {
+    const rang = choix.indexOf(theme.id);
+    const poids = choix.length === 0 ? PRIORITE_PAR_DEFAUT : rang >= 0 ? POIDS_RANG[rang] : AUTRES;
+    mandat.regler(theme.id, poids);
+  }
 }
 
-function Curseur({
-  theme,
-  libelle,
-  valeur,
-  touche,
+/** Retrouve la sélection déjà enregistrée : les thèmes réglés à 95, 85 ou 75, dans cet ordre. */
+function selectionEnregistree(reglages: Mandat): ThemeId[] {
+  return POIDS_RANG.flatMap((poids) => {
+    const theme = THEMES.find((t) => reglages.priorites[t.id] === poids);
+    return theme ? [theme.id as ThemeId] : [];
+  });
+}
+
+/** Dix pastilles de thèmes, trois au plus : l'ordre du toucher est l'ordre d'importance. */
+export function Priorites({
+  reglages,
+  manquants,
+  onRevenir,
 }: {
-  theme: ThemeId;
-  libelle: string;
-  valeur: number;
-  /** Vrai quand le citoyen a déjà déplacé ce curseur. */
-  touche: boolean;
+  reglages: Mandat;
+  /** Nombre de textes qu'il reste à trancher avant de pouvoir découvrir son IA. */
+  manquants: number;
+  onRevenir: () => void;
 }) {
-  const champ = `priorite-${theme}`;
-  const couleur = COULEUR_THEME[theme];
+  const [choix, setChoix] = useState<ThemeId[]>(() => selectionEnregistree(reglages));
+  const [annonce, setAnnonce] = useState("");
+
+  function basculer(theme: ThemeId, libelle: string) {
+    const rang = choix.indexOf(theme);
+    if (rang < 0 && choix.length >= MAXIMUM) {
+      setAnnonce("Vous avez déjà trois priorités. Retirez-en une pour en choisir une autre.");
+      return;
+    }
+    const suivant = rang >= 0 ? choix.filter((c) => c !== theme) : [...choix, theme];
+    setChoix(suivant);
+    appliquer(suivant);
+    setAnnonce(
+      rang >= 0
+        ? `${libelle} retiré. ${suivant.length} priorité${suivant.length > 1 ? "s" : ""} sur ${MAXIMUM}.`
+        : `${libelle} : priorité ${suivant.length} sur ${MAXIMUM}.`,
+    );
+  }
+
+  const pret = manquants === 0 && choix.length > 0;
+  const raison =
+    manquants > 0
+      ? `Encore ${manquants} texte${manquants > 1 ? "s" : ""} à trancher.`
+      : choix.length === 0
+        ? "Choisissez au moins une priorité."
+        : null;
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3 text-[15px] leading-6">
-        <label htmlFor={champ} className="flex min-w-0 items-center gap-2 font-medium">
-          <span
-            aria-hidden
-            className="size-2.5 shrink-0 rounded-full border"
-            style={{ borderColor: couleur, background: touche ? couleur : "transparent" }}
-          />
-          <span className="truncate">{libelle}</span>
-        </label>
-        <output htmlFor={champ} className="shrink-0 text-sm tabular-nums text-attenue">
-          {valeur} sur 100
-        </output>
+      <p className="sr-only" role="status" aria-live="polite">
+        {annonce}
+      </p>
+      <div role="group" aria-label="Vos priorités, de la plus importante à la moins importante" className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
+        {THEMES.map((theme) => {
+          const rang = choix.indexOf(theme.id);
+          const choisi = rang >= 0;
+          const plein = !choisi && choix.length >= MAXIMUM;
+          return (
+            <motion.button
+              key={theme.id}
+              type="button"
+              aria-pressed={choisi}
+              aria-disabled={plein || undefined}
+              onClick={() => basculer(theme.id, theme.libelle)}
+              whileTap={{ scale: 0.96 }}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors duration-150 ${FOCUS} ${
+                choisi
+                  ? "border-texte bg-texte text-fond"
+                  : plein
+                    ? "border-trait text-attenue opacity-60"
+                    : "border-trait bg-surface hover:border-texte"
+              }`}
+            >
+              {choisi ? (
+                <motion.span
+                  aria-hidden
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 22 }}
+                  className="flex size-6 items-center justify-center rounded-full bg-fond text-sm font-semibold tabular-nums text-texte"
+                >
+                  {rang + 1}
+                </motion.span>
+              ) : null}
+              {choisi ? <span className="sr-only">Priorité {rang + 1} : </span> : null}
+              {theme.libelle}
+            </motion.button>
+          );
+        })}
       </div>
-      <input
-        id={champ}
-        type="range"
-        min={0}
-        max={100}
-        step={1}
-        value={valeur}
-        aria-valuetext={`${valeur} sur 100`}
-        onChange={(evenement) => mandat.regler(theme, Number(evenement.target.value))}
-        className="reglage-priorite"
-        style={{ "--c": touche ? couleur : "var(--texte)", "--v": `${valeur}%` } as React.CSSProperties}
-      />
+
+      <div className="mt-10 flex flex-col items-center gap-1">
+        {pret ? (
+          <Link
+            href="/resultat"
+            className={`inline-flex h-14 items-center rounded-full bg-texte px-8 font-medium text-fond transition-opacity duration-150 hover:opacity-80 ${FOCUS}`}
+          >
+            Découvrir mon IA
+          </Link>
+        ) : (
+          <>
+            <button
+              type="button"
+              aria-disabled
+              aria-describedby="raison-inactif"
+              className={`inline-flex h-14 cursor-not-allowed items-center rounded-full bg-relief px-8 font-medium text-attenue ${FOCUS}`}
+            >
+              Découvrir mon IA
+            </button>
+            <p id="raison-inactif" className="text-sm text-attenue">
+              {raison}
+            </p>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onRevenir}
+          className={`inline-flex min-h-11 items-center px-3 text-[15px] text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current ${FOCUS}`}
+        >
+          Revenir aux textes
+        </button>
+      </div>
     </div>
   );
 }
+
+/** Le nombre de priorités déjà choisies, lu depuis le mandat : 0 à 3. */
+export const nombreDePriorites = (reglages: Mandat) => selectionEnregistree(reglages).length;
