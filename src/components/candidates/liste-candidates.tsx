@@ -14,7 +14,14 @@ import { useClassement } from "@/lib/ma-candidate";
 import { affinitePourcent } from "./prenom";
 
 const PILULE_NOIRE =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-7 text-[15px] font-medium text-fond outline-none hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-8 text-[15px] font-medium text-fond outline-none transition-colors duration-150 hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
+
+// Une seule entrée pour la page : le titre, puis les cinq sphères l'une après l'autre.
+const ENTREE = {
+  cache: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.2, 0.8, 0.2, 1] as const } },
+};
+const CASCADE = { cache: {}, visible: { transition: { staggerChildren: 0.07 } } };
 
 /** /candidates : toutes les IA candidates à la présidence, côte à côte. */
 export function ListeCandidates() {
@@ -31,56 +38,56 @@ export function ListeCandidates() {
       <FiltreSphere />
       <AvisExemple meta={scrutins.data?.meta} />
 
-      <header className="mx-auto max-w-2xl text-center">
-        <h1 className="font-titre text-[clamp(2rem,4.4vw,3.4rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
-          Les cinq IA candidates
-        </h1>
-        <p className="mt-5 text-lg leading-8 text-attenue">
-          Chacune a un prénom, une doctrine et un programme public. Leurs votes se vérifient, texte après texte.
-        </p>
-      </header>
+      <motion.div initial="cache" animate="visible" variants={CASCADE}>
+        <motion.header variants={ENTREE} className="mx-auto max-w-2xl text-center">
+          <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
+            Les cinq IA candidates
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-attenue">
+            Chacune a un prénom, une doctrine et un programme public. Leurs votes se vérifient, texte après texte.
+          </p>
+        </motion.header>
 
-      <ul role="list" className="mx-auto mt-14 grid max-w-5xl grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-3 lg:grid-cols-5">
-        {lignes.map(({ candidate, score, premiere }, i) => (
-          <li key={candidate.id}>
-            <Link
-              href={`/candidates/${candidate.id}`}
-              className="group flex min-h-11 flex-col items-center text-center outline-none focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-texte"
-            >
-              <motion.div
-                className="w-full max-w-40"
-                animate={{ y: [0, -9, 0] }}
-                transition={{ duration: 5 + i * 0.7, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+        <ul role="list" className="mx-auto mt-16 flex max-w-6xl flex-col gap-10 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-16">
+          {lignes.map(({ candidate, score, premiere }, i) => (
+            <motion.li key={candidate.id} variants={ENTREE} className="sm:w-48 lg:w-[calc(20%-1.6rem)]">
+              <Link
+                href={`/candidates/${candidate.id}`}
+                className="group flex min-h-11 items-center gap-6 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-texte sm:flex-col sm:gap-0 sm:text-center"
               >
-                <Sphere teintes={candidate.teintes} duree={13 + i * 2} />
-              </motion.div>
-              <span className="mt-6 text-2xl font-semibold tracking-[-0.03em] text-texte underline decoration-transparent decoration-1 underline-offset-8 group-hover:decoration-trait">
-                {candidate.prenom}
-              </span>
-              <span className="mt-1.5 text-[15px] leading-6 text-attenue">{candidate.doctrine}</span>
-              {score !== null ? (
-                <span className="mt-3 text-[15px] leading-6 tabular-nums text-texte">
-                  {premiere ? <strong className="font-semibold">Votre IA · </strong> : null}
-                  {affinitePourcent(score)} d&apos;affinité
+                <span className="block w-24 shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100 sm:w-full">
+                  <Sphere teintes={candidate.teintes} duree={13 + i * 2} />
                 </span>
-              ) : null}
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <span className="flex flex-col sm:mt-8">
+                  <span className="text-3xl font-semibold tracking-[-0.03em] text-texte underline decoration-transparent decoration-1 underline-offset-8 transition-colors duration-150 group-hover:decoration-trait">
+                    {candidate.prenom}
+                  </span>
+                  <span className="mt-1.5 text-[15px] leading-6 text-attenue">{candidate.doctrine}</span>
+                  {score !== null ? (
+                    <span className="mt-3 text-[15px] leading-6 tabular-nums text-texte">
+                      {premiere ? <strong className="block font-semibold">Votre IA</strong> : null}
+                      {affinitePourcent(score)} d&apos;affinité
+                    </span>
+                  ) : null}
+                </span>
+              </Link>
+            </motion.li>
+          ))}
+        </ul>
 
-      <div aria-live="polite" className="mx-auto mt-16 flex max-w-xl flex-col items-center gap-5 text-center">
-        {regle ? (
-          <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="justify-center" />
-        ) : (
-          <>
-            <p className="text-lg leading-8 text-attenue">Passez le test pour savoir laquelle vous ressemble.</p>
-            <Link href="/test" className={PILULE_NOIRE}>
-              Faire le test
-            </Link>
-          </>
-        )}
-      </div>
+        <motion.div variants={ENTREE} aria-live="polite" className="mx-auto mt-20 flex max-w-xl flex-col items-center gap-6 text-center">
+          {regle ? (
+            <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="justify-center" />
+          ) : (
+            <>
+              <p className="text-lg leading-8 text-attenue">Passez le test pour savoir laquelle vous ressemble.</p>
+              <Link href="/test" className={PILULE_NOIRE}>
+                Faire le test
+              </Link>
+            </>
+          )}
+        </motion.div>
+      </motion.div>
     </MotionConfig>
   );
 }

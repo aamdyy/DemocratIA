@@ -60,7 +60,7 @@ export function RechercheDepute({
         spellCheck={false}
         placeholder="Par exemple : Dupont"
         className={cn(
-          "mt-2 h-12 w-full max-w-xl border border-trait bg-surface px-4 text-base text-texte placeholder:text-attenue",
+          "mt-2 h-12 w-full max-w-xl rounded-md border border-trait bg-surface px-4 text-base text-texte transition-colors duration-150 placeholder:text-attenue hover:border-attenue",
           FOCUS,
         )}
       />
@@ -69,7 +69,7 @@ export function RechercheDepute({
       </p>
 
       {assezLong && !erreur && resultats && resultats.length > 0 ? (
-        <ul className={cn("mt-3 grid max-w-3xl border-t border-trait sm:grid-cols-2 sm:gap-x-8", enAttente && "opacity-60")}>
+        <ul className={cn("mt-4 grid max-w-3xl border-t border-trait transition-opacity duration-150 sm:grid-cols-2 sm:gap-x-8", enAttente && "opacity-60")}>
           {resultats.map((depute) => {
             const choisi = depute.id === choisiId;
             return (
@@ -79,14 +79,14 @@ export function RechercheDepute({
                   aria-pressed={choisi}
                   onClick={() => onChoisir(depute)}
                   className={cn(
-                    "flex min-h-11 w-full items-center justify-between gap-4 px-1 py-2.5 text-left text-[15px] leading-6 hover:bg-relief",
+                    "flex min-h-11 w-full items-center justify-between gap-4 px-1 py-2.5 text-left text-[15px] leading-6 transition-colors duration-150 hover:bg-relief",
                     choisi && "font-medium",
                     FOCUS,
                   )}
                 >
                   <span>
                     {nomComplet(depute)}
-                    {choisi ? <span className="ml-2 text-sm font-normal text-attenue">· choisi</span> : null}
+                    {choisi ? <span className="ml-2 text-sm font-normal text-attenue">(choisi)</span> : null}
                   </span>
                   <span className="shrink-0 text-sm text-attenue">{depute.groupe ?? "Groupe non renseigné"}</span>
                 </button>

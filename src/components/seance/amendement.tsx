@@ -12,7 +12,7 @@ import type { Position } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PILULE =
-  "inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full px-7 text-[15px] font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full px-7 text-[15px] font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 transition-colors duration-150 focus-visible:outline-texte disabled:cursor-not-allowed disabled:opacity-40";
 const PILULE_NOIRE = `${PILULE} bg-texte text-fond hover:bg-texte/85`;
 const PILULE_CLAIRE = `${PILULE} border border-texte text-texte hover:bg-relief`;
 
@@ -140,15 +140,15 @@ export function Amendement({
   const couleur = teintes[1];
 
   return (
-    <div className="grid items-start gap-x-16 gap-y-10 lg:grid-cols-[18rem_1fr]">
-      <div className="relative mx-auto size-60 lg:mx-0 lg:size-72">
+    <div className="grid items-start gap-x-12 gap-y-8 lg:grid-cols-[14rem_1fr]">
+      <div className="relative mx-auto size-44 sm:size-56 lg:mx-0">
         {/* Des ondes concentriques quittent la sphère tant qu'elle dicte. */}
         {ecrit && !reduit
           ? [0, 1, 2].map((i) => (
               <motion.span
                 key={i}
                 aria-hidden
-                className="absolute inset-[20%] rounded-full border"
+                className="absolute inset-[16%] rounded-full border"
                 style={{ borderColor: couleur }}
                 animate={{ scale: [1, 1.7], opacity: [0.5, 0] }}
                 transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
@@ -159,7 +159,7 @@ export function Amendement({
           <span aria-hidden className="absolute inset-[12%] rounded-full border" style={{ borderColor: couleur }} />
         ) : null}
         <motion.div
-          className="absolute inset-[20%]"
+          className="absolute inset-[16%]"
           animate={{ scale: ecrit && !reduit ? [1, 1.05, 1] : 1 }}
           transition={{ duration: 1.2, repeat: ecrit && !reduit ? Infinity : 0, ease: "easeInOut" }}
         >
@@ -168,7 +168,7 @@ export function Amendement({
       </div>
 
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           {ecrit ? (
             <button type="button" onClick={() => controleur.current?.abort()} className={PILULE_CLAIRE}>
               Arrêter
@@ -182,35 +182,38 @@ export function Amendement({
                   : `Faire rédiger l'amendement par ${prenom}`}
             </button>
           )}
+          <p role="status" className="text-[15px] leading-6 text-attenue">
+            {ecrit
+              ? `${prenom} rédige son amendement…`
+              : etat.statut === "termine"
+                ? `Amendement déposé. ${prenom} l'a dicté en direct.`
+                : etat.statut === "arrete"
+                  ? "Dictée arrêtée : le texte ci-dessous est incomplet."
+                  : !demande
+                    ? "Choisissez un texte pour que la rédaction soit possible."
+                    : null}
+          </p>
         </div>
-
-        <p role="status" className="mt-4 min-h-6 text-[15px] leading-6 text-attenue">
-          {ecrit
-            ? `${prenom} rédige son amendement…`
-            : etat.statut === "termine"
-              ? `Amendement déposé. ${prenom} l'a dicté en direct.`
-              : etat.statut === "arrete"
-                ? "Dictée arrêtée : le texte ci-dessous est incomplet."
-                : !demande
-                  ? "Choisissez un texte pour que la rédaction soit possible."
-                  : null}
-        </p>
 
         {ecrit || aDuTexte ? (
           <div
             aria-busy={ecrit}
             className={cn(
-              "mt-4 min-h-40 border-l-2 pl-5 font-donnee text-[15px] leading-7 whitespace-pre-wrap text-texte [overflow-wrap:anywhere]",
+              "mt-8 min-h-40 border-l-2 pl-6 font-donnee text-[15px] leading-7 whitespace-pre-wrap text-texte [overflow-wrap:anywhere]",
               ecrit && "curseur-machine",
             )}
             style={{ borderColor: couleur }}
           >
             {etat.texte}
           </div>
-        ) : null}
+        ) : etat.statut === "erreur" ? null : (
+          <p className="mt-8 border-l-2 border-trait pl-6 text-[15px] leading-7 text-attenue">
+            L&apos;amendement s&apos;écrira ici, mot après mot, dès que vous le demandez.
+          </p>
+        )}
 
         {etat.statut === "erreur" ? (
-          <p role="alert" className="mt-4 border border-trait px-4 py-3 text-[15px] leading-6 text-texte">
+          <p role="alert" className="mt-6 rounded-md bg-relief px-4 py-3 text-[15px] leading-6 text-texte">
             {etat.message}
           </p>
         ) : null}
@@ -228,7 +231,8 @@ export function Amendement({
           />
         ) : null}
         {aDuTexte && etat.origine === "exemple" ? (
-          <p className="mt-6 w-fit max-w-full border border-dashed border-trait px-2 py-1 text-xs leading-5 text-attenue">
+          <p className="mt-6 flex items-center gap-2 text-xs leading-5 text-attenue">
+            <span aria-hidden className="size-2 shrink-0 rounded-full border border-dashed border-attenue" />
             {etat.raison || "Texte d'exemple : le modèle de langage n'a pas répondu."}
           </p>
         ) : null}

@@ -193,7 +193,7 @@ ARTICLE 1er
 Compléter cet article par un alinéa ainsi rédigé : « Les dispositions du présent texte s'appliquent dans le respect de la priorité ${priorite ? `« ${priorite.theme} »` : "fixée par l'IA au pouvoir"}, telle que portée par l'IA au pouvoir. »
 
 EXPOSÉ SOMMAIRE
-Ce texte est un exemple écrit à l'avance : aucun modèle n'a été appelé, car la clé Featherless n'est pas renseignée. Avec la clé, le Législateur automatique rédige ici un amendement à « ${demande.titre} » à partir du programme de l'IA au pouvoir${priorite ? `, dont la première priorité est « ${priorite.theme} » (${priorite.poids} sur 100)` : ""}.`;
+Ce texte est un exemple écrit à l'avance : aucun modèle n'a été appelé. Une fois le modèle connecté, le Législateur automatique rédige ici un amendement à « ${demande.titre} » à partir du programme de l'IA au pouvoir${priorite ? `, dont la première priorité est « ${priorite.theme} » (${priorite.poids} sur 100)` : ""}.`;
   const mots = texte.split(/(?<=\s)/);
   const encodeur = new TextEncoder();
   let indice = 0;

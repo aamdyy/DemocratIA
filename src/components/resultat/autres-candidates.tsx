@@ -10,11 +10,11 @@ import { pourcent } from "@/lib/format";
 export function AutresCandidates({ autres }: { autres: Affinite[] }) {
   if (autres.length === 0) return null;
   return (
-    <section aria-labelledby="titre-autres" className="mt-24 border-t border-trait pt-12">
-      <h2 id="titre-autres" className="font-titre text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.03em]">
+    <section aria-labelledby="titre-autres" className="mt-28">
+      <h2 id="titre-autres" className="font-titre text-3xl font-semibold leading-[1.1] tracking-[-0.03em] sm:text-4xl">
         Les autres candidates
       </h2>
-      <p className="mt-3 max-w-xl text-[17px] leading-7 text-attenue">
+      <p className="mt-4 max-w-xl text-base leading-7 text-attenue">
         De la plus proche de vous à la plus éloignée. Chacune a une fiche.
       </p>
       <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-3" />

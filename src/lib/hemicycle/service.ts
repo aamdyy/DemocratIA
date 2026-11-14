@@ -30,7 +30,7 @@ const meta = (reponse: ReponseHemicycle<unknown>): MetaReponse => ({
   credits: reponse.credits,
 });
 
-const RAISON_CLE_ABSENTE = "Clé Hémicycle absente : renseignez HEMICYCLE_API_KEY dans .env.local.";
+const RAISON_CLE_ABSENTE = "Données d'exemple : la connexion à Hémicycle n'est pas active.";
 
 /** Quand Hémicycle ne répond pas, la démo continue sur des données d'exemple, et le dit. */
 function repli<T>(data: T, erreur: unknown): Enveloppe<T> {

@@ -25,13 +25,12 @@ import { TableauGroupes } from "./tableau-groupes";
 
 type Seance = "2026" | "2050";
 
-const LIEN =
-  "inline-flex min-h-11 items-center border border-texte px-5 text-[15px] font-medium text-texte outline-none hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
-const BOUTON = `${LIEN} cursor-pointer`;
 const PILULE_NOIRE =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-7 text-[15px] font-medium text-fond outline-none hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
-const PILULE =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-full border px-6 text-[15px] font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-8 text-[15px] font-medium text-fond outline-none transition-colors duration-150 hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
+const PILULE_CLAIRE =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-texte px-6 text-[15px] font-medium text-texte outline-none transition-colors duration-150 hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
+const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
+const H3 = "font-titre text-xl font-semibold leading-7 tracking-[-0.02em] text-texte";
 
 const sansAbonnement = () => () => {};
 /** Faux pendant le rendu serveur : le mandat vit dans le navigateur, on ne conclut rien avant de l'avoir lu. */
@@ -46,19 +45,19 @@ const adopte = (resultat: "adopte" | "rejete") => (resultat === "adopte" ? "Adop
 
 function Attente({ libelle, hauteur = "h-40" }: { libelle: string; hauteur?: string }) {
   return (
-    <div role="status" className="border-t border-trait">
+    <div role="status">
       <span className="sr-only">{libelle}</span>
-      <div aria-hidden className={cn("mt-6 bg-relief motion-safe:animate-pulse", hauteur)} />
+      <div aria-hidden className={cn("rounded-md bg-relief motion-safe:animate-pulse", hauteur)} />
     </div>
   );
 }
 
 function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; onReessayer: () => void }) {
   return (
-    <div role="alert" className="border border-trait px-5 py-5">
+    <div role="alert" className="rounded-md bg-relief px-5 py-5">
       <p className="font-medium text-texte">{titre}</p>
       <p className="mt-1 text-[15px] leading-6 text-attenue">{detail}</p>
-      <button type="button" onClick={onReessayer} className={`${BOUTON} mt-4`}>
+      <button type="button" onClick={onReessayer} className={`${PILULE_CLAIRE} mt-4`}>
         Réessayer
       </button>
     </div>
@@ -78,7 +77,7 @@ function ChoixTexte({
   onChoisir: (id: string) => void;
 }) {
   return (
-    <div className="min-w-0 flex-1">
+    <div className="mx-auto max-w-4xl">
       <label htmlFor="seance-texte" className="text-sm text-attenue">
         Texte examiné en séance
       </label>
@@ -86,12 +85,12 @@ function ChoixTexte({
         id="seance-texte"
         value={choisi ?? ""}
         onChange={(evenement) => onChoisir(evenement.target.value)}
-        className="mt-1 block min-h-11 w-full border border-trait bg-fond px-3 text-[15px] text-texte outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
+        className="mt-2 block min-h-12 w-full rounded-md border border-trait bg-fond px-4 text-[15px] text-texte outline-none transition-colors duration-150 hover:border-attenue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
       >
         {textes.map((texte) => (
           <option key={texte.id} value={texte.id}>
-            {arbitres.has(texte.id) ? "Tranché par vous · " : ""}
             {titreLisible(texte.titre)}
+            {arbitres.has(texte.id) ? " (tranché par vous)" : ""}
           </option>
         ))}
       </select>
@@ -99,9 +98,10 @@ function ChoixTexte({
   );
 }
 
+/** La bascule : l'Assemblée de 2026, puis l'hémicycle de 2050. */
 function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance: Seance) => void }) {
   return (
-    <div role="group" aria-label="Choisir la séance" className="flex flex-wrap gap-2">
+    <div role="group" aria-label="Choisir la séance" className="mx-auto flex w-fit max-w-full gap-1 rounded-full bg-relief p-1">
       {(
         [
           ["2026", "Assemblée de 2026"],
@@ -114,8 +114,8 @@ function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance
           aria-pressed={seance === valeur}
           onClick={() => onChoisir(valeur)}
           className={cn(
-            PILULE,
-            seance === valeur ? "border-texte bg-texte text-fond" : "border-trait text-texte hover:bg-relief",
+            "inline-flex min-h-11 cursor-pointer items-center justify-center flex-1 whitespace-nowrap rounded-full px-3 text-[15px] font-medium outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte sm:flex-none sm:px-7",
+            seance === valeur ? "bg-texte text-fond" : "text-attenue hover:text-texte",
           )}
         >
           {libelle}
@@ -169,11 +169,19 @@ function ScenePublique({
   );
 }
 
-function Mesure({ libelle, children, machine = false }: { libelle: string; children: React.ReactNode; machine?: boolean }) {
+/** Un chiffre en grand, son libellé en petit : ce qu'on lit en premier, de loin. */
+function Chiffre({ libelle, children, machine = false }: { libelle: string; children: React.ReactNode; machine?: boolean }) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-trait py-4">
-      <dt className="text-[15px] leading-6 text-texte">{libelle}</dt>
-      <dd className={cn("text-lg leading-7 tabular-nums", machine ? "font-donnee text-machine" : "text-texte")}>{children}</dd>
+    <div>
+      <dt className="text-sm leading-5 text-attenue">{libelle}</dt>
+      <dd
+        className={cn(
+          "mt-1 text-2xl leading-8 font-semibold sm:text-3xl sm:leading-9 tracking-[-0.03em] tabular-nums",
+          machine ? "font-donnee font-medium tracking-[-0.02em] text-machine" : "text-texte",
+        )}
+      >
+        {children}
+      </dd>
     </div>
   );
 }
@@ -183,20 +191,18 @@ function DecompteReel({ resultat }: { resultat: ResultatScrutin }) {
   const { decompte, source } = resultat.scrutin;
   return (
     <div>
-      <h3 className="font-titre text-lg font-semibold tracking-[-0.01em] text-texte">
-        Séance de 2026 : {adopte(resultat.scrutin.resultat).toLowerCase()}
-      </h3>
-      <p className="mt-1 text-[15px] leading-6 text-attenue">
+      <h3 className={H3}>Séance de 2026 : {adopte(resultat.scrutin.resultat).toLowerCase()}</h3>
+      <p className="mt-2 text-[15px] leading-6 text-attenue">
         Scrutin n° {resultat.scrutin.numero} du {dateLongue(resultat.scrutin.date)}. Chaque siège porte le vote réel de son
         député ; les sièges éteints n&apos;ont pas voté.
       </p>
-      <dl className="mt-4 border-t border-trait">
-        <Mesure libelle="Pour">{nombre(decompte.pour)}</Mesure>
-        <Mesure libelle="Contre">{nombre(decompte.contre)}</Mesure>
-        <Mesure libelle="Abstention">{nombre(decompte.abstention)}</Mesure>
-        <Mesure libelle="Non-votants">{nombre(decompte.non_votants)}</Mesure>
+      <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
+        <Chiffre libelle="Pour">{nombre(decompte.pour)}</Chiffre>
+        <Chiffre libelle="Contre">{nombre(decompte.contre)}</Chiffre>
+        <Chiffre libelle="Abstention">{nombre(decompte.abstention)}</Chiffre>
+        <Chiffre libelle="Non-votants">{nombre(decompte.non_votants)}</Chiffre>
       </dl>
-      <SourceBadge source={source} className="mt-5" />
+      <SourceBadge source={source} className="mt-8" />
     </div>
   );
 }
@@ -218,49 +224,47 @@ function Hypothese2050({
   const { prenom } = candidate;
   return (
     <div>
-      <h3 className="font-titre text-lg font-semibold tracking-[-0.01em] text-texte">577 sièges, une seule voix</h3>
-      <p className="mt-1 max-w-3xl text-[15px] leading-6 text-attenue">
+      <h3 className={H3}>577 sièges, une seule voix</h3>
+      <p className="mt-2 max-w-3xl text-[15px] leading-6 text-attenue">
         En 2050, {prenom} préside. Les {nombre(NOMBRE_SIEGES)} sièges sont tenus par des sphères qui votent comme elle. C&apos;est
         un scénario, pas un fait : il montre ce que donnerait une présidence où une seule IA décide.
       </p>
 
-      <div aria-live="polite">
-        <dl className="mt-4 border-t border-trait">
-          <Mesure libelle={`${prenom} vote`} machine>
-            <PositionLibelle position={position} machine />
-          </Mesure>
-          <Mesure libelle="Pour" machine>
-            {nombre(simulation.pour)}
-          </Mesure>
-          <Mesure libelle="Contre" machine>
-            {nombre(simulation.contre)}
-          </Mesure>
-          <Mesure libelle="Abstention" machine>
-            {nombre(simulation.abstention)}
-          </Mesure>
-          <Mesure libelle="Durée du débat" machine>
-            0 seconde
-          </Mesure>
-          <Mesure libelle="Issue simulée" machine>
-            {simulation.adopte ? "Adopté" : "Rejeté"}
-          </Mesure>
-        </dl>
+      <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
+        <Chiffre libelle={`${prenom} vote`} machine>
+          <PositionLibelle position={position} machine />
+        </Chiffre>
+        <Chiffre libelle="Durée du débat" machine>
+          0 seconde
+        </Chiffre>
+        <Chiffre libelle="Issue simulée" machine>
+          {simulation.adopte ? "Adopté" : "Rejeté"}
+        </Chiffre>
+        <Chiffre libelle="Pour" machine>
+          {nombre(simulation.pour)}
+        </Chiffre>
+        <Chiffre libelle="Contre" machine>
+          {nombre(simulation.contre)}
+        </Chiffre>
+        <Chiffre libelle="Abstention" machine>
+          {nombre(simulation.abstention)}
+        </Chiffre>
+      </dl>
 
-        <p className="mt-4 text-[15px] leading-6 text-texte">
-          La position {deCandidate(prenom)} se déduit de son programme : {REGLE_POSITION.charAt(0).toLowerCase()}
-          {REGLE_POSITION.slice(1)}
+      <p className="mt-8 text-[15px] leading-6 text-texte">
+        La position {deCandidate(prenom)} se déduit de son programme : {REGLE_POSITION.charAt(0).toLowerCase()}
+        {REGLE_POSITION.slice(1)}
+      </p>
+      {reel ? (
+        <p className="mt-2 text-[15px] leading-6 text-texte">
+          En 2026, ce texte a été {reel.scrutin.resultat === "adopte" ? "adopté" : "rejeté"}
+          {" : "}
+          {reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete")
+            ? "la séance de 2050 aboutirait à la même issue, sans débat."
+            : "la séance de 2050 aboutirait à l'issue inverse, sans débat."}
         </p>
-        {reel ? (
-          <p className="mt-2 text-[15px] leading-6 text-texte">
-            En 2026, ce texte a été {reel.scrutin.resultat === "adopte" ? "adopté" : "rejeté"}
-            {" : "}
-            {reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete")
-              ? "la séance de 2050 aboutirait à la même issue, sans débat."
-              : "la séance de 2050 aboutirait à l'issue inverse, sans débat."}
-          </p>
-        ) : null}
-        <SourceBadge source={sourceCalcul(`${definitionSimulation(prenom)} ${REGLE_POSITION}`, dateCalcul)} className="mt-5" />
-      </div>
+      ) : null}
+      <SourceBadge source={sourceCalcul(`${definitionSimulation(prenom)} ${REGLE_POSITION}`, dateCalcul)} className="mt-6" />
     </div>
   );
 }
@@ -310,146 +314,144 @@ export function VueSeance() {
     <MotionConfig reducedMotion="user">
       <AvisExemple meta={metaExemple} />
 
-      <header className="flex flex-col gap-8 sm:flex-row sm:items-center sm:gap-12">
-        <Sphere
-          teintes={candidate.teintes}
-          duree={14}
-          description={`La sphère ${deCandidate(candidate.prenom)}`}
-          className="size-32 shrink-0 sm:size-40"
-        />
-        <div className="max-w-3xl">
-          <p className="text-sm text-attenue">République française, an 2050</p>
-          <h1 className="mt-3 font-titre text-[clamp(2rem,4.4vw,3.4rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
-            Au pouvoir
-          </h1>
-          <p aria-live="polite" className="mt-5 text-lg leading-8 text-attenue">
-            {testFait ? (
-              <>
-                Votre IA, <strong className="font-medium text-texte">{candidate.prenom}</strong>, préside. Elle tranche un vrai
-                texte de loi de l&apos;Assemblée, puis rédige un amendement.
-              </>
-            ) : (
-              <>
-                Vous n&apos;avez pas encore passé le test. En attendant, <strong className="font-medium text-texte">{candidate.prenom}</strong>,
-                la première candidate, préside.
-              </>
-            )}
-          </p>
-          {!testFait ? (
-            <Link href="/test" className={`${PILULE_NOIRE} mt-6`}>
-              Faire le test
-            </Link>
-          ) : null}
-        </div>
-      </header>
-
-      <section aria-labelledby="seance-hemicycle" className="mt-16">
-        <h2 id="seance-hemicycle" className="sr-only">
-          L&apos;hémicycle
-        </h2>
-
-        {!pret ? (
-          <Attente libelle="Lecture de vos choix et des textes…" hauteur="h-72" />
-        ) : scrutins.error ? (
-          <Panne
-            titre="La liste des textes n'a pas pu être lue."
-            detail={(scrutins.error as Error).message}
-            onReessayer={() => void scrutins.mutate()}
+      {/* Une seule entrée pour toute la page ; le reste ne bouge que sur un geste du visiteur. */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+      >
+        <header className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
+          <Sphere
+            teintes={candidate.teintes}
+            duree={14}
+            description={`La sphère ${deCandidate(candidate.prenom)}`}
+            className="size-28 shrink-0 sm:size-32"
           />
-        ) : !texte || !position || !simulation ? (
-          <div className="border border-trait px-5 py-6">
-            <p className="font-medium text-texte">Aucun texte à examiner pour le moment.</p>
-            <p className="mt-1 text-[15px] leading-6 text-attenue">
-              La liste des scrutins est vide. Revenez dans un instant.
+          <div>
+            <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
+              Au pouvoir
+            </h1>
+            <p aria-live="polite" className="mt-5 text-lg leading-8 text-attenue">
+              {testFait ? (
+                <>
+                  Votre IA, <strong className="font-medium text-texte">{candidate.prenom}</strong>, préside. Elle tranche un vrai
+                  texte de loi, puis rédige un amendement.
+                </>
+              ) : (
+                <>
+                  Vous n&apos;avez pas encore passé le test. En attendant, <strong className="font-medium text-texte">{candidate.prenom}</strong>,
+                  la première candidate, préside.
+                </>
+              )}
             </p>
+            {!testFait ? (
+              <Link href="/test" className={`${PILULE_NOIRE} mt-8`}>
+                Faire le test
+              </Link>
+            ) : null}
           </div>
-        ) : (
-          <>
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
-              <ChoixTexte textes={textes} choisi={texte.id} arbitres={arbitres} onChoisir={setChoix} />
-              <ChoixSeance seance={seance} onChoisir={setSeance} />
-            </div>
+        </header>
 
-            <p aria-live="polite" className="mt-8 text-[15px] font-medium leading-6 text-texte">
-              {seance === "2026"
-                ? "Assemblée de 2026 : le vote réel de chaque député."
-                : `Hémicycle de 2050 : 577 sièges, une seule voix, celle ${deCandidate(candidate.prenom)}.`}
-            </p>
-
-            <div className="mt-4" aria-busy={resultat.isLoading}>
-              <ScenePublique etats={etats} description={description} seance={seance} candidate={candidate} />
-            </div>
-
-            <div className="mx-auto mt-10 max-w-3xl">
-              <motion.div
-                key={seance}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-              >
-                {seance === "2026" ? (
-                  resultat.error ? (
-                    <Panne
-                      titre="Le détail de ce scrutin n'est pas disponible."
-                      detail={`${(resultat.error as Error).message} Choisissez un autre texte, ou réessayez.`}
-                      onReessayer={() => void resultat.mutate()}
-                    />
-                  ) : !reel ? (
-                    <Attente libelle="Lecture des votes du scrutin…" hauteur="h-48" />
-                  ) : (
-                    <DecompteReel resultat={reel} />
-                  )
-                ) : (
-                  <Hypothese2050
-                    candidate={candidate}
-                    position={position}
-                    simulation={simulation}
-                    reel={reel}
-                    dateCalcul={resultat.data?.meta.recuLe ?? null}
-                  />
-                )}
-              </motion.div>
-            </div>
-          </>
-        )}
-      </section>
-
-      {texte && position ? (
-        <section aria-labelledby="seance-groupes" className="mt-16">
-          <h2 id="seance-groupes" className="font-titre text-2xl font-semibold leading-8 tracking-[-0.02em] text-texte">
-            Les groupes de 2026 sur ce texte
+        <section aria-labelledby="seance-hemicycle" className="mt-16">
+          <h2 id="seance-hemicycle" className="sr-only">
+            L&apos;hémicycle
           </h2>
-          <p className="mt-1 mb-6 max-w-3xl text-[15px] leading-6 text-attenue">
-            Les groupes de l&apos;Assemblée, leurs votes publiés et leur position majoritaire, comparés à la position{" "}
-            {deCandidate(candidate.prenom)} sur « {titreLisible(texte.titre)} ».
-          </p>
-          {reel ? (
-            <>
-              <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
-              <SourceBadge source={reel.scrutin.source} className="mt-5" />
-            </>
-          ) : resultat.error ? (
-            <p className="border border-dashed border-trait px-5 py-5 text-[15px] leading-6 text-attenue">
-              Les groupes de ce scrutin ne sont pas disponibles. Choisissez un autre texte.
-            </p>
+
+          {!pret ? (
+            <Attente libelle="Lecture de vos choix et des textes…" hauteur="h-80" />
+          ) : scrutins.error ? (
+            <Panne
+              titre="La liste des textes n'a pas pu être lue."
+              detail={(scrutins.error as Error).message}
+              onReessayer={() => void scrutins.mutate()}
+            />
+          ) : !texte || !position || !simulation ? (
+            <div className="rounded-md bg-relief px-5 py-6">
+              <p className="font-medium text-texte">Aucun texte à examiner pour le moment.</p>
+              <p className="mt-1 text-[15px] leading-6 text-attenue">La liste des scrutins est vide. Revenez dans un instant.</p>
+            </div>
           ) : (
-            <Attente libelle="Lecture des groupes…" hauteur="h-56" />
+            <>
+              <ChoixTexte textes={textes} choisi={texte.id} arbitres={arbitres} onChoisir={setChoix} />
+              <div className="mt-8">
+                <ChoixSeance seance={seance} onChoisir={setSeance} />
+              </div>
+
+              <div className="mt-10" aria-busy={resultat.isLoading}>
+                <ScenePublique etats={etats} description={description} seance={seance} candidate={candidate} />
+              </div>
+
+              <div className="mx-auto mt-12 max-w-4xl" aria-live="polite">
+                <motion.div
+                  key={seance}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                >
+                  {seance === "2026" ? (
+                    resultat.error ? (
+                      <Panne
+                        titre="Le détail de ce scrutin n'est pas disponible."
+                        detail={`${(resultat.error as Error).message} Choisissez un autre texte, ou réessayez.`}
+                        onReessayer={() => void resultat.mutate()}
+                      />
+                    ) : !reel ? (
+                      <Attente libelle="Lecture des votes du scrutin…" hauteur="h-48" />
+                    ) : (
+                      <DecompteReel resultat={reel} />
+                    )
+                  ) : (
+                    <Hypothese2050
+                      candidate={candidate}
+                      position={position}
+                      simulation={simulation}
+                      reel={reel}
+                      dateCalcul={resultat.data?.meta.recuLe ?? null}
+                    />
+                  )}
+                </motion.div>
+              </div>
+            </>
           )}
         </section>
-      ) : null}
 
-      {texte && position ? (
-        <section aria-labelledby="seance-amendement" className="mt-16">
-          <h2 id="seance-amendement" className="font-titre text-2xl font-semibold leading-8 tracking-[-0.02em] text-texte">
-            L&apos;amendement {deCandidate(candidate.prenom)}
-          </h2>
-          <p className="mt-1 mb-8 max-w-3xl text-[15px] leading-6 text-attenue">
-            {candidate.prenom} rédige en direct un amendement fidèle à son programme sur ce texte. C&apos;est une fiction, écrite
-            par un modèle de langage : elle n&apos;a aucune valeur juridique.
-          </p>
-          <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
-        </section>
-      ) : null}
+        {texte && position ? (
+          <section aria-labelledby="seance-amendement" className="mx-auto mt-28 max-w-4xl">
+            <h2 id="seance-amendement" className={H2}>
+              L&apos;amendement {deCandidate(candidate.prenom)}
+            </h2>
+            <p className="mt-2 mb-10 max-w-3xl text-[15px] leading-6 text-attenue">
+              {candidate.prenom} rédige en direct un amendement fidèle à son programme sur ce texte. C&apos;est une fiction, écrite
+              par un modèle de langage : elle n&apos;a aucune valeur juridique.
+            </p>
+            <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
+          </section>
+        ) : null}
+
+        {texte && position ? (
+          <section aria-labelledby="seance-groupes" className="mx-auto mt-28 max-w-4xl">
+            <h2 id="seance-groupes" className={H2}>
+              Les groupes de 2026 sur ce texte
+            </h2>
+            <p className="mt-2 mb-8 max-w-3xl text-[15px] leading-6 text-attenue">
+              Les groupes de l&apos;Assemblée, leurs votes publiés et leur position majoritaire, comparés à la position{" "}
+              {deCandidate(candidate.prenom)} sur « {titreLisible(texte.titre)} ».
+            </p>
+            {reel ? (
+              <>
+                <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
+                <SourceBadge source={reel.scrutin.source} className="mt-6" />
+              </>
+            ) : resultat.error ? (
+              <p className="rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">
+                Les groupes de ce scrutin ne sont pas disponibles. Choisissez un autre texte.
+              </p>
+            ) : (
+              <Attente libelle="Lecture des groupes…" hauteur="h-56" />
+            )}
+          </section>
+        ) : null}
+      </motion.div>
     </MotionConfig>
   );
 }

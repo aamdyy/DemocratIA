@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
-
 import { PositionLibelle } from "@/components/position";
 import { SourceBadge } from "@/components/source-badge";
 import { dateLongue, titreLisible } from "@/lib/format";
@@ -39,20 +37,15 @@ function CelluleGroupe({ ligne }: { ligne: LigneAudit }) {
       {position ? <PositionLibelle position={position} /> : <span>Pas de position majoritaire</span>}
       <span className={NOTE}>
         {ligne.sigleGroupe}
-        {position && eluExprime ? (ligne.voteElu === position ? " · suivi par l'élu" : " · non suivi par l'élu") : ""}
+        {position && eluExprime ? (ligne.voteElu === position ? ", suivi par l'élu" : ", non suivi par l'élu") : ""}
       </span>
     </>
   );
 }
 
-function Ligne({ ligne, rang }: { ligne: LigneAudit; rang: number }) {
+function Ligne({ ligne }: { ligne: LigneAudit }) {
   return (
-    <motion.tr
-      className="border-b border-trait"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: Math.min(rang, 8) * 0.06, ease: "easeOut" }}
-    >
+    <tr className="border-b border-trait">
       <th scope="row" className={`${CELLULE} pl-0 text-left font-normal`}>
         <span className="block font-medium text-texte">{titreLisible(ligne.scrutin.titre)}</span>
         <span className={NOTE}>
@@ -80,7 +73,7 @@ function Ligne({ ligne, rang }: { ligne: LigneAudit; rang: number }) {
           {ligne.ia === ligne.mandat ? "Comme vous" : "Différent de vous"}
         </span>
       </td>
-    </motion.tr>
+    </tr>
   );
 }
 
@@ -119,13 +112,13 @@ export function TableauComparaison({ lignes, nomElu, candidate }: { lignes: Lign
           </tr>
         </thead>
         <tbody>
-          {lignes.map((ligne, rang) => (
-            <Ligne key={ligne.scrutin.id} ligne={ligne} rang={rang} />
+          {lignes.map((ligne) => (
+            <Ligne key={ligne.scrutin.id} ligne={ligne} />
           ))}
         </tbody>
       </table>
     </div>
-    <SourceBadge source={sourceCalcul(REGLE_POSITION)} className="mt-4 max-w-4xl" />
+    <SourceBadge source={sourceCalcul(REGLE_POSITION)} className="mt-6 max-w-4xl" />
     </>
   );
 }

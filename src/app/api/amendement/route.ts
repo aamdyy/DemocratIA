@@ -32,9 +32,9 @@ function lireDemande(corps: unknown): DemandeAmendement | null {
 }
 
 function raisonDuRepli(code: string): string {
-  if (code === "cle-absente") return "Clé Featherless absente : renseignez FEATHERLESS_API_KEY dans .env.local.";
+  if (code === "cle-absente") return "Texte d'exemple : le modèle de rédaction n'est pas connecté.";
   if (code === "featherless-429") return "Featherless est saturé (limite de concurrence atteinte) : réessayez dans un instant.";
-  if (code === "featherless-401" || code === "featherless-403") return "Featherless a refusé la clé : vérifiez FEATHERLESS_API_KEY.";
+  if (code === "featherless-401" || code === "featherless-403") return "Le modèle de rédaction a refusé la connexion : texte d'exemple affiché.";
   if (code === "featherless-delai") return "Featherless met trop de temps à répondre : réessayez dans un instant.";
   if (code === "featherless-vide") return "Le modèle n'a rien rédigé : réessayez dans un instant.";
   if (/^featherless-\d{3}$/.test(code)) return `Featherless n'a pas répondu (erreur ${code.slice(12)}).`;

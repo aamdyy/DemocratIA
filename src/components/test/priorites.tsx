@@ -22,7 +22,7 @@ export function Priorites({ reglages }: { reglages: Mandat }) {
   return (
     <div>
       <style>{STYLE_CURSEUR}</style>
-      <div className="grid gap-x-10 gap-y-2 sm:grid-cols-2">
+      <div className="grid gap-x-12 gap-y-3 sm:grid-cols-2">
         {THEMES.map((theme) => (
           <Curseur
             key={theme.id}

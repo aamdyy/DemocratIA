@@ -24,9 +24,13 @@ const REPONSES: { position: Position; touche: string }[] = [
   { position: "pour", touche: "ArrowRight" },
 ];
 
-const CADRE = "col-start-1 row-start-1 flex min-h-[19rem] flex-col border border-trait bg-surface p-6 sm:p-8";
+const CADRE =
+  "col-start-1 row-start-1 flex min-h-[17rem] flex-col rounded-2xl border border-trait bg-surface p-6 sm:p-8";
 
-const TITRE = "text-balance font-titre text-[clamp(1.5rem,2.4vw,2rem)] font-semibold leading-[1.12] tracking-[-0.03em]";
+const TITRE = "text-balance font-titre text-[clamp(1.375rem,2.4vw,1.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]";
+
+const BOUTON_DISCRET =
+  "inline-flex min-h-11 items-center px-3 text-[15px] text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current disabled:pointer-events-none disabled:opacity-60";
 
 const CARTE = {
   entree: { opacity: 0, scale: 0.96, y: 18 },
@@ -103,7 +107,11 @@ export function PileTextes({
         {actif ? `Texte ${rang} sur ${total}` : `${total} textes sur ${total}`}
       </p>
 
-      <div className="relative mt-3 grid">
+      <div className="relative mt-3 grid pb-2">
+        {/* Une carte qui dépasse derrière : il en reste d'autres à trancher. */}
+        {actif && rang < total ? (
+          <div aria-hidden className="col-start-1 row-start-1 translate-y-2 scale-[0.95] rounded-2xl border border-trait" />
+        ) : null}
         <AnimatePresence custom={geste} initial={false}>
           {scrutin ? (
             <CarteTexte key={scrutin.id} scrutin={scrutin} onArbitrer={onArbitrer} />
@@ -115,7 +123,7 @@ export function PileTextes({
 
       {actif ? (
         <>
-          <div role="group" aria-label="Votre position sur ce texte" className="mt-8 grid grid-cols-3 gap-3">
+          <div role="group" aria-label="Votre position sur ce texte" className="mt-6 grid grid-cols-3 gap-3">
             {REPONSES.map((reponse) => (
               <button
                 key={reponse.position}
@@ -128,37 +136,22 @@ export function PileTextes({
               </button>
             ))}
           </div>
-          <div className="mt-3 flex items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={onPasser}
-              className="inline-flex min-h-11 items-center px-3 text-[15px] font-medium underline decoration-trait underline-offset-4 transition-colors hover:decoration-current"
-            >
-              Passer
+          <div className="mt-2 flex items-center justify-between gap-4">
+            <button type="button" onClick={onAnnuler} disabled={!peutAnnuler} className={`-ml-3 ${BOUTON_DISCRET}`}>
+              Revenir en arrière
             </button>
-            {peutAnnuler ? (
-              <button
-                type="button"
-                onClick={onAnnuler}
-                className="inline-flex min-h-11 items-center px-3 text-sm text-attenue underline decoration-trait underline-offset-4 transition-colors hover:text-texte hover:decoration-current"
-              >
-                Revenir au texte précédent
-              </button>
-            ) : null}
+            <button type="button" onClick={onPasser} className={`-mr-3 ${BOUTON_DISCRET}`}>
+              Passer ce texte
+            </button>
           </div>
-          <p className="mt-4 text-sm leading-6 text-attenue">
-            Glissez la carte à droite pour voter pour, à gauche pour voter contre. Au clavier : flèche gauche (contre),
-            flèche droite (pour), flèche bas (abstention, depuis un bouton).
+          <p className="mt-4 text-center text-sm leading-6 text-attenue">
+            Glissez la carte vers la droite ou la gauche, ou utilisez les flèches du clavier.
           </p>
         </>
       ) : peutAnnuler ? (
-        <p className="mt-4">
-          <button
-            type="button"
-            onClick={onAnnuler}
-            className="inline-flex min-h-11 items-center px-3 text-sm text-attenue underline decoration-trait underline-offset-4 transition-colors hover:text-texte hover:decoration-current"
-          >
-            Revenir au texte précédent
+        <p className="mt-2">
+          <button type="button" onClick={onAnnuler} className={`-ml-3 ${BOUTON_DISCRET}`}>
+            Revenir en arrière
           </button>
         </p>
       ) : null}
@@ -194,14 +187,14 @@ function CarteTexte({ scrutin, onArbitrer }: { scrutin: Scrutin; onArbitrer: (po
       <motion.span
         aria-hidden
         style={{ opacity: marquePour }}
-        className="pointer-events-none absolute left-5 top-5 border border-pour bg-surface px-3 py-1.5 text-sm font-medium"
+        className="pointer-events-none absolute left-5 top-5 rounded-full border border-pour bg-surface px-3 py-1.5 text-sm font-medium"
       >
         <PositionLibelle position="pour" />
       </motion.span>
       <motion.span
         aria-hidden
         style={{ opacity: marqueContre }}
-        className="pointer-events-none absolute right-5 top-5 border border-contre bg-surface px-3 py-1.5 text-sm font-medium"
+        className="pointer-events-none absolute right-5 top-5 rounded-full border border-contre bg-surface px-3 py-1.5 text-sm font-medium"
       >
         <PositionLibelle position="contre" />
       </motion.span>
@@ -210,14 +203,14 @@ function CarteTexte({ scrutin, onArbitrer }: { scrutin: Scrutin; onArbitrer: (po
         {scrutin.numero ? `Scrutin n° ${scrutin.numero}, ` : "Scrutin "}
         du {dateLongue(scrutin.date)}
       </p>
-      <h3 className={`mt-4 ${TITRE}`}>{titreLisible(scrutin.titre)}</h3>
+      <h3 className={`mt-3 ${TITRE}`}>{titreLisible(scrutin.titre)}</h3>
 
-      <div className="mt-auto space-y-3 pt-8">
+      <div className="mt-auto space-y-3 pt-6">
         <div>
           <p className="font-donnee text-sm text-machine">Thème estimé : {libelleTheme(themeDe(scrutin.titre))}</p>
           <SourceBadge source={sourceCalcul(DEFINITION_THEME)} className="mt-1" />
         </div>
-        <SourceBadge source={scrutin.source} className="border-t border-trait pt-3" />
+        <SourceBadge source={scrutin.source} />
       </div>
     </motion.article>
   );
@@ -244,7 +237,7 @@ function CarteFin({
       <h3 ref={titre} tabIndex={-1} className={`${TITRE} outline-none`}>
         {total > 1 ? `Vous avez parcouru les ${total} textes.` : "Vous avez parcouru le texte."}
       </h3>
-      <p className="mt-4 max-w-md text-[17px] leading-7 text-attenue">
+      <p className="mt-3 max-w-md text-base leading-7 text-attenue">
         Il reste une dernière étape : dire ce qui compte le plus pour vous.
       </p>
       <p className="mt-auto pt-8">
@@ -260,14 +253,17 @@ function CarteFin({
   );
 }
 
-/** Pendant la lecture des textes : la place de la carte est déjà là, vide. */
+/** Pendant la lecture des textes : la place de la carte est déjà là, vide, aux mêmes dimensions. */
 export function PileEnAttente() {
   return (
     <div role="status" className={CADRE}>
       <p className="text-sm text-attenue">Lecture des textes de loi…</p>
       <div aria-hidden className="mt-5 space-y-3 motion-safe:animate-pulse">
-        <div className="h-7 w-11/12 bg-relief" />
-        <div className="h-7 w-8/12 bg-relief" />
+        <div className="h-6 w-11/12 rounded bg-relief" />
+        <div className="h-6 w-8/12 rounded bg-relief" />
+      </div>
+      <div aria-hidden className="mt-auto pt-8 motion-safe:animate-pulse">
+        <div className="h-4 w-1/2 rounded bg-relief" />
       </div>
     </div>
   );
@@ -276,8 +272,8 @@ export function PileEnAttente() {
 export function PileEnErreur({ message, onReessayer }: { message: string | null; onReessayer: () => void }) {
   return (
     <div role="alert" className={CADRE}>
-      <h2 className="font-titre text-2xl font-semibold tracking-[-0.03em]">Les textes de loi n&apos;ont pas pu être lus.</h2>
-      <p className="mt-3 text-[15px] leading-6 text-attenue">
+      <h2 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h2>
+      <p className="mt-3 max-w-md text-base leading-7 text-attenue">
         {message ?? "Vérifiez votre connexion."} Vos réponses déjà enregistrées sont conservées.
       </p>
       <p className="mt-auto pt-8">
@@ -296,8 +292,8 @@ export function PileEnErreur({ message, onReessayer }: { message: string | null;
 export function PileVide({ onTerminer }: { onTerminer: () => void }) {
   return (
     <div className={CADRE}>
-      <h2 className="font-titre text-2xl font-semibold tracking-[-0.03em]">Aucun texte à trancher pour le moment.</h2>
-      <p className="mt-3 text-[15px] leading-6 text-attenue">
+      <h2 className={TITRE}>Aucun texte à trancher pour le moment.</h2>
+      <p className="mt-3 max-w-md text-base leading-7 text-attenue">
         L&apos;Assemblée n&apos;a publié aucun vote sur l&apos;ensemble d&apos;un texte dans la période lue. Vous pouvez
         déjà régler vos priorités.
       </p>

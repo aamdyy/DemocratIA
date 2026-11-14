@@ -15,20 +15,20 @@ export function FaceAFace({ depute, candidate }: { depute: Depute; candidate: Ca
 
   return (
     <motion.div
-      className="grid gap-10 border-t border-trait pt-8 md:grid-cols-2 md:gap-12"
-      initial={{ opacity: 0, y: 8 }}
+      className="grid gap-10 md:grid-cols-2 md:gap-12"
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
       <article className="flex gap-5">
         <div aria-hidden className="size-24 shrink-0 rounded-full border border-trait bg-relief sm:size-28" />
         <div className="min-w-0">
-          <p className="text-sm text-attenue">Élu humain · discipline de groupe</p>
-          <h3 className="mt-1 font-titre text-2xl leading-8 text-texte">
+          <h3 className="font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte">
             {depute.civilite ? `${depute.civilite} ` : ""}
             {nomComplet(depute)}
           </h3>
-          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
+          <p className="mt-1 text-sm leading-6 text-attenue">Élu humain, discipline de groupe</p>
+          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
             <dt className="text-attenue">Groupe</dt>
             <dd>{depute.groupe ?? "Non renseigné"}</dd>
             <dt className="text-attenue">Profession</dt>
@@ -40,23 +40,23 @@ export function FaceAFace({ depute, candidate }: { depute: Depute; candidate: Ca
                 href={depute.hatvpUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center text-[15px] underline decoration-trait underline-offset-4 outline-none hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
+                className="inline-flex min-h-11 items-center text-[15px] underline decoration-trait underline-offset-4 outline-none transition-colors duration-150 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
               >
                 Déclarations déposées à la HATVP
                 <span className="sr-only"> (nouvel onglet)</span>
               </a>
             </p>
           ) : null}
-          <SourceBadge source={depute.source} className="mt-3" />
+          <SourceBadge source={depute.source} className="mt-4" />
         </div>
       </article>
 
       <article className="flex gap-5">
         <Sphere teintes={candidate.teintes} className="size-24 shrink-0 sm:size-28" />
         <div className="min-w-0">
-          <p className="font-donnee text-sm text-machine">Votre IA · candidate à la présidence</p>
-          <h3 className="mt-1 font-titre text-2xl leading-8 text-texte">{candidate.prenom}</h3>
-          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
+          <h3 className="font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte">{candidate.prenom}</h3>
+          <p className="mt-1 font-donnee text-sm leading-6 text-machine">Votre IA, candidate à la présidence</p>
+          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
             <dt className="text-attenue">Groupe</dt>
             <dd>Aucun</dd>
             <dt className="text-attenue">Profession</dt>

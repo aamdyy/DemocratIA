@@ -103,13 +103,48 @@
   }
   html {
     @apply font-sans;
+    /* La barre de défilement garde sa place : le contenu ne saute pas d'une page à l'autre. */
+    scrollbar-gutter: stable;
+    /* Le lien d'évitement et les ancres ne finissent pas sous l'en-tête. */
+    scroll-padding-top: 4.5rem;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     @apply bg-background text-foreground;
   }
+  /* Titres sans ligne orpheline, paragraphes sans dernier mot seul. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p,
+  li {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--republique) 18%, white);
+    color: var(--texte);
+  }
+  /* Un seul anneau de focus pour tout le site : 2 px, décalé, jamais retiré sans remplaçant. */
   :focus-visible {
     outline: 2px solid var(--republique);
     outline-offset: 3px;
+  }
+  /* Cible du lien d'évitement : le focus y est posé par programme, on ne l'encadre pas. */
+  main[tabindex="-1"]:focus {
+    outline: none;
+  }
+  /* Quand l'utilisateur demande moins de mouvement, les transitions deviennent quasi instantanées. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      transition-duration: 1ms !important;
+    }
   }
 }
 

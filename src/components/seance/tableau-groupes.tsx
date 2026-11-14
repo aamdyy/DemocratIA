@@ -34,7 +34,7 @@ export function TableauGroupes({
 }) {
   return (
     <div role="table" aria-label="Votes des groupes de l'Assemblée de 2026 sur ce texte">
-      <div role="row" className={`hidden border-y border-trait py-3 text-sm text-attenue md:grid md:gap-x-4 ${COLONNES}`}>
+      <div role="row" className={`hidden border-b border-trait py-3 text-sm text-attenue md:grid md:gap-x-4 ${COLONNES}`}>
         <div role="columnheader">Groupe</div>
         <div role="columnheader" className="text-right">
           Pour

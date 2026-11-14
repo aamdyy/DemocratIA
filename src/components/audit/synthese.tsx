@@ -25,8 +25,8 @@ export function Synthese({ synthese, nomElu, candidate }: { synthese: SyntheseAu
     <div role="status" aria-live="polite">
       <div className="grid gap-10 md:grid-cols-2 md:gap-12">
         <section aria-label={`Synthèse pour ${nomElu}`}>
-          <h3 className="text-lg font-medium leading-7 text-texte">{nomElu}</h3>
-          <p className="text-sm leading-6 text-attenue">Élu humain · discipline de groupe</p>
+          <h3 className="font-titre text-xl font-semibold leading-7 tracking-[-0.02em] text-texte">{nomElu}</h3>
+          <p className="text-sm leading-6 text-attenue">Élu humain, discipline de groupe</p>
           <dl className="mt-3 border-t border-trait">
             <Mesure libelle="A voté comme vous" valeur={`${commeMandat} sur ${textes(n)}`} />
             <Mesure
@@ -37,15 +37,15 @@ export function Synthese({ synthese, nomElu, candidate }: { synthese: SyntheseAu
         </section>
 
         <section aria-label={`Synthèse pour ${candidate.prenom}`}>
-          <h3 className="text-lg font-medium leading-7 text-texte">{candidate.prenom}</h3>
-          <p className="font-donnee text-sm leading-6 text-machine">Votre IA · candidate à la présidence</p>
+          <h3 className="font-titre text-xl font-semibold leading-7 tracking-[-0.02em] text-texte">{candidate.prenom}</h3>
+          <p className="font-donnee text-sm leading-6 text-machine">Votre IA, candidate à la présidence</p>
           <dl className="mt-3 border-t border-trait">
             <Mesure libelle="Vote comme vous" valeur={`${iaCommeMandat} sur ${textes(n)}`} />
             <Mesure libelle="Suit un groupe" valeur="Aucun, seulement son programme" />
           </dl>
         </section>
       </div>
-      <SourceBadge source={sourceCalcul(DEFINITION_AUDIT)} className="mt-6 max-w-4xl" />
+      <SourceBadge source={sourceCalcul(DEFINITION_AUDIT)} className="mt-8 max-w-4xl" />
     </div>
   );
 }
