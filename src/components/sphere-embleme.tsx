@@ -34,10 +34,28 @@ const HALO = "drop-shadow(0 0 1px rgb(255 255 255 / 0.75)) drop-shadow(0 0 5px r
  */
 const TAILLE_MIN = 96;
 
-export function EmblemeDeSphere({ teintes }: { teintes: Teintes }) {
+/** Rythme du détail vivant quand la sphère est mise en avant : il joue, se repose, puis rejoue. */
+const CYCLE = 2600;
+
+export function EmblemeDeSphere({ teintes, actif = false }: { teintes: Teintes; actif?: boolean }) {
   const candidate = CANDIDATES.find((c) => c.teintes[1] === teintes[1] && c.teintes[2] === teintes[2]);
   const repere = useRef<HTMLDivElement>(null);
   const [assezGrande, setAssezGrande] = useState(false);
+  const [etat, setEtat] = useState<"visible" | "survol">("visible");
+
+  // Mise en avant : le détail de l'emblème joue en boucle (la balance oscille, l'épi se balance…).
+  useEffect(() => {
+    if (!actif || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let joue = false;
+    const minuterie = setInterval(() => {
+      joue = !joue;
+      setEtat(joue ? "survol" : "visible");
+    }, CYCLE / 2);
+    return () => {
+      clearInterval(minuterie);
+      setEtat("visible");
+    };
+  }, [actif]);
 
   useEffect(() => {
     const sphere = repere.current?.parentElement;
@@ -60,9 +78,9 @@ export function EmblemeDeSphere({ teintes }: { teintes: Teintes }) {
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-1/2" style={{ filter: HALO }}>
           {lettre === "A" ? (
-            <Embleme id={candidate.id} couleur={couleur} className="w-full" />
+            <Embleme key={String(actif)} id={candidate.id} couleur={couleur} etat={etat} className="w-full" />
           ) : (
-            <EmblemeVariante id={candidate.id} lettre={lettre} couleur={couleur} className="w-full" />
+            <EmblemeVariante key={String(actif)} id={candidate.id} lettre={lettre} couleur={couleur} etat={etat} className="w-full" />
           )}
         </div>
       </div>

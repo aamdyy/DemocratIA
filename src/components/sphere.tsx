@@ -30,6 +30,7 @@ export function Sphere({
   description,
   className,
   sansEmbleme = false,
+  emblemeActif = false,
   children,
 }: {
   teintes: Teintes;
@@ -43,6 +44,8 @@ export function Sphere({
   className?: string;
   /** Vrai pour ne pas poser l'emblème de la candidate sur la sphère (il est posé par défaut). */
   sansEmbleme?: boolean;
+  /** Vrai quand la sphère est mise en avant : l'emblème se redessine et son détail vit en boucle. */
+  emblemeActif?: boolean;
   children?: React.ReactNode;
 }) {
   const style = {
@@ -72,7 +75,7 @@ export function Sphere({
       <div className="sphere-courant" />
       <div className="sphere-volume" />
       <div className="sphere-grain" />
-      {sansEmbleme ? null : <EmblemeDeSphere teintes={teintes} />}
+      {sansEmbleme ? null : <EmblemeDeSphere teintes={teintes} actif={emblemeActif} />}
       {children}
     </div>
   );

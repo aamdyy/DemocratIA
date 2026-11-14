@@ -278,6 +278,7 @@ export function Embleme({
   className,
   couleur = "currentColor",
   animer = true,
+  etat,
 }: {
   /** L'identifiant de la candidate (voir src/lib/candidates.ts). */
   id: string;
@@ -286,6 +287,8 @@ export function Embleme({
   couleur?: string;
   /** Le trait se dessine à l'apparition et un détail vit au survol. */
   animer?: boolean;
+  /** Pilote l'animation de l'extérieur : « survol » joue le détail vivant sans que le pointeur soit dessus. */
+  etat?: "visible" | "survol";
 }) {
   const reduit = useReducedMotion() ?? false;
   const Dessin = DESSINS[id];
@@ -308,7 +311,7 @@ export function Embleme({
       strokeLinejoin="miter"
       strokeMiterlimit={4}
       initial={anime ? "cache" : false}
-      animate="visible"
+      animate={anime && etat ? etat : "visible"}
       whileHover={anime ? "survol" : undefined}
     >
       <Dessin />

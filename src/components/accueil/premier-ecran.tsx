@@ -141,7 +141,7 @@ export function PremierEcran() {
               // Ressort doux, sans rebond : les sphères glissent d'une place à l'autre comme sur un rail.
               transition={{ ...RESSORT_LENT, opacity: { duration: DUREE.entree, ease: DOUX } }}
             >
-              <Sphere teintes={c.teintes} duree={14 + i * 3} />
+              <Sphere teintes={c.teintes} duree={14 + i * 3} emblemeActif={i === active} />
             </motion.button>
           );
         })}
