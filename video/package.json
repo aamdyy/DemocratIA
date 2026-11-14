@@ -1,0 +1,22 @@
+{
+  "name": "democratia-video",
+  "private": true,
+  "type": "module",
+  "description": "Vidéo de présentation DemocratIA (80 s, Remotion). Projet autonome, hors de l'application Next.",
+  "scripts": {
+    "studio": "remotion studio src/index.jsx",
+    "render": "remotion render src/index.jsx Democratia out/democratia.mp4",
+    "voix": "node scripts/voix.mjs",
+    "visuels": "node scripts/visuels.mjs"
+  },
+  "dependencies": {
+    "@remotion/captions": "4.0.543",
+    "@remotion/cli": "4.0.543",
+    "@remotion/google-fonts": "4.0.543",
+    "@remotion/media": "4.0.543",
+    "@remotion/transitions": "4.0.543",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.543"
+  }
+}

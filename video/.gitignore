@@ -1,0 +1,5 @@
+# Projet vidéo autonome (Remotion) : dépendances installées localement avec npm.
+node_modules/
+# Rendus intermédiaires ; seul le rendu final est gardé.
+out/*
+!out/democratia.mp4
