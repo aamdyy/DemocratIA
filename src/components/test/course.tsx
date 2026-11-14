@@ -176,7 +176,7 @@ export function CourseCompacte({ classement, precision, visible }: { classement:
           transition={RESSORT}
         >
           <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
-            <ol className="flex items-center gap-1.5">
+            <ol className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
               {classement.map(({ candidate }, rang) => (
                 <motion.li key={candidate.id} layout="position" transition={RESSORT} className="relative">
                   {rang === 0 ? (
@@ -191,14 +191,14 @@ export function CourseCompacte({ classement, precision, visible }: { classement:
                     initial={false}
                     animate={{ scale: rang === 0 ? 1 : 0.72 }}
                     transition={RESSORT}
-                    className="relative size-8"
+                    className="relative size-7 sm:size-8"
                   >
                     <Sphere teintes={candidate.teintes} duree={10 + rang} className="size-full" />
                   </motion.div>
                 </motion.li>
               ))}
             </ol>
-            <p className="min-w-0 flex-1 truncate text-sm">
+            <p className="min-w-0 flex-1 whitespace-nowrap text-sm">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={tete.candidate.id}
