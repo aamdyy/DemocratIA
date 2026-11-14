@@ -193,7 +193,7 @@ const piece = (cx: number, y: number) =>
 function Plutus() {
   return (
     <>
-      <Vivant variants={vivant({ scaleX: [1, 0.08, 1, 0.08, 1] }, 1.2, { scaleX: 1 })}>
+      <Vivant variants={vivant({ rotate: [0, -14, 10, -5, 0] }, 1.2, { rotate: 0 })}>
         <Cercle cx={60} cy={36} r={18} rang={0} />
         <Cercle cx={60} cy={36} r={8} rang={1} />
       </Vivant>
