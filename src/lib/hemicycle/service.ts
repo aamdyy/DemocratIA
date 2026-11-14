@@ -181,6 +181,12 @@ export async function listerScrutinsDeTextes(nombre = 20): Promise<Enveloppe<Scr
 
 export async function lireResultat(id: string): Promise<Enveloppe<ResultatScrutin | null>> {
   if (id.startsWith("EXEMPLE-")) return exemple(resultatExemple(id));
+  // Protection des crédits : seuls les scrutins proposés par le site (la liste du test) peuvent être lus.
+  // Une instance qui démarre relit d'abord la liste (mise en cache), puis refuse tout identifiant inconnu.
+  if (scrutinsConnus.size === 0) await listerScrutinsDeTextes();
+  if (scrutinsConnus.size > 0 && !scrutinsConnus.has(id)) {
+    throw new ErreurHemicycle(404, "introuvable", "Ce scrutin ne fait pas partie des textes proposés par DemocratIA.");
+  }
   try {
     const reponse = await hemicycle<unknown>(`/scrutins/${encodeURIComponent(id)}/resultat`);
     const resultat = normaliserResultat(reponse.corps);
