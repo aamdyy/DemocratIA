@@ -12,6 +12,9 @@ export function Pied() {
           (Hémicycle).
         </p>
         <nav aria-label="Liens complémentaires" className="flex shrink-0 gap-x-6 md:-mt-3">
+          <Link href="/honnetete" className={LIEN}>
+            Honnêteté
+          </Link>
           <Link href="/audit" className={LIEN}>
             Auditer un député
           </Link>
