@@ -4,7 +4,7 @@ import { AbsoluteFill } from "remotion";
 import { Sphere } from "../Sphere.jsx";
 import { C, CANDIDATES, EGAL, GAGNANTE, MONO, SANS, entre } from "../commun.js";
 import { CADRE, SIEGES } from "../elements.jsx";
-import { quand } from "../temps.js";
+import { SCENES, quand } from "../temps.js";
 
 // État de départ : un vote ordinaire de l'Assemblée (pour, contre, abstention), déterministe.
 const ETATS = SIEGES.map((_, i) => {
@@ -27,7 +27,7 @@ const melange = (a, b, p) => {
 
 export function Pouvoir({ t }) {
   const tPouvoir = quand("Puis");
-  const tSieges = quand("cinq");
+  const tSieges = quand("cinq", 1);
   const tBascule = quand("basculent");
   const tRedige = quand("rédige");
   const tDirect = quand("direct.");
@@ -41,7 +41,7 @@ export function Pouvoir({ t }) {
   const dureeBascule = tBascule + 1.2 - debutBascule;
   const bascules = SIEGES.filter((_, i) => t > debutBascule + (i / SIEGES.length) * dureeBascule + 0.15).length;
   const caracteres = Math.floor(entre(t, tRedige + 0.15, tDirect + 1.0, 0, 1, (x) => x) * AMENDEMENT.length);
-  const sortie = entre(t, 42.1, 42.9);
+  const sortie = entre(t, SCENES.pouvoir[1] - 0.8, SCENES.pouvoir[1]);
 
   return (
     <AbsoluteFill style={{ background: C.fond, fontFamily: SANS, color: C.texte, filter: `grayscale(${sortie})` }}>

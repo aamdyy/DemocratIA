@@ -13,5 +13,9 @@ a.characters.forEach((c, i) => {
   courant.fin = a.character_end_times_seconds[i];
 });
 if (courant) mots.push(courant);
+// Les balises <break> éventuelles ne sont pas des mots prononcés.
+const prononces = mots.filter((m) => !/[<>]|^break$|^time=|^\/>$/.test(m.mot));
+mots.length = 0;
+mots.push(...prononces);
 writeFileSync(join(RACINE, "public", "mots.json"), JSON.stringify(mots, null, 0));
 console.log(mots.map((m, i) => `${i}:${m.mot}@${m.debut.toFixed(2)}-${m.fin.toFixed(2)}`).join("  "));

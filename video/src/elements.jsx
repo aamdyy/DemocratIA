@@ -2,7 +2,7 @@
 import { Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 
 import { C, MONO, SANS, entre, EGAL } from "./commun.js";
-import { MOTS } from "./temps.js";
+import { MOTS, SCENES } from "./temps.js";
 
 /** Le liseré tricolore du site : bleu, gris clair, rouge. `p` (0 à 1) le déploie depuis le centre. */
 export function Lisere({ p = 1, hauteur = 4, style }) {
@@ -20,7 +20,7 @@ export function Lisere({ p = 1, hauteur = 4, style }) {
 /** En-tête discret, comme celui du site : logo, mention « République française, an 2050 », liseré. */
 export function EnTete({ t }) {
   const lisere = entre(t, 0.7, 2.0, 0, 1, EGAL);
-  const logo = entre(t, 6.2, 7.0) * (1 - entre(t, 51.0, 51.8));
+  const logo = entre(t, 6.2, 7.0) * (1 - entre(t, SCENES.final[0] + 0.6, SCENES.final[0] + 1.4));
   return (
     <div style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
       <div style={{ height: 76, display: "flex", alignItems: "center", padding: "0 96px", gap: 22, opacity: logo }}>

@@ -93,7 +93,7 @@ export function Course({ t }) {
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: revele }}>
         <div style={{ scale: String(0.82 + 0.18 * revele), display: "flex", flexDirection: "column", alignItems: "center", marginTop: -30 }}>
           <div style={{ fontFamily: MONO, fontSize: 26, color: C.attenue, marginBottom: 30 }}>L'IA qui vous ressemble</div>
-          <Sphere teintes={GAGNANTE.teintes} taille={400} embleme={GAGNANTE.id} trace={entre(t, tRessemble + 0.1, tRessemble + 1.7, 0, 1, (x) => x)} decalage={gIndex * 2.3} />
+          <Sphere teintes={GAGNANTE.teintes} taille={400} intensite={1} embleme={GAGNANTE.id} trace={entre(t, tRessemble + 0.1, tRessemble + 1.7, 0, 1, (x) => x)} decalage={gIndex * 2.3} />
           <div style={{ fontSize: 110, fontWeight: 700, letterSpacing: "-0.05em", marginTop: 34, lineHeight: 1 }}>{GAGNANTE.prenom}</div>
           <div style={{ fontSize: 36, color: C.attenue, marginTop: 14 }}>
             {GAGNANTE.doctrine} <span style={{ fontFamily: MONO, color: C.texte }}>· 87 % d'affinité</span>

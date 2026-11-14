@@ -14,7 +14,8 @@ const NUAGES = [
 const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>\")";
 
-export function Sphere({ teintes, taille, embleme = null, trace = 1, duree = 7, decalage = 0, style }) {
+/** `intensite` (0 à 1) densifie la matière : utile en grand format, où les teintes claires paraissent pâles. */
+export function Sphere({ teintes, taille, embleme = null, trace = 1, duree = 7, decalage = 0, intensite = 0, style }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps + decalage;
@@ -30,13 +31,13 @@ export function Sphere({ teintes, taille, embleme = null, trace = 1, duree = 7, 
         height: taille,
         borderRadius: "50%",
         clipPath: "circle(50%)",
-        background: teintes[0],
+        background: intensite ? `color-mix(in srgb, ${teintes[0]}, ${teintes[1]} ${Math.round(intensite * 42)}%)` : teintes[0],
         isolation: "isolate",
         flexShrink: 0,
         ...style,
       }}
     >
-      <div style={{ position: "absolute", inset: 0, rotate: `${tour(7.9)}deg` }}>
+      <div style={{ position: "absolute", inset: 0, rotate: `${tour(7.9)}deg`, filter: intensite ? `saturate(${1 + 0.3 * intensite})` : undefined }}>
         {NUAGES.map((n, i) => {
           const h = houle(n.vague);
           return (
@@ -50,8 +51,8 @@ export function Sphere({ teintes, taille, embleme = null, trace = 1, duree = 7, 
                 left: `${n.inset[3]}%`,
                 borderRadius: n.radius,
                 background: n.couleur ? teintes[n.couleur] : "#ffffff",
-                opacity: n.couleur ? 1 : 0.65,
-                filter: `blur(${taille * 0.09}px)`,
+                opacity: n.couleur ? 1 : 0.65 - 0.45 * intensite,
+                filter: `blur(${taille * (0.09 - 0.02 * intensite)}px)`,
                 transformOrigin: n.pivot,
                 rotate: `${n.sens * tour(n.tour)}deg`,
                 translate: `${n.houle[0] * h}% ${n.houle[1] * h}%`,

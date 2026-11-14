@@ -4,7 +4,7 @@ import { loadFont as chargerPublicSans } from "@remotion/google-fonts/PublicSans
 import { loadFont as chargerDMMono } from "@remotion/google-fonts/DMMono";
 
 export const FPS = 30;
-export const DUREE = 60 * FPS;
+export const DUREE = 80 * FPS;
 
 export const { fontFamily: SANS } = chargerPublicSans("normal", {
   weights: ["400", "500", "600", "700"],

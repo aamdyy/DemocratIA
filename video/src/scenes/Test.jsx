@@ -9,7 +9,7 @@ import { Lisere } from "../elements.jsx";
 
 export function Test({ t }) {
   const [debut] = SCENES.test;
-  const tPour = quand("Pour", 0);
+  const tPour = quand("trouver") - 0.35;
   const tAssemblee = quand("l'Assemblée");
   const tDonnees = quand("Des", 0);
   const fenetre = entre(t, debut + 0.1, debut + 1.1);
