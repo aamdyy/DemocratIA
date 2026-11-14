@@ -52,7 +52,7 @@ export function PremierEcran() {
       >
         <Logo titre className="text-[clamp(1.75rem,3.6vw,3rem)]" />
         {/* La phrase de la maquette 05, gardée par l'équipe : c'est elle, en grand, qui porte la page. */}
-        <span className="mx-auto mt-6 block max-w-[24ch] text-[clamp(2.4rem,5.6vw,4.8rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
+        <span className="mx-auto mt-6 block max-w-none text-[clamp(2.2rem,4.7vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
           <span className="sr-only">. </span>
           En 2050, on ne vote plus pour un parti. <span className="block text-attenue">On règle une sphère.</span>
         </span>
