@@ -15,7 +15,6 @@ const LIENS = [
   { href: "/seance", libelle: "Au pouvoir" },
   { href: "/audit", libelle: "Auditer un député" },
   { href: "/honnetete", libelle: "Honnêteté" },
-  { href: "/maquettes", libelle: "Maquettes" },
 ];
 
 /**
