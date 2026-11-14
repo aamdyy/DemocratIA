@@ -47,7 +47,7 @@ export function PremierEcranGrandeSphere() {
   );
 }
 
-const IA = candidateParId("maelle");
+const IA = candidateParId("hygie");
 
 /** Variante 3 : le logo, une question, puis l'écran coupé en deux, un humain d'un côté, une IA de l'autre. */
 export function PremierEcranCoupeEnDeux() {

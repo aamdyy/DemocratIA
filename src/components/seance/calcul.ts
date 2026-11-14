@@ -42,5 +42,10 @@ export function simuler2050(position: Position, sieges = NOMBRE_SIEGES): Simulat
   return { pour, contre, abstention, adopte: pour > contre };
 }
 
+/** La définition courte, toujours visible sous le résultat simulé. */
 export const definitionSimulation = (prenom: string) =>
-  `Simulation de DemocratIA : les 577 sièges votent comme ${prenom}, l'IA présidente. Sa position se déduit de son programme par la règle publique de DemocratIA. Le texte est adopté si les pour dépassent les contre.`;
+  `Simulation : les ${NOMBRE_SIEGES} sièges votent comme ${prenom}, selon sa règle publique.`;
+
+/** Le détail du calcul, replié par défaut : la règle de position, puis la règle d'adoption. */
+export const ADOPTION_SIMULEE =
+  "Le texte est adopté si les pour dépassent les contre ; les abstentions ne comptent pas, comme pour un vote à la majorité des suffrages exprimés.";

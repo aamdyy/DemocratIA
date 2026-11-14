@@ -10,7 +10,7 @@ import type { Position, Provenance } from "@/lib/types";
 import { useEtapeVue } from "./hooks";
 import { Reveal, TITRE_SECTION } from "./reveal";
 
-const IA: Candidate = CANDIDATES.find((c) => c.id === "maelle") ?? CANDIDATES[0];
+const IA: Candidate = CANDIDATES.find((c) => c.id === "hygie") ?? CANDIDATES[0];
 
 /** Exemple fictif : le vote d'un élu humain face à celui de l'IA, sur cinq textes imaginaires. */
 const TEXTES: { titre: string; elu: Position }[] = [

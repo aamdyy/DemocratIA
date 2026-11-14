@@ -89,11 +89,11 @@ function SchemaCarte() {
 
 /** Affinités d'exemple, de la plus forte à la plus faible. */
 const AFFINITES: { id: string; valeur: number }[] = [
-  { id: "maelle", valeur: 84 },
-  { id: "noe", valeur: 67 },
-  { id: "iris", valeur: 55 },
-  { id: "sacha", valeur: 38 },
-  { id: "leon", valeur: 26 },
+  { id: "hygie", valeur: 84 },
+  { id: "athena", valeur: 67 },
+  { id: "gaia", valeur: 55 },
+  { id: "plutus", valeur: 38 },
+  { id: "themis", valeur: 26 },
 ];
 
 /** Étape 2 : les barres d'affinité des sept candidates se remplissent. */
@@ -150,7 +150,7 @@ function SchemaAmendement() {
     <div ref={racine}>
       <p className="text-sm text-attenue">Exemple fictif</p>
       <div className="mt-4 rounded-2xl bg-fond p-6 shadow-[0_10px_34px_rgb(17_19_24/0.08)]">
-        <p className="text-sm text-attenue">Amendement rédigé par Maëlle</p>
+        <p className="text-sm text-attenue">Amendement rédigé par Hygie</p>
         <p className="sr-only">{AMENDEMENT}</p>
         <p aria-hidden className="relative mt-4 font-donnee text-[15px] leading-7 text-machine">
           <span className="invisible">{AMENDEMENT}</span>

@@ -59,7 +59,7 @@ const CRITERES = [
   },
 ] as const;
 
-const MAELLE = candidateParId("maelle") ?? CANDIDATES[0];
+const HYGIE = candidateParId("hygie") ?? CANDIDATES[0];
 
 const SOURCE_CONSTITUTION: Provenance = {
   editeur: "Constitution du 4 octobre 1958, articles 6 et 12 ; portrait officiel, Présidence de la République",
@@ -90,7 +90,7 @@ function Comparatif() {
             <p className="font-medium">Le dernier président humain</p>
           </Reveal>
           <Reveal delai={0.15} className="flex flex-col items-start gap-4">
-            <Sphere teintes={MAELLE.teintes} className="size-24 sm:size-32" />
+            <Sphere teintes={HYGIE.teintes} className="size-24 sm:size-32" />
             <p className="font-medium">La première présidente IA</p>
           </Reveal>
         </div>

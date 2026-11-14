@@ -38,7 +38,7 @@ export function Barre({
   valeur: number;
   max?: number;
   couleur?: string;
-  /** Phrase lue par les lecteurs d'écran, par exemple « Iris : 93 % d'affinité ». */
+  /** Phrase lue par les lecteurs d'écran, par exemple « Gaïa : 93 % d'affinité ». */
   etiquette: string;
   delai?: number;
   duree?: number;

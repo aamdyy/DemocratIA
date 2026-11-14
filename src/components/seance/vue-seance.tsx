@@ -21,7 +21,14 @@ import type { Position, ResultatScrutin, Scrutin } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import { Amendement } from "./amendement";
-import { ETATS_2050, definitionSimulation, etatsDeLAssemblee2026, simuler2050, type Simulation2050 } from "./calcul";
+import {
+  ADOPTION_SIMULEE,
+  ETATS_2050,
+  definitionSimulation,
+  etatsDeLAssemblee2026,
+  simuler2050,
+  type Simulation2050,
+} from "./calcul";
 import { TableauGroupes } from "./tableau-groupes";
 
 type Seance = "2026" | "2050";
@@ -73,15 +80,15 @@ function ChoixTexte({
   onChoisir: (id: string) => void;
 }) {
   return (
-    <div className="mx-auto max-w-4xl">
-      <label htmlFor="seance-texte" className="text-sm text-attenue">
+    <div className="min-w-0 flex-1">
+      <label htmlFor="seance-texte" className="text-sm leading-5 text-attenue">
         Texte examiné
       </label>
       <select
         id="seance-texte"
         value={choisi ?? ""}
         onChange={(evenement) => onChoisir(evenement.target.value)}
-        className="mt-2 block min-h-12 w-full rounded-md border border-trait bg-fond px-4 text-[15px] text-texte outline-none transition-colors duration-150 hover:border-attenue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
+        className="mt-2 block h-13 w-full truncate rounded-full border border-trait bg-fond pr-10 pl-5 text-[15px] text-texte outline-none transition-colors duration-150 hover:border-attenue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
       >
         {textes.map((texte) => (
           <option key={texte.id} value={texte.id}>
@@ -97,7 +104,7 @@ function ChoixTexte({
 /** La bascule : l'Assemblée de 2026, puis l'hémicycle de 2050. */
 function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance: Seance) => void }) {
   return (
-    <div role="group" aria-label="Choisir la séance" className="mx-auto flex w-fit max-w-full gap-1 rounded-full bg-relief p-1">
+    <div role="group" aria-label="Choisir la séance" className="flex w-full gap-1 rounded-full bg-relief p-1 md:w-fit">
       {(
         [
           ["2026", "Assemblée de 2026"],
@@ -110,7 +117,7 @@ function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance
           aria-pressed={seance === valeur}
           onClick={() => onChoisir(valeur)}
           className={cn(
-            "inline-flex min-h-11 cursor-pointer items-center justify-center flex-1 whitespace-nowrap rounded-full px-3 text-[15px] font-medium outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte sm:flex-none sm:px-7",
+            "inline-flex min-h-11 cursor-pointer items-center justify-center flex-1 whitespace-nowrap rounded-full px-3 text-[15px] font-medium outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte sm:px-6 md:flex-none",
             seance === valeur ? "bg-texte text-fond" : "text-attenue hover:text-texte",
           )}
         >
@@ -165,6 +172,10 @@ function ScenePublique({
   );
 }
 
+/** « 95 abstentions », « 1 abstention » : le libellé s'accorde avec le nombre. */
+const accorder = (libelle: string, valeur: number) =>
+  libelle === "Abstention" && valeur > 1 ? "abstentions" : libelle.toLowerCase();
+
 /** Une ligne de comparaison : un titre, sa barre empilée, ses chiffres lisibles en toutes lettres. */
 function LigneDecompte({
   titre,
@@ -179,7 +190,7 @@ function LigneDecompte({
   machine?: boolean;
   children?: React.ReactNode;
 }) {
-  const lisible = segments.filter((s) => s.valeur > 0).map((s) => `${s.valeur} ${s.libelle.toLowerCase()}`);
+  const lisible = segments.filter((s) => s.valeur > 0).map((s) => `${s.valeur} ${accorder(s.libelle, s.valeur)}`);
   return (
     <div>
       <p className={cn("flex flex-wrap items-baseline justify-between gap-x-4 text-[15px] leading-6", machine && "font-donnee text-machine")}>
@@ -191,19 +202,24 @@ function LigneDecompte({
         segments={segments}
         etiquette={`${titre} : ${issue.toLowerCase()}, ${lisible.join(", ")}`}
       />
-      <ul role="list" className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-attenue">
+      <ul role="list" className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-sm leading-5 tabular-nums text-attenue">
         {segments
           .filter((s) => s.valeur > 0)
           .map((s) => (
             <li key={s.libelle} className="inline-flex items-center gap-1.5">
               <span aria-hidden className={cn("size-2 rounded-full", s.fond)} />
-              {nombre(s.valeur)} {s.libelle.toLowerCase()}
+              <span className="font-medium text-texte">{nombre(s.valeur)}</span> {accorder(s.libelle, s.valeur)}
             </li>
           ))}
       </ul>
       {children}
     </div>
   );
+}
+
+/** Un filet vertical entre deux mentions ; les lecteurs d'écran n'en entendent rien. */
+function Filet() {
+  return <li aria-hidden className="h-3.5 w-px bg-trait" />;
 }
 
 /** Le décompte réel de 2026 face au résultat simulé de 2050, en deux barres empilées de même échelle. */
@@ -223,8 +239,9 @@ function Decomptes({
   const { prenom } = candidate;
   const fondPosition = position === "pour" ? "bg-pour" : position === "contre" ? "bg-contre" : "bg-abstention";
   const issue2050 = simulation.adopte ? "Adopté" : "Rejeté";
+  const memeIssue = reel ? reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete") : false;
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       {reel ? (
         <LigneDecompte
           titre="Assemblée de 2026"
@@ -236,7 +253,7 @@ function Decomptes({
             { libelle: "Non-votants", valeur: reel.scrutin.decompte.non_votants, fond: "bg-absent" },
           ]}
         >
-          <SourceBadge source={reel.scrutin.source} className="mt-4" />
+          <SourceBadge source={reel.scrutin.source} className="mt-3" />
         </LigneDecompte>
       ) : null}
 
@@ -250,15 +267,36 @@ function Decomptes({
           { libelle: "Contre", valeur: simulation.contre, fond: fondPosition },
         ]}
       >
-        <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-attenue">
-          <span>{prenom} vote</span>
-          <PositionLibelle position={position} machine className="text-texte" />
-          <span>
-            · débat de 0 seconde
-            {reel ? (reel.scrutin.resultat === (simulation.adopte ? "adopte" : "rejete") ? " · même issue qu'en 2026" : " · issue inverse de 2026") : ""}
-          </span>
-        </p>
-        <SourceBadge source={sourceCalcul(`${definitionSimulation(prenom)} ${REGLE_POSITION}`, dateCalcul)} className="mt-4" />
+        <ul role="list" className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-5 text-attenue">
+          <li className="inline-flex items-center gap-2">
+            {prenom} vote
+            <PositionLibelle position={position} machine className="font-medium text-texte" />
+          </li>
+          <Filet />
+          <li>Débat de 0 seconde</li>
+          {reel ? (
+            <>
+              <Filet />
+              <li>{memeIssue ? "Même issue qu'en 2026" : "Issue inverse de 2026"}</li>
+            </>
+          ) : null}
+        </ul>
+        <div className="mt-5 border-t border-trait pt-4">
+          <SourceBadge source={{ ...sourceCalcul("", dateCalcul), definition: undefined }} />
+          <p className="mt-1.5 text-sm leading-6 text-attenue">{definitionSimulation(prenom)}</p>
+          <details className="group mt-1 text-sm leading-6 text-attenue">
+            <summary className="-mx-1 inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded px-1 font-medium text-texte underline decoration-trait underline-offset-4 outline-none transition-colors duration-150 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte [&::-webkit-details-marker]:hidden">
+              <svg aria-hidden viewBox="0 0 12 12" className="size-3 shrink-0 transition-transform duration-200 group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 2.5 8 6l-3.5 3.5" />
+              </svg>
+              Comment c&apos;est calculé
+            </summary>
+            <ol className="mt-1 mb-2 max-w-2xl list-decimal space-y-1 pl-9 marker:text-attenue">
+              <li>{REGLE_POSITION}</li>
+              <li>{ADOPTION_SIMULEE}</li>
+            </ol>
+          </details>
+        </div>
       </LigneDecompte>
     </div>
   );
@@ -315,37 +353,29 @@ export function VueSeance() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        <header className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
+        <header className="mx-auto flex max-w-2xl flex-col items-center text-center">
           <Sphere
             teintes={candidate.teintes}
             duree={14}
             description={`La sphère ${deCandidate(candidate.prenom)}`}
-            className="size-28 shrink-0 sm:size-32"
+            className="size-24 shrink-0 sm:size-28"
           />
-          <div>
-            <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
-              Au pouvoir
-            </h1>
-            <p aria-live="polite" className="mt-4 text-lg leading-8 text-attenue">
-              {testFait ? (
-                <>
-                  Votre IA, <strong className="font-medium text-texte">{candidate.prenom}</strong>, préside.
-                </>
-              ) : (
-                <>
-                  <strong className="font-medium text-texte">{candidate.prenom}</strong> préside.
-                </>
-              )}
-            </p>
-            {!testFait ? (
-              <BoutonIA href="/test" className="mt-6">
-                Trouver mon IA
-              </BoutonIA>
-            ) : null}
-          </div>
+          <h1 className="mt-6 font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
+            Au pouvoir
+          </h1>
+          <p aria-live="polite" className="mt-3 text-lg leading-7 text-attenue">
+            {testFait ? "Votre IA, " : null}
+            <strong className="font-medium text-texte">{candidate.prenom}</strong>
+            {testFait ? ", préside et tranche un vrai texte de 2026." : " préside en attendant la vôtre."}
+          </p>
+          {!testFait ? (
+            <BoutonIA href="/test" className="mt-6">
+              Trouver mon IA
+            </BoutonIA>
+          ) : null}
         </header>
 
-        <section aria-labelledby="seance-hemicycle" className="mt-16">
+        <section aria-labelledby="seance-hemicycle" className="mx-auto mt-12 max-w-4xl">
           <h2 id="seance-hemicycle" className="sr-only">
             L&apos;hémicycle
           </h2>
@@ -364,16 +394,16 @@ export function VueSeance() {
             </div>
           ) : (
             <>
-              <ChoixTexte textes={textes} choisi={texte.id} arbitres={arbitres} onChoisir={setChoix} />
-              <div className="mt-8">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end">
+                <ChoixTexte textes={textes} choisi={texte.id} arbitres={arbitres} onChoisir={setChoix} />
                 <ChoixSeance seance={seance} onChoisir={setSeance} />
               </div>
 
-              <div className="mt-10" aria-busy={resultat.isLoading}>
+              <div className="mt-8" aria-busy={resultat.isLoading}>
                 <ScenePublique etats={etats} description={description} seance={seance} candidate={candidate} />
               </div>
 
-              <div className="mx-auto mt-14 max-w-4xl" aria-busy={resultat.isLoading}>
+              <div className="mt-10" aria-busy={resultat.isLoading}>
                 {resultat.error ? (
                   <Panne
                     titre="Le détail de ce scrutin n'est pas disponible."
@@ -397,8 +427,8 @@ export function VueSeance() {
         </section>
 
         {texte && position ? (
-          <section aria-labelledby="seance-amendement" className="mx-auto mt-28 max-w-4xl">
-            <h2 id="seance-amendement" className={`mb-10 ${H2}`}>
+          <section aria-labelledby="seance-amendement" className="mx-auto mt-20 max-w-4xl">
+            <h2 id="seance-amendement" className={`mb-6 ${H2}`}>
               L&apos;amendement {deCandidate(candidate.prenom)}
             </h2>
             <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
@@ -406,14 +436,14 @@ export function VueSeance() {
         ) : null}
 
         {texte && position ? (
-          <section aria-labelledby="seance-groupes" className="mx-auto mt-28 max-w-4xl">
-            <h2 id="seance-groupes" className={`mb-8 ${H2}`}>
+          <section aria-labelledby="seance-groupes" className="mx-auto mt-20 max-w-4xl">
+            <h2 id="seance-groupes" className={`mb-6 ${H2}`}>
               Les groupes en 2026
             </h2>
             {reel ? (
               <>
                 <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
-                <SourceBadge source={reel.scrutin.source} className="mt-6" />
+                <SourceBadge source={reel.scrutin.source} className="mt-4" />
               </>
             ) : resultat.error ? (
               <p className="rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">

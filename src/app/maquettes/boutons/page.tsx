@@ -8,7 +8,7 @@ import { Sphere } from "@/components/sphere";
 import { CANDIDATES } from "@/lib/candidates";
 
 const police = Public_Sans({ subsets: ["latin"] });
-const [IRIS, LEON, MAELLE] = CANDIDATES;
+const [GAIA, THEMIS, HYGIE] = CANDIDATES;
 
 /** Une proposition : son numéro, son nom, une phrase, puis le bouton principal et un bouton secondaire. */
 function Proposition({
@@ -57,11 +57,11 @@ export default function Boutons() {
 
           <Proposition n={2} nom="Pilule et sphère" idee="Une petite sphère vivante dans le bouton, qui grossit au survol.">
             <button className={`group flex h-14 items-center gap-3 rounded-full bg-[#111318] pl-2 pr-7 font-medium text-white ${FOCUS}`}>
-              <Sphere teintes={MAELLE.teintes} duree={8} className="size-10 transition-transform duration-500 group-hover:scale-110" />
+              <Sphere teintes={HYGIE.teintes} duree={8} className="size-10 transition-transform duration-500 group-hover:scale-110" />
               Trouver mon IA
             </button>
             <button className={`group flex h-14 items-center gap-3 rounded-full border border-[#d9dbe1] pl-2 pr-7 font-medium ${FOCUS}`}>
-              <Sphere teintes={IRIS.teintes} duree={10} className="size-10 transition-transform duration-500 group-hover:scale-110" />
+              <Sphere teintes={GAIA.teintes} duree={10} className="size-10 transition-transform duration-500 group-hover:scale-110" />
               Voir les candidates
             </button>
           </Proposition>
@@ -71,7 +71,7 @@ export default function Boutons() {
               <span
                 aria-hidden
                 className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full"
-                style={{ background: `conic-gradient(${MAELLE.teintes[1]}, ${IRIS.teintes[1]}, ${LEON.teintes[1]}, ${MAELLE.teintes[1]})` }}
+                style={{ background: `conic-gradient(${HYGIE.teintes[1]}, ${GAIA.teintes[1]}, ${THEMIS.teintes[1]}, ${HYGIE.teintes[1]})` }}
               />
               <button className={`relative h-14 rounded-full bg-white px-8 font-medium ${FOCUS}`}>Trouver mon IA</button>
             </span>
@@ -82,7 +82,7 @@ export default function Boutons() {
               <span
                 aria-hidden
                 className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
-                style={{ background: MAELLE.teintes[1] }}
+                style={{ background: HYGIE.teintes[1] }}
               />
               <span className="relative transition-colors duration-300 group-hover:text-white">Trouver mon IA</span>
             </button>
@@ -123,7 +123,7 @@ export default function Boutons() {
           <Proposition n={8} nom="Bulle de verre" idee="Le bouton entier est une sphère douce, sans fond noir ; le texte reste sombre.">
             <button
               className={`group relative h-14 overflow-hidden rounded-full px-8 font-medium ${FOCUS}`}
-              style={{ background: `radial-gradient(circle at 30% 20%, #fff, ${MAELLE.teintes[0]} 40%, ${MAELLE.teintes[3]})` }}
+              style={{ background: `radial-gradient(circle at 30% 20%, #fff, ${HYGIE.teintes[0]} 40%, ${HYGIE.teintes[3]})` }}
             >
               <span className="relative transition-transform duration-300 group-hover:scale-105">Trouver mon IA</span>
             </button>

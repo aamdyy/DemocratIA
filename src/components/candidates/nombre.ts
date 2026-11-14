@@ -7,7 +7,7 @@ export const NOMBRE_CANDIDATES = enLettres(CANDIDATES.length);
 /** « Les sept IA candidates ». */
 export const TITRE_CANDIDATES = `Les ${NOMBRE_CANDIDATES} IA candidates`;
 
-/** « Iris, Léon, Maëlle, Sacha, Noé, Inès et Jules ». */
+/** « Gaïa, Thémis, Hygie, Plutus, Athéna, Harmonie et Déméter ». */
 export const PRENOMS_CANDIDATES = CANDIDATES.map((c) => c.prenom)
   .join(", ")
   .replace(/, ([^,]+)$/, " et $1");

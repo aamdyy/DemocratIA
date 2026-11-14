@@ -5,8 +5,8 @@ import { CANDIDATES, type Candidate } from "@/lib/candidates";
 import { useClassement } from "@/lib/ma-candidate";
 
 /** Couleurs mêlées de plusieurs candidates : la sphère de quelqu'un qui n'a pas encore passé le test. */
-const [IRIS, , MAELLE, , NOE] = CANDIDATES;
-export const TEINTES_MELEES: Teintes = ["#f6f4f1", IRIS.teintes[1], MAELLE.teintes[1], NOE.teintes[3]];
+const [GAIA, , HYGIE, , ATHENA] = CANDIDATES;
+export const TEINTES_MELEES: Teintes = ["#f6f4f1", GAIA.teintes[1], HYGIE.teintes[1], ATHENA.teintes[3]];
 
 /**
  * La sphère du citoyen : celle de l'IA qui lui correspond le mieux une fois le test commencé,
