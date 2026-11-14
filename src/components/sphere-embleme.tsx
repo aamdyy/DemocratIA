@@ -78,9 +78,9 @@ export function EmblemeDeSphere({ teintes, actif = false }: { teintes: Teintes; 
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-1/2" style={{ filter: HALO }}>
           {lettre === "A" ? (
-            <Embleme key={String(actif)} id={candidate.id} couleur={couleur} etat={etat} className="w-full" />
+            <Embleme id={candidate.id} couleur={couleur} etat={etat} className="w-full" />
           ) : (
-            <EmblemeVariante key={String(actif)} id={candidate.id} lettre={lettre} couleur={couleur} etat={etat} className="w-full" />
+            <EmblemeVariante id={candidate.id} lettre={lettre} couleur={couleur} etat={etat} className="w-full" />
           )}
         </div>
       </div>
