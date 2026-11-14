@@ -7,7 +7,8 @@ import { useMouvementReduit } from "@/components/accueil/hooks";
 import { PositionLibelle } from "@/components/position";
 import { Barre } from "@/components/graphiques";
 import { SourceBadge } from "@/components/source-badge";
-import { Reveal } from "@/components/accueil/reveal";
+import { Element, Reveal, Serie } from "@/components/accueil/reveal";
+import { CASCADE } from "@/lib/animation";
 import { CANDIDATES } from "@/lib/candidates";
 import { EnTete, Nombre, SOURCE_EXEMPLE } from "./commun";
 
@@ -27,17 +28,24 @@ function Etape({
 }) {
   return (
     <li className="grid items-center gap-x-20 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
-      <Reveal>
-        <p aria-hidden className="text-[clamp(3.5rem,7vw,5.5rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
-          {rang}
-        </p>
-        <h3 className="mt-5 text-[clamp(1.75rem,3.2vw,2.5rem)] font-semibold leading-[1.05] tracking-[-0.035em]">
-          <span className="sr-only">Étape {rang} sur 3 : </span>
-          {titre}
-        </h3>
-        <p className="mt-4 max-w-[28rem] text-lg leading-8 text-attenue">{phrase}</p>
+      {/* Le numéro, le titre, la phrase, puis le schéma : l'étape se lit dans l'ordre où elle apparaît. */}
+      <Serie>
+        <Element as="p" className="text-[clamp(3.5rem,7vw,5.5rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+          <span aria-hidden>{rang}</span>
+        </Element>
+        <Element>
+          <h3 className="mt-5 text-[clamp(1.75rem,3.2vw,2.5rem)] font-semibold leading-[1.05] tracking-[-0.035em]">
+            <span className="sr-only">Étape {rang} sur 3 : </span>
+            {titre}
+          </h3>
+        </Element>
+        <Element as="p" className="mt-4 max-w-[28rem] text-lg leading-8 text-attenue">
+          {phrase}
+        </Element>
+      </Serie>
+      <Reveal delai={CASCADE * 3} className={FOND_SCHEMA}>
+        {children}
       </Reveal>
-      <div className={FOND_SCHEMA}>{children}</div>
     </li>
   );
 }

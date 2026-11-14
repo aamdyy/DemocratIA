@@ -5,7 +5,8 @@ import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
 import { useCompteur } from "@/app/maquettes/commun";
-import { FOCUS, Reveal, TITRE_SECTION } from "@/components/accueil/reveal";
+import { Element, FOCUS, Reveal, Serie, TITRE_SECTION } from "@/components/accueil/reveal";
+import { ENTREE, VUE } from "@/lib/animation";
 import { BoutonIA } from "@/components/bouton-ia";
 import { Logo } from "@/components/logo";
 import { FiltreSphere } from "@/components/sphere";
@@ -24,12 +25,18 @@ export const SOURCE_EXEMPLE: Provenance = {
 /** Titre de section, avec au plus une phrase dessous. */
 export function EnTete({ id, titre, phrase }: { id: string; titre: string; phrase?: string }) {
   return (
-    <Reveal>
-      <h2 id={id} className={TITRE_SECTION}>
-        {titre}
-      </h2>
-      {phrase ? <p className="mt-6 max-w-[34rem] text-lg leading-8 text-attenue">{phrase}</p> : null}
-    </Reveal>
+    <Serie>
+      <Element>
+        <h2 id={id} className={TITRE_SECTION}>
+          {titre}
+        </h2>
+      </Element>
+      {phrase ? (
+        <Element as="p" className="mt-6 max-w-[34rem] text-lg leading-8 text-attenue">
+          {phrase}
+        </Element>
+      ) : null}
+    </Serie>
   );
 }
 
@@ -46,7 +53,7 @@ export function Nombre({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const vu = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
+  const vu = useInView(ref, VUE);
   const courant = useCompteur(0, vu ? valeur : 0, duree, vu);
   return (
     <span ref={ref} aria-hidden className={className}>
@@ -61,9 +68,7 @@ export function TitreLogo({ id, className }: { id: string; className: string }) 
   return (
     <motion.h1
       id={id}
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+      {...ENTREE}
     >
       <Logo titre className={className} />
       <span className="sr-only"> En 2050, la France élit une IA.</span>
@@ -80,14 +85,14 @@ function NavVariantes({ n }: { n: number }) {
         <Link
           key={v.n}
           href={`/accueils/${v.n}`}
-          className={`inline-flex min-h-11 items-center px-3 text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current ${FOCUS}`}
+          className={`inline-flex min-h-11 items-center px-3 text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 ease-out hover:text-texte hover:decoration-current ${FOCUS}`}
         >
           {v.n}. {v.titre}
         </Link>
       ))}
       <Link
         href="/accueils"
-        className={`inline-flex min-h-11 items-center px-3 text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current ${FOCUS}`}
+        className={`inline-flex min-h-11 items-center px-3 text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 ease-out hover:text-texte hover:decoration-current ${FOCUS}`}
       >
         Toutes les maquettes
       </Link>

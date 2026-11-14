@@ -1,10 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion, useInView } from "motion/react";
+import { AnimatePresence, motion, useInView, useScroll, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
+import { CASCADE, DOUX, DUREE, ENTREE, RESSORT_LENT } from "@/lib/animation";
 import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
 import { FOCUS } from "./reveal";
@@ -56,14 +57,11 @@ export function PremierEcran() {
     <section
       ref={racine}
       aria-labelledby="titre-accueil"
-      className="flex min-h-[calc(100dvh-10rem)] flex-col items-center justify-center overflow-x-clip py-4 text-center"
+      // Les marges négatives étirent la zone de découpe jusqu'aux bords de l'écran : sur téléphone,
+      // les sphères voisines sortent de l'écran au lieu d'être coupées net à 16 px du bord.
+      className="relative -mx-4 flex min-h-[calc(100dvh-10rem)] flex-col items-center justify-center overflow-x-clip px-4 pb-20 pt-4 text-center sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
     >
-      <motion.h1
-        id="titre-accueil"
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
-      >
+      <motion.h1 id="titre-accueil" {...ENTREE}>
         <span className="sr-only">DemocratIA. </span>
         {/* La phrase de la maquette 05, gardée par l'équipe : c'est elle, en grand, qui porte la page. */}
         <span className="mx-auto block max-w-none text-[clamp(2.2rem,4.7vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
@@ -74,7 +72,7 @@ export function PremierEcran() {
             style={{ backgroundImage: DEGRADE_IA, backgroundSize: "300% 100%" }}
             initial={{ backgroundPositionX: "100%" }}
             animate={reduit ? { backgroundPositionX: "50%" } : { backgroundPositionX: ["100%", "0%"] }}
-            transition={{ duration: 3.5, delay: 0.6, ease: "easeInOut", repeat: reduit ? 0 : Infinity, repeatType: "mirror" }}
+            transition={{ duration: 3.5, delay: DUREE.entree, ease: "easeInOut", repeat: reduit ? 0 : Infinity, repeatType: "mirror" }}
           >
             On règle une sphère.
           </motion.span>
@@ -91,6 +89,10 @@ export function PremierEcran() {
         aria-label="Les IA candidates : glissez ou utilisez les flèches pour en voir une autre"
         tabIndex={0}
         className={`relative mx-auto mt-8 size-[min(27vh,58vw,300px)] cursor-grab touch-pan-y select-none active:cursor-grabbing ${FOCUS}`}
+        // Après le titre, le manège se pose : il grandit à peine en apparaissant.
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: DUREE.scene, ease: DOUX, delay: CASCADE * 3 }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.35}
@@ -135,7 +137,7 @@ export function PremierEcran() {
               initial={false}
               animate={{ x: place.x, scale: place.scale, opacity: place.opacity }}
               // Ressort doux, sans rebond : les sphères glissent d'une place à l'autre comme sur un rail.
-              transition={{ type: "spring", visualDuration: 1.1, bounce: 0.08, opacity: { duration: 0.8, ease: "easeInOut" } }}
+              transition={{ ...RESSORT_LENT, opacity: { duration: DUREE.entree, ease: DOUX } }}
             >
               <Sphere teintes={c.teintes} duree={14 + i * 3} />
             </motion.button>
@@ -143,26 +145,80 @@ export function PremierEcran() {
         })}
       </motion.div>
 
-      <div className="mt-6 flex h-[6.5rem] flex-col items-center text-center" aria-live="polite">
+      <motion.div
+        className="mt-6 flex h-[6.5rem] flex-col items-center text-center"
+        aria-live="polite"
+        initial={ENTREE.initial}
+        animate={ENTREE.animate}
+        transition={{ ...ENTREE.transition, delay: CASCADE * 6 }}
+      >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={candidate.id}
             initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: DUREE.entree, ease: DOUX }}
           >
             <p className="text-4xl font-semibold tracking-[-0.03em]">{candidate.prenom}</p>
             <p className="mt-2 text-lg text-attenue">{candidate.doctrine}</p>
           </motion.div>
         </AnimatePresence>
-      </div>
+      </motion.div>
 
-      <div className="mt-3">
+      <motion.div
+        className="mt-3"
+        initial={ENTREE.initial}
+        animate={ENTREE.animate}
+        transition={{ ...ENTREE.transition, delay: CASCADE * 8 }}
+      >
         <BoutonIA href="/test">
           Trouver mon IA
         </BoutonIA>
-      </div>
+      </motion.div>
+
+      <IndicateurDefilement />
     </section>
+  );
+}
+
+/**
+ * Sous le premier écran, une invitation discrète à poursuivre : un trait qui s'écoule vers le bas.
+ * Il apparaît en dernier et s'efface dès que la page défile. Cliquable : il mène à la section suivante.
+ */
+function IndicateurDefilement() {
+  const reduit = useMouvementReduit();
+  const { scrollY } = useScroll();
+  const opacite = useTransform(scrollY, [0, 160], [1, 0]);
+
+  return (
+    <motion.div
+      className="absolute bottom-0 left-1/2 -translate-x-1/2"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: DUREE.entree, ease: DOUX, delay: DUREE.scene + CASCADE * 8 }}
+    >
+      <motion.a
+        href="#titre-comparatif"
+        style={{ opacity: opacite }}
+        onClick={(evenement) => {
+          const cible = document.getElementById("titre-comparatif");
+          if (!cible) return;
+          evenement.preventDefault();
+          cible.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "start" });
+        }}
+        className={`group flex min-h-11 flex-col items-center gap-2 rounded-md px-3 py-1 text-xs text-attenue transition-colors duration-150 ease-out hover:text-texte ${FOCUS}`}
+      >
+        Pourquoi une IA ?
+        <span aria-hidden className="relative h-7 w-px overflow-hidden bg-trait">
+          <motion.span
+            className="absolute inset-x-0 top-0 h-3 bg-texte"
+            initial={{ y: "-100%" }}
+            animate={reduit ? { y: "0%" } : { y: ["-100%", "240%"] }}
+            transition={{ duration: 1.6, ease: DOUX, repeat: reduit ? 0 : Infinity, repeatDelay: 0.6 }}
+          />
+        </span>
+      </motion.a>
+    </motion.div>
   );
 }

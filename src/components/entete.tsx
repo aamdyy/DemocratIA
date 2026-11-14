@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useMaSphere } from "@/components/accueil/ma-sphere";
 import { Hemicycle, NOMBRE_SIEGES, type EtatSiege } from "@/components/hemicycle";
 import { Logo } from "@/components/logo";
 import { Sphere } from "@/components/sphere";
+import { DOUX, DUREE, RESSORT } from "@/lib/animation";
 import { useEtat } from "@/lib/api";
 import { CANDIDATES } from "@/lib/candidates";
 import { cn } from "@/lib/utils";
@@ -61,6 +63,49 @@ const LIENS = [
 
 const correspond = (chemin: string, href: string) => chemin === href || chemin.startsWith(`${href}/`);
 
+/** La courbe DOUX, pour les transitions CSS de l'en-tête. */
+const COURBE = `cubic-bezier(${DOUX.join(", ")})`;
+
+/**
+ * Le trait sous le lien de la page en cours. Un seul trait pour tout l'en-tête (`layoutId`) :
+ * il glisse d'un lien à l'autre à chaque navigation, et s'efface en revenant à l'accueil.
+ */
+function Soulignement() {
+  return (
+    <motion.span
+      layoutId="entete-soulignement"
+      aria-hidden
+      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-texte sm:inset-x-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ ...RESSORT, opacity: { duration: DUREE.etat, ease: DOUX } }}
+    />
+  );
+}
+
+/**
+ * Tant que la page demandée n'est pas prête, un trait fin la parcourt sous le lien cliqué.
+ * Toujours présent, il ne fait que changer d'opacité : aucun décalage de mise en page.
+ */
+function Attente() {
+  const { pending } = useLinkStatus();
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-x-3 -bottom-px h-0.5 overflow-hidden sm:inset-x-4">
+      <motion.span
+        className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-attenue"
+        initial={false}
+        animate={pending ? { opacity: 1, x: ["-100%", "300%"] } : { opacity: 0 }}
+        transition={
+          pending
+            ? { opacity: { duration: DUREE.micro }, x: { duration: DUREE.scene, ease: DOUX, repeat: Infinity } }
+            : { duration: DUREE.etat }
+        }
+      />
+    </span>
+  );
+}
+
 /**
  * L'en-tête : l'état des données à gauche, la marque au centre, le parcours à droite.
  * Au survol (ou au focus clavier) d'un lien, une petite présentation illustrée apparaît dessous.
@@ -72,11 +117,12 @@ export function Entete() {
   const { candidate, teintes } = useMaSphere();
 
   return (
-    <header className="relative z-40 border-b border-trait bg-fond">
+    // Nommé pour les transitions de page : l'en-tête reste immobile pendant que le contenu change (transitions.css).
+    <header className="relative z-40 border-b border-trait bg-fond" style={{ viewTransitionName: "entete" }}>
       <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
         <Link
           href="/"
-          className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte lg:col-start-2 lg:justify-self-center"
+          className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte active:opacity-50 lg:col-start-2 lg:justify-self-center"
         >
           <Logo className="text-[22px]" />
           {candidate ? <span className="sr-only">Votre IA : {candidate.prenom}</span> : null}
@@ -98,20 +144,24 @@ export function Entete() {
                     aria-current={active ? "page" : undefined}
                     aria-describedby={`apercu-${lien.href.slice(1)}`}
                     className={cn(
-                      "flex min-h-11 items-center justify-center whitespace-nowrap border-b-2 border-transparent px-3 text-sm text-attenue transition-colors duration-150 hover:text-texte focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-texte sm:px-4 lg:min-h-14",
-                      active && "border-texte font-medium text-texte",
+                      "relative flex min-h-11 items-center justify-center whitespace-nowrap px-3 text-sm text-attenue transition-colors duration-150 ease-out hover:text-texte focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-texte active:text-texte sm:px-4 lg:min-h-14",
+                      active && "text-texte",
                     )}
                   >
-                    {lien.libelle}
+                    {/* Le texte ne s'épaissit pas à l'activation (cela décalerait les liens) : seul le trait le dit. */}
+                    <span className="transition-transform duration-150 ease-out group-active:scale-[0.97]">{lien.libelle}</span>
+                    <Attente />
+                    <AnimatePresence initial={false}>{active ? <Soulignement key="soulignement" /> : null}</AnimatePresence>
                   </Link>
 
                   {/* La présentation : invisible au repos, elle glisse en place au survol ou au focus. */}
                   <div
                     id={`apercu-${lien.href.slice(1)}`}
                     role="tooltip"
-                    className="pointer-events-none invisible absolute right-0 top-full z-50 hidden w-72 translate-y-1 pt-2 opacity-0 transition-[opacity,translate,visibility] duration-200 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transition-none lg:block"
+                    style={{ transitionTimingFunction: COURBE }}
+                    className="pointer-events-none invisible absolute right-0 top-full z-50 hidden w-72 origin-top-right -translate-y-1 scale-[0.97] pt-2 opacity-0 transition-[opacity,translate,scale,visibility] duration-300 group-hover:visible group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-hover:delay-75 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 motion-reduce:transition-none lg:block"
                   >
-                    <div className="overflow-hidden rounded-xl border border-trait bg-fond">
+                    <div className="overflow-hidden rounded-xl border border-trait bg-fond shadow-[0_12px_32px_rgb(17_19_24/0.08)]">
                       <div className="h-32 bg-relief">
                         {lien.href === "/test" ? (
                           <ApercuTest />
@@ -147,18 +197,36 @@ function EtatDonnees() {
       role="status"
       className="col-start-2 row-start-1 flex min-h-14 items-center gap-2 justify-self-end text-xs leading-4 text-attenue lg:col-start-1 lg:justify-self-start"
     >
-      {etat ? (
-        <>
-          {/* Point plein : données réelles. Cercle en pointillés : exemples. La forme le dit, pas la couleur. */}
-          <span
-            aria-hidden
-            className={cn("size-2 shrink-0 rounded-full", reel ? "bg-texte" : "border border-dashed border-attenue")}
-          />
-          {reel ? "Hémicycle connecté" : "Données d'exemple"}
-        </>
-      ) : erreur ? (
-        "Données inconnues"
-      ) : null}
+      {/* L'état arrive après le premier affichage : il apparaît en fondu au lieu de surgir. */}
+      <AnimatePresence mode="wait" initial={false}>
+        {etat ? (
+          <motion.span
+            key={reel ? "reel" : "exemple"}
+            className="flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DUREE.etat, ease: DOUX }}
+          >
+            {/* Point plein : données réelles. Cercle en pointillés : exemples. La forme le dit, pas la couleur. */}
+            <span
+              aria-hidden
+              className={cn("size-2 shrink-0 rounded-full", reel ? "bg-texte" : "border border-dashed border-attenue")}
+            />
+            {reel ? "Hémicycle connecté" : "Données d'exemple"}
+          </motion.span>
+        ) : erreur ? (
+          <motion.span
+            key="inconnu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DUREE.etat, ease: DOUX }}
+          >
+            Données inconnues
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
     </p>
   );
 }

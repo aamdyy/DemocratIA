@@ -1,0 +1,96 @@
+/*
+ * Transitions entre les pages (API View Transitions, déclenchée par <ViewTransition> dans template.tsx).
+ * Mêmes valeurs que src/lib/animation.ts : courbe DOUX, sortie en DUREE.micro, entrée en DUREE.entree.
+ */
+
+:root {
+  --doux: cubic-bezier(0.22, 1, 0.36, 1);
+  --duree-micro: 150ms;
+  --duree-etat: 300ms;
+  --duree-entree: 600ms;
+}
+
+/* L'ancienne page s'efface vite, sans bouger : elle ne doit pas disputer l'attention. */
+::view-transition-old(.page-sortie) {
+  animation: var(--duree-micro) ease-in both page-fondu reverse;
+}
+
+/* La nouvelle page attend la sortie, puis monte de quelques pixels en apparaissant. */
+::view-transition-new(.page-entree) {
+  animation:
+    var(--duree-etat) var(--doux) var(--duree-micro) both page-fondu,
+    var(--duree-entree) var(--doux) var(--duree-micro) both page-montee;
+}
+
+@keyframes page-fondu {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes page-montee {
+  from {
+    transform: translateY(14px);
+  }
+}
+
+/* Le reste de la page (pied) passe en fondu court. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duree-etat);
+}
+
+/* L'en-tête ne bouge pas d'un pixel : c'est le point fixe de la navigation. */
+::view-transition-group(entete) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(entete) {
+  display: none;
+}
+::view-transition-new(entete) {
+  animation: none;
+}
+
+/* Les clics passent pendant la transition. */
+::view-transition {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* État de chargement (loading.tsx) : il n'apparaît qu'après un court délai, pour ne pas clignoter. */
+.chargement {
+  animation: var(--duree-etat) var(--doux) 200ms both page-fondu;
+}
+
+.chargement-point {
+  animation: chargement-vague 1.2s var(--doux) infinite both;
+}
+
+@keyframes chargement-vague {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chargement-point {
+    animation: none;
+    opacity: 0.7;
+  }
+}

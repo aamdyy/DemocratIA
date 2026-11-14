@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { FOCUS, Reveal } from "@/components/accueil/reveal";
+import { Element, FOCUS, Reveal, Serie } from "@/components/accueil/reveal";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
+import { CASCADE } from "@/lib/animation";
 import { CANDIDATES, candidateParId } from "@/lib/candidates";
 import type { Provenance } from "@/lib/types";
 import { EnTete } from "./commun";
@@ -89,31 +90,31 @@ function Comparatif() {
             />
             <p className="font-medium">Le dernier président humain</p>
           </Reveal>
-          <Reveal delai={0.15} className="flex flex-col items-start gap-4">
+          <Reveal delai={CASCADE * 2} className="flex flex-col items-start gap-4">
             <Sphere teintes={HYGIE.teintes} className="size-24 sm:size-32" />
             <p className="font-medium">La première présidente IA</p>
           </Reveal>
         </div>
 
         <ul>
-          {CRITERES.map((c, i) => {
+          {CRITERES.map((c) => {
             const { humain: SchemaHumain, ia: SchemaIA } = SCHEMAS[c.id];
             return (
             <li key={c.id} className="border-t border-trait">
-              <Reveal
-                delai={i * 0.08}
-                className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12"
-              >
-                <h3 className="col-span-2 text-lg font-semibold tracking-[-0.02em] sm:col-span-1">{c.titre}</h3>
-                <div className="flex flex-col gap-3">
+              {/* Chaque ligne entre en trois temps : le critère, l'humain, puis l'IA. */}
+              <Serie className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12">
+                <Element className="col-span-2 sm:col-span-1">
+                  <h3 className="text-lg font-semibold tracking-[-0.02em]">{c.titre}</h3>
+                </Element>
+                <Element className="flex flex-col gap-3">
                   <SchemaHumain />
                   <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
-                </div>
-                <div className="flex flex-col gap-3">
+                </Element>
+                <Element className="flex flex-col gap-3">
                   <SchemaIA />
                   <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
-                </div>
-              </Reveal>
+                </Element>
+              </Serie>
             </li>
             );
           })}
@@ -133,15 +134,20 @@ function Grille() {
       <ul className="mt-16 flex flex-wrap justify-center gap-x-6 gap-y-14">
         {CANDIDATES.map((c, i) => (
           <li key={c.id} className="w-[calc(50%-0.75rem)] md:w-[calc(25%-1.125rem)]">
-            <Reveal delai={i * 0.08}>
-              <Link href={`/candidates/${c.id}`} className={`group flex flex-col items-center text-center ${FOCUS}`}>
+            {/* i % 4 : la cascade repart à chaque ligne, quatre sphères puis trois. */}
+            <Reveal delai={(i % 4) * CASCADE}>
+              <Link
+                href={`/candidates/${c.id}`}
+                className={`group flex flex-col items-center rounded-3xl text-center ${FOCUS}`}
+              >
+                {/* Au survol, la sphère se soulève ; à la pression, elle s'enfonce. */}
                 <Sphere
                   teintes={c.teintes}
                   duree={14 + i * 3}
-                  className="size-28 transition-transform duration-300 group-hover:scale-105 sm:size-32"
+                  className="size-28 transition-[translate,scale] duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-105 group-active:scale-[0.97] group-active:duration-150 motion-reduce:transition-none sm:size-32"
                 />
                 <span className="mt-5 text-2xl font-semibold tracking-[-0.03em]">{c.prenom}</span>
-                <span className="mt-1.5 min-h-11 text-[15px] leading-6 text-attenue underline decoration-trait underline-offset-4 group-hover:decoration-current">
+                <span className="mt-1.5 min-h-11 text-[15px] leading-6 text-attenue underline decoration-trait underline-offset-4 transition-[color,text-decoration-color] duration-150 ease-out group-hover:text-texte group-hover:decoration-current">
                   {c.doctrine}
                 </span>
               </Link>
