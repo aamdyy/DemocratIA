@@ -1,0 +1,290 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Jetons de DemocratIA : la couleur et la police disent d'où vient une donnée. */
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-relief: var(--relief);
+  --color-trait: var(--trait);
+  --color-texte: var(--texte);
+  --color-attenue: var(--attenue);
+  --color-pour: var(--pour);
+  --color-contre: var(--contre);
+  --color-abstention: var(--abstention);
+  --color-absent: var(--absent);
+  --color-republique: var(--republique);
+  --color-machine: var(--machine);
+  --font-titre: var(--police-titre);
+  --font-donnee: var(--police-donnee);
+
+  /* Jetons attendus par shadcn/ui, branchés sur les nôtres plus bas. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--police-interface);
+  --font-mono: var(--police-donnee);
+  --font-heading: var(--police-titre);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Direction retenue : celle des maquettes 05 à 08. Fond blanc, minimaliste ; la sphère est le seul
+ * objet coloré et vivant. Police : DM Sans pour l'interface, DM Mono pour la voix de la machine.
+ * Règle de sens : bleu, gris et rouge portent les votes publiés ; --machine (pourpre) porte
+ * tout ce qu'une machine calcule ou rédige.
+ */
+:root {
+  color-scheme: light;
+  --fond: #ffffff;
+  --surface: #ffffff;
+  --relief: #f5f6f8;
+  --trait: #e3e5ea;
+  --texte: #111318;
+  --attenue: #5f6573;
+  --pour: #1d3fd8;
+  --contre: #e1000f;
+  --abstention: #aab0bd;
+  --absent: #e9ebf0;
+  --republique: #1d3fd8;
+  --machine: #9c1f6b;
+  --police-titre: var(--police-interface);
+  --police-interface: var(--police-dm-sans), system-ui, sans-serif;
+  --police-donnee: var(--police-dm-mono), ui-monospace, monospace;
+
+  --background: var(--fond);
+  --foreground: var(--texte);
+  --card: var(--surface);
+  --card-foreground: var(--texte);
+  --popover: var(--surface);
+  --popover-foreground: var(--texte);
+  --primary: var(--texte);
+  --primary-foreground: var(--fond);
+  --secondary: var(--relief);
+  --secondary-foreground: var(--texte);
+  --muted: var(--relief);
+  --muted-foreground: var(--attenue);
+  --accent: var(--relief);
+  --accent-foreground: var(--texte);
+  --destructive: var(--contre);
+  --border: var(--trait);
+  --input: var(--trait);
+  --ring: var(--republique);
+  --radius: 0.375rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :focus-visible {
+    outline: 2px solid var(--republique);
+    outline-offset: 3px;
+  }
+}
+
+/* Sièges de l'hémicycle : la couleur balaie de la gauche vers la droite quand l'état change. */
+.siege {
+  fill: var(--absent);
+  transition: fill 320ms ease-out;
+  transition-delay: calc(var(--rang, 0) * var(--pas-siege, 1.6ms));
+}
+.siege[data-etat="pour"] {
+  fill: var(--pour);
+}
+.siege[data-etat="contre"] {
+  fill: var(--contre);
+}
+.siege[data-etat="abstention"] {
+  fill: var(--abstention);
+}
+.siege[data-etat="machine"] {
+  fill: var(--machine);
+}
+
+@keyframes clignoter {
+  50% {
+    opacity: 0;
+  }
+}
+.curseur-machine::after {
+  /* Première ligne : repli pour les navigateurs qui ne lisent pas le texte alternatif après « / ». */
+  content: "▍";
+  content: "▍" / "";
+  animation: clignoter 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siege {
+    transition: none;
+  }
+  .curseur-machine::after {
+    animation: none;
+  }
+}
+
+/*
+ * Sphère : l'incarnation d'un Député IA (src/components/sphere.tsx).
+ * Les nuages dérivent par `transform` ; leur taille suit le mandat par la propriété `scale`,
+ * qui se compose avec l'animation sans l'interrompre.
+ */
+.sphere {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  clip-path: circle(50%);
+  background: var(--s1);
+  container-type: inline-size;
+  isolation: isolate;
+}
+/*
+ * La matière. Tout tourne lentement et sans jamais s'arrêter, comme un fluide dans une bille de verre :
+ * - la couche entière fait un tour très lent ;
+ * - chaque nuage tourne autour d'un point décalé de son centre (il décrit donc une petite orbite
+ *   tout en pivotant sur lui-même), dans un sens et à un rythme qui lui sont propres ;
+ * - une houle le pousse et le ramène doucement.
+ * `rotate`, `translate` et `scale` sont des propriétés séparées : l'orbite, la houle et la taille
+ * réglée par le mandat se composent sans se gêner. Aucun rythme n'est multiple d'un autre,
+ * pour que le mouvement ne se répète jamais à l'œil.
+ */
+.sphere-nuages {
+  position: absolute;
+  inset: 0;
+  animation: sphere-orbite calc(var(--duree, 16s) * 7.9) linear infinite;
+}
+.sphere[data-aquarelle] .sphere-nuages {
+  filter: url(#sphere-aquarelle);
+}
+.sphere-nuage {
+  position: absolute;
+  filter: blur(9cqw);
+  transform-origin: var(--pivot);
+  animation:
+    sphere-orbite calc(var(--duree, 16s) * var(--tour)) linear infinite var(--sens, normal),
+    sphere-houle calc(var(--duree, 16s) * var(--vague)) ease-in-out infinite alternate;
+  transition: scale 400ms ease-out;
+}
+.sphere-nuage:nth-child(1) {
+  inset: -14% 28% 32% -12%;
+  border-radius: 58% 42% 55% 45% / 48% 56% 44% 52%;
+  background: var(--s2);
+  scale: var(--p1, 1);
+  --pivot: 62% 64%;
+  --tour: 3.6;
+  --vague: 1.6;
+  --houle: 10% 8%;
+}
+.sphere-nuage:nth-child(2) {
+  inset: 26% -14% 0% 34%;
+  border-radius: 44% 56% 48% 52% / 57% 45% 55% 43%;
+  background: var(--s3);
+  scale: var(--p2, 1);
+  --pivot: 34% 38%;
+  --tour: 4.7;
+  --sens: reverse;
+  --vague: 2.1;
+  --houle: -12% 6%;
+}
+.sphere-nuage:nth-child(3) {
+  inset: 46% 26% -18% -4%;
+  border-radius: 52% 48% 42% 58% / 46% 54% 50% 50%;
+  background: var(--s4);
+  scale: var(--p3, 1);
+  --pivot: 58% 30%;
+  --tour: 3.1;
+  --vague: 1.3;
+  --houle: 8% -12%;
+}
+/* Le voile blanc : une poche de lumière qui circule dans la matière. */
+.sphere-nuage:nth-child(4) {
+  inset: 10% 10% 46% 42%;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0.65;
+  --pivot: 20% 80%;
+  --tour: 2.7;
+  --sens: reverse;
+  --vague: 1.8;
+  --houle: -14% 16%;
+}
+/* Le courant : un reflet en arc qui glisse à contresens, comme un remous sous la surface. */
+.sphere-courant {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 50%, rgb(255 255 255 / 0.5) 68%, transparent 86%);
+  filter: blur(6cqw);
+  mix-blend-mode: soft-light;
+  animation: sphere-orbite calc(var(--duree, 16s) * 4.3) linear infinite reverse;
+}
+@keyframes sphere-orbite {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes sphere-houle {
+  to {
+    translate: var(--houle);
+  }
+}
+/* Le verre ne bouge pas : c'est ce qui donne l'impression que la matière remue à l'intérieur. */
+.sphere-volume {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.55), transparent 42%),
+    radial-gradient(circle at 70% 84%, rgb(255 255 255 / 0.16), transparent 28%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgb(20 10 30 / 0.14) 100%);
+}
+.sphere-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sphere-nuages,
+  .sphere-nuage,
+  .sphere-courant {
+    animation: none;
+  }
+  /* Le filtre animé ondule en continu : on passe à sa version immobile. */
+  .sphere[data-aquarelle] .sphere-nuages {
+    filter: url(#sphere-aquarelle-fixe);
+  }
+}
+
+/* Fin des styles de la sphère (matière ralentie). */
