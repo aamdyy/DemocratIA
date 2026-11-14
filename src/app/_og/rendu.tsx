@@ -20,7 +20,7 @@ const matiere = ([fond, nuage1, nuage2, nuage3]: Teintes) =>
     `linear-gradient(${fond}, ${fond})`,
   ].join(", ");
 
-function SphereRendue({ teintes, diametre }: { teintes: Teintes; diametre: number }) {
+export function SphereRendue({ teintes, diametre }: { teintes: Teintes; diametre: number }) {
   return (
     <div
       style={{

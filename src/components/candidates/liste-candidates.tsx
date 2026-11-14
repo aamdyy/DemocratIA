@@ -6,6 +6,7 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
+import { InvitationDiscrete } from "@/components/partage/invitation-discrete";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { useScrutins } from "@/lib/api";
@@ -215,6 +216,12 @@ export function ListeCandidates() {
           <BoutonIA href="/test" variante="contour">
             Passer le test
           </BoutonIA>
+        </motion.div>
+      ) : null}
+
+      {pret ? (
+        <motion.div {...entree(5)} className="mt-8 flex justify-center">
+          <InvitationDiscrete />
         </motion.div>
       ) : null}
 

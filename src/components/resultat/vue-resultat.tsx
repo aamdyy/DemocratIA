@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
+import { BlocPartage } from "@/components/partage/bloc-partage";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { CASCADE, DOUX, DUREE, ENTREE, RESSORT_LENT, VUE } from "@/lib/animation";
 import { useScrutins } from "@/lib/api";
@@ -306,6 +307,12 @@ export function VueResultat() {
           )}
         </AnimatePresence>
       </LayoutGroup>
+
+      {enSuspense ? null : (
+        <div className="mx-auto max-w-4xl">
+          <BlocPartage affinite={meilleure} />
+        </div>
+      )}
 
       {enSuspense ? null : (
         <div className="mx-auto max-w-2xl">

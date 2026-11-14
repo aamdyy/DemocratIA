@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 
 import { RESSORT_LENT } from "@/lib/animation";
 import { BoutonIA } from "@/components/bouton-ia";
+import { InvitationDiscrete } from "@/components/partage/invitation-discrete";
 import { Sphere } from "@/components/sphere";
 import type { Affinite } from "@/lib/candidates";
 import { SEUIL_PRECISION } from "@/lib/precision";
@@ -90,6 +91,7 @@ export function FinDuTest({
             ))}
           </ul>
         ) : null}
+        <InvitationDiscrete className="mt-2" />
       </motion.div>
     </section>
   );
