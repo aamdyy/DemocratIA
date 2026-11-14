@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
 import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
-import { BOUTON_PILULE, FOCUS } from "./reveal";
+import { FOCUS } from "./reveal";
 
 /** Places du manège : au centre, à droite en retrait, à gauche en retrait ; les deux autres attendent derrière. */
 const PLACES = [
@@ -31,7 +31,7 @@ export function PremierEcran() {
 
   useEffect(() => {
     if (pause || !visible || reduit) return;
-    const minuterie = setInterval(() => setActive((a) => (a + 1) % CANDIDATES.length), 3600);
+    const minuterie = setInterval(() => setActive((a) => (a + 1) % CANDIDATES.length), 4500);
     return () => clearInterval(minuterie);
   }, [pause, visible, reduit]);
 
@@ -51,7 +51,7 @@ export function PremierEcran() {
       <motion.h1
         id="titre-accueil"
         initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
       >
         <span className="sr-only">DemocratIA. </span>
@@ -114,7 +114,8 @@ export function PremierEcran() {
               // Dès le premier affichage, chaque sphère est à sa place : pas d'empilement au chargement.
               initial={false}
               animate={{ x: place.x, scale: place.scale, opacity: place.opacity }}
-              transition={{ type: "spring", stiffness: 70, damping: 16 }}
+              // Ressort doux, sans rebond : les sphères glissent d'une place à l'autre comme sur un rail.
+              transition={{ type: "spring", visualDuration: 1.1, bounce: 0.08, opacity: { duration: 0.8, ease: "easeInOut" } }}
             >
               <Sphere teintes={c.teintes} duree={14 + i * 3} />
             </motion.button>
@@ -123,13 +124,13 @@ export function PremierEcran() {
       </motion.div>
 
       <div className="mt-6 flex h-[6.5rem] flex-col items-center text-center" aria-live="polite">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={candidate.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="text-4xl font-semibold tracking-[-0.03em]">{candidate.prenom}</p>
             <p className="mt-2 text-lg text-attenue">{candidate.doctrine}</p>
@@ -138,9 +139,9 @@ export function PremierEcran() {
       </div>
 
       <div className="mt-3">
-        <Link href="/test" className={BOUTON_PILULE}>
+        <BoutonIA href="/test">
           Trouver mon IA
-        </Link>
+        </BoutonIA>
       </div>
     </section>
   );

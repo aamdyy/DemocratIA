@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
 import { useState } from "react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { mandat, type Mandat } from "@/lib/mandat";
 import { PRIORITE_PAR_DEFAUT, THEMES, type ThemeId } from "@/lib/themes";
 
@@ -119,12 +119,7 @@ export function Priorites({
 
       <div className="mt-10 flex flex-col items-center gap-1">
         {pret ? (
-          <Link
-            href="/resultat"
-            className={`inline-flex h-14 items-center rounded-full bg-texte px-8 font-medium text-fond transition-opacity duration-150 hover:opacity-80 ${FOCUS}`}
-          >
-            Découvrir mon IA
-          </Link>
+          <BoutonIA href="/resultat">Découvrir mon IA</BoutonIA>
         ) : (
           <>
             <button

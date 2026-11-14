@@ -10,6 +10,7 @@ import {
 } from "motion/react";
 import { useEffect, useEffectEvent, useRef } from "react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { BarreEmpilee } from "@/components/graphiques";
 import { PositionLibelle } from "@/components/position";
 import { Sphere } from "@/components/sphere";
@@ -343,13 +344,7 @@ function CarteFin({ prendreLeFocus, onTerminer }: { prendreLeFocus: boolean; onT
         Tous les textes sont parcourus.
       </h3>
       <p className="mt-auto pt-8">
-        <button
-          type="button"
-          onClick={onTerminer}
-          className={`inline-flex h-14 items-center rounded-full bg-texte px-8 font-medium text-fond transition-opacity duration-150 hover:opacity-80 ${FOCUS}`}
-        >
-          Choisir mes priorités
-        </button>
+        <BoutonIA onClick={onTerminer}>Choisir mes priorités</BoutonIA>
       </p>
     </motion.div>
   );
@@ -377,13 +372,9 @@ export function PileEnErreur({ message, onReessayer }: { message: string | null;
       <h2 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h2>
       <p className="mt-3 max-w-md text-base leading-7 text-attenue">{message ?? "Vérifiez votre connexion."}</p>
       <p className="mt-auto pt-8">
-        <button
-          type="button"
-          onClick={onReessayer}
-          className={`inline-flex h-12 items-center rounded-full border border-texte px-6 font-medium transition-colors duration-150 hover:bg-relief ${FOCUS}`}
-        >
+        <BoutonIA variante="contour" onClick={onReessayer}>
           Réessayer
-        </button>
+        </BoutonIA>
       </p>
     </div>
   );
@@ -394,13 +385,7 @@ export function PileVide({ onTerminer }: { onTerminer: () => void }) {
     <div className={CADRE}>
       <h2 className={TITRE}>Aucun texte à trancher pour le moment.</h2>
       <p className="mt-auto pt-8">
-        <button
-          type="button"
-          onClick={onTerminer}
-          className={`inline-flex h-14 items-center rounded-full bg-texte px-8 font-medium text-fond transition-opacity duration-150 hover:opacity-80 ${FOCUS}`}
-        >
-          Choisir mes priorités
-        </button>
+        <BoutonIA onClick={onTerminer}>Choisir mes priorités</BoutonIA>
       </p>
     </div>
   );

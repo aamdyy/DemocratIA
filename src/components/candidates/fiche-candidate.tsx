@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
 import { Barre, BarreEmpilee } from "@/components/graphiques";
 import { PositionLibelle } from "@/components/position";
@@ -22,8 +23,6 @@ import { affinitePourcent } from "./prenom";
 
 const LIEN =
   "inline-flex min-h-11 items-center text-[15px] text-attenue underline decoration-trait underline-offset-4 outline-none transition-colors duration-150 hover:text-texte hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
-const PILULE_NOIRE =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-8 text-[15px] font-medium text-fond outline-none transition-colors duration-150 hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 const PILULE_CLAIRE =
   "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-texte px-6 text-[15px] font-medium text-texte outline-none transition-colors duration-150 hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
@@ -139,9 +138,9 @@ function Votes({ candidate, testFait, votes }: { candidate: Candidate; testFait:
         <div role="alert" className="mt-8 rounded-md bg-relief px-5 py-5">
           <p className="font-medium text-texte">La liste des textes n&apos;a pas pu être lue.</p>
           <p className="mt-1 text-[15px] leading-6 text-attenue">{(scrutins.error as Error).message}</p>
-          <button type="button" onClick={() => void scrutins.mutate()} className={`${PILULE_CLAIRE} mt-4`}>
+          <BoutonIA variante="contour" teintes={candidate.teintes} onClick={() => void scrutins.mutate()} className="mt-4">
             Réessayer
-          </button>
+          </BoutonIA>
         </div>
       ) : textes.length === 0 ? (
         <p className="mt-8 rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">Aucun texte à afficher pour le moment.</p>
@@ -223,9 +222,9 @@ export function FicheCandidate({ candidate }: { candidate: Candidate }) {
                   <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-3" />
                 </div>
               ) : (
-                <Link href="/test" className={PILULE_NOIRE}>
+                <BoutonIA href="/test" teintes={candidate.teintes}>
                   Mesurer mon affinité
-                </Link>
+                </BoutonIA>
               )}
             </div>
           </div>

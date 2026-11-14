@@ -11,8 +11,6 @@ export const TITRE_SECTION =
 /** Cible de 44 px et contour de focus visible, pour les liens et boutons de la page. */
 export const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-texte";
 
-export const BOUTON_PILULE = `inline-flex h-14 items-center justify-center rounded-full bg-texte px-8 text-base font-medium text-fond transition-transform duration-150 hover:scale-[1.03] ${FOCUS}`;
-
 /** Le bloc se lève et apparaît quand il entre à l'écran, une seule fois. */
 export function Reveal({
   children,

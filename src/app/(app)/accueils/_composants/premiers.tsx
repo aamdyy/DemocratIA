@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
 
 import { TEINTES_MELEES } from "@/components/accueil/ma-sphere";
-import { BOUTON_PILULE } from "@/components/accueil/reveal";
+import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
 import { candidateParId } from "@/lib/candidates";
 import { TitreLogo } from "./commun";
@@ -40,9 +39,9 @@ export function PremierEcranGrandeSphere() {
       </div>
       <p className="mt-4 text-lg text-attenue">Cinq IA se présentent à la présidence.</p>
       <div className="mt-8">
-        <Link href="/test" className={BOUTON_PILULE}>
+        <BoutonIA href="/test">
           Trouver mon IA
-        </Link>
+        </BoutonIA>
       </div>
     </section>
   );

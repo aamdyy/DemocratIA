@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { deCandidate } from "@/components/candidates/prenom";
@@ -11,10 +12,6 @@ import { THEMES } from "@/lib/themes";
 import type { Position } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const PILULE =
-  "inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full px-7 text-[15px] font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 transition-colors duration-150 focus-visible:outline-texte disabled:cursor-not-allowed disabled:opacity-40";
-const PILULE_NOIRE = `${PILULE} bg-texte text-fond hover:bg-texte/85`;
-const PILULE_CLAIRE = `${PILULE} border border-texte text-texte hover:bg-relief`;
 
 type Statut = "repos" | "ecriture" | "termine" | "arrete" | "erreur";
 
@@ -170,17 +167,17 @@ export function Amendement({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-4">
           {ecrit ? (
-            <button type="button" onClick={() => controleur.current?.abort()} className={PILULE_CLAIRE}>
+            <BoutonIA variante="contour" teintes={teintes} onClick={() => controleur.current?.abort()}>
               Arrêter
-            </button>
+            </BoutonIA>
           ) : (
-            <button type="button" onClick={() => void demander()} disabled={!demande} className={PILULE_NOIRE}>
+            <BoutonIA teintes={teintes} onClick={() => void demander()} desactive={!demande}>
               {etat.statut === "erreur"
                 ? "Réessayer"
                 : aDuTexte
                   ? "Réécrire l'amendement"
                   : "Rédiger l'amendement"}
-            </button>
+            </BoutonIA>
           )}
           <p role="status" className="text-[15px] leading-6 text-attenue">
             {ecrit

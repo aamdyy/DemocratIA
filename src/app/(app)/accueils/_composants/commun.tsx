@@ -5,7 +5,8 @@ import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
 import { useCompteur } from "@/app/maquettes/commun";
-import { BOUTON_PILULE, FOCUS, Reveal, TITRE_SECTION } from "@/components/accueil/reveal";
+import { FOCUS, Reveal, TITRE_SECTION } from "@/components/accueil/reveal";
+import { BoutonIA } from "@/components/bouton-ia";
 import { Logo } from "@/components/logo";
 import { FiltreSphere } from "@/components/sphere";
 import type { Provenance } from "@/lib/types";
@@ -117,9 +118,9 @@ export function Cadre({
       {children}
       {bouton ? (
         <Reveal className="flex justify-center">
-          <Link href="/test" className={BOUTON_PILULE}>
+          <BoutonIA href="/test">
             Trouver mon IA
-          </Link>
+          </BoutonIA>
         </Reveal>
       ) : null}
       <NavVariantes n={n} />

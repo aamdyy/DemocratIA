@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { MotionConfig } from "motion/react";
 
 import { HumainContreIA } from "@/app/(app)/accueils/_composants/comparatif";
 import { Recit } from "@/app/(app)/accueils/_composants/recit";
+import { BoutonIA } from "@/components/bouton-ia";
 import { FiltreSphere } from "@/components/sphere";
 import { PremierEcran } from "./premier-ecran";
-import { BOUTON_PILULE, Reveal } from "./reveal";
+import { Reveal } from "./reveal";
 
 /**
  * L'accueil retenu par l'équipe : le manège des trois sphères (maquette 05), puis « pourquoi une IA »
@@ -23,9 +23,9 @@ export function Accueil() {
         <HumainContreIA />
         <Recit />
         <Reveal className="flex justify-center pb-8 sm:pb-16">
-          <Link href="/test" className={BOUTON_PILULE}>
+          <BoutonIA href="/test">
             Trouver mon IA
-          </Link>
+          </BoutonIA>
         </Reveal>
       </div>
     </MotionConfig>

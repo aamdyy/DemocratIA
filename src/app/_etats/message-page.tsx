@@ -1,8 +1,6 @@
 import { Sphere } from "@/components/sphere";
 import { TEINTES_MARQUE } from "@/app/_og/marque";
 
-export const BOUTON =
-  "inline-flex h-12 items-center justify-center rounded-full bg-texte px-7 text-base font-medium text-fond transition-opacity duration-150 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-republique";
 export const LIEN =
   "inline-flex min-h-11 items-center px-3 text-sm text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current";
 

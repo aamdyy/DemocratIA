@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { MotionConfig, motion } from "motion/react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
 import { useDeputes, useScrutins } from "@/lib/api";
 import { useMandat } from "@/lib/mandat";
@@ -17,9 +17,6 @@ import { Synthese } from "./synthese";
 import { TableauComparaison } from "./tableau-comparaison";
 import { useResultats } from "./use-resultats";
 
-const LIEN =
-  "inline-flex min-h-11 items-center justify-center rounded-full border border-texte px-6 text-[15px] font-medium text-texte outline-none transition-colors duration-150 hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
-const BOUTON = `${LIEN} cursor-pointer`;
 const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
 
 /** Rend la valeur avec un retard : la recherche part quand la frappe s'arrête. */
@@ -61,9 +58,9 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
     <div role="alert" className="rounded-md bg-relief px-5 py-5">
       <p className="font-medium text-texte">{titre}</p>
       <p className="mt-1 text-[15px] leading-6 text-attenue">{detail}</p>
-      <button type="button" onClick={onReessayer} className={`${BOUTON} mt-4`}>
+      <BoutonIA variante="contour" onClick={onReessayer} className="mt-4">
         Réessayer
-      </button>
+      </BoutonIA>
     </div>
   );
 }
@@ -72,9 +69,9 @@ function AucunTexte() {
   return (
     <div className="rounded-md bg-relief px-5 py-6">
       <p className="font-medium text-texte">Vous n&apos;avez encore tranché aucun texte.</p>
-      <Link href="/test" className={`${LIEN} mt-5`}>
+      <BoutonIA href="/test" variante="contour" className="mt-5">
         Trouver mon IA
-      </Link>
+      </BoutonIA>
     </div>
   );
 }

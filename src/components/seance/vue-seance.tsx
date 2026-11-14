@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { MotionConfig, motion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { BarreEmpilee, type Segment } from "@/components/graphiques";
+import { BoutonIA } from "@/components/bouton-ia";
 import { Hemicycle, NOMBRE_SIEGES } from "@/components/hemicycle";
 import { deCandidate } from "@/components/candidates/prenom";
 import { PositionLibelle } from "@/components/position";
@@ -26,10 +26,6 @@ import { TableauGroupes } from "./tableau-groupes";
 
 type Seance = "2026" | "2050";
 
-const PILULE_NOIRE =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-8 text-[15px] font-medium text-fond outline-none transition-colors duration-150 hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
-const PILULE_CLAIRE =
-  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-texte px-6 text-[15px] font-medium text-texte outline-none transition-colors duration-150 hover:bg-relief focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
 
 const sansAbonnement = () => () => {};
@@ -57,9 +53,9 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
     <div role="alert" className="rounded-md bg-relief px-5 py-5">
       <p className="font-medium text-texte">{titre}</p>
       <p className="mt-1 text-[15px] leading-6 text-attenue">{detail}</p>
-      <button type="button" onClick={onReessayer} className={`${PILULE_CLAIRE} mt-4`}>
+      <BoutonIA variante="contour" onClick={onReessayer} className="mt-4">
         Réessayer
-      </button>
+      </BoutonIA>
     </div>
   );
 }
@@ -342,9 +338,9 @@ export function VueSeance() {
               )}
             </p>
             {!testFait ? (
-              <Link href="/test" className={`${PILULE_NOIRE} mt-6`}>
+              <BoutonIA href="/test" className="mt-6">
                 Trouver mon IA
-              </Link>
+              </BoutonIA>
             ) : null}
           </div>
         </header>

@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
 
 import { useMouvementReduit } from "@/components/accueil/hooks";
 import { TEINTES_MELEES } from "@/components/accueil/ma-sphere";
-import { BOUTON_PILULE, FOCUS } from "@/components/accueil/reveal";
+import { FOCUS } from "@/components/accueil/reveal";
+import { BoutonIA } from "@/components/bouton-ia";
 import { PositionLibelle } from "@/components/position";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
@@ -61,13 +61,9 @@ export function PremierEcranTest() {
             ) : error ? (
               <div role="alert">
                 <h2 className="text-2xl font-semibold tracking-[-0.03em]">Les textes de loi n&apos;ont pas pu être lus.</h2>
-                <button
-                  type="button"
-                  onClick={() => mutate()}
-                  className={`mt-6 inline-flex h-12 items-center rounded-full border border-texte px-6 font-medium ${FOCUS}`}
-                >
+                <BoutonIA variante="contour" onClick={() => mutate()} className="mt-6">
                   Réessayer
-                </button>
+                </BoutonIA>
               </div>
             ) : courant ? (
               <motion.div
@@ -113,9 +109,9 @@ export function PremierEcranTest() {
           ) : null}
 
           <div className="mt-8">
-            <Link href="/test" className={BOUTON_PILULE}>
+            <BoutonIA href="/test">
               Continuer le test
-            </Link>
+            </BoutonIA>
           </div>
         </div>
 

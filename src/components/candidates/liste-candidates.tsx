@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MotionConfig, motion } from "motion/react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
 import { Barre } from "@/components/graphiques";
 import { FiltreSphere, Sphere } from "@/components/sphere";
@@ -13,9 +14,6 @@ import { sourceCalcul } from "@/lib/concordance";
 import { useClassement } from "@/lib/ma-candidate";
 
 import { affinitePourcent } from "./prenom";
-
-const PILULE_NOIRE =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-texte px-8 text-[15px] font-medium text-fond outline-none transition-colors duration-150 hover:bg-texte/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 
 // Une seule entrée pour la page : le titre, puis les cinq sphères l'une après l'autre.
 const ENTREE = {
@@ -84,11 +82,7 @@ export function ListeCandidates() {
           {regle ? (
             <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="justify-center" />
           ) : (
-            <>
-              <Link href="/test" className={PILULE_NOIRE}>
-                Trouver mon IA
-              </Link>
-            </>
+            <BoutonIA href="/test">Trouver mon IA</BoutonIA>
           )}
         </motion.div>
       </motion.div>

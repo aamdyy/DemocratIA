@@ -3,6 +3,7 @@
 import { MotionConfig, motion } from "motion/react";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
+import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
 import { useScrutins } from "@/lib/api";
 import { CANDIDATES, classerCandidates, positionCandidate } from "@/lib/candidates";
@@ -29,7 +30,6 @@ const TEXTES_REQUIS = 3;
 
 const TITRE = "font-titre text-[clamp(1.5rem,3vw,2rem)] font-semibold leading-[1.1] tracking-[-0.03em]";
 
-const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-republique";
 
 const DOUX = [0.2, 0.8, 0.2, 1] as const;
 
@@ -209,13 +209,9 @@ export function VueTest() {
               )}
               {enCours && tranches >= requis && tranches > 0 ? (
                 <p className="mt-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => aller(2)}
-                    className={`inline-flex min-h-11 items-center rounded-full border border-trait px-6 text-[15px] font-medium transition-colors duration-150 hover:border-texte ${FOCUS}`}
-                  >
+                  <BoutonIA variante="contour" onClick={() => aller(2)}>
                     Mes priorités
-                  </button>
+                  </BoutonIA>
                 </p>
               ) : null}
             </div>

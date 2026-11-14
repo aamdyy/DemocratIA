@@ -6,6 +6,7 @@ import { MotionConfig, animate, motion, useReducedMotion, type Variants } from "
 import { useEffect, useState } from "react";
 
 import { AvisExemple } from "@/components/avis-exemple";
+import { BoutonIA } from "@/components/bouton-ia";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { useScrutins } from "@/lib/api";
 import { pourcent } from "@/lib/format";
@@ -15,10 +16,6 @@ import { mandat, useMandat } from "@/lib/mandat";
 import { AutresCandidates } from "./autres-candidates";
 import { Pourquoi } from "./pourquoi";
 
-const BOUTON_PRINCIPAL =
-  "inline-flex h-14 items-center rounded-full bg-texte px-8 font-medium text-fond transition-opacity duration-150 hover:opacity-80";
-const BOUTON_SECONDAIRE =
-  "inline-flex h-14 items-center rounded-full border border-trait px-8 font-medium transition-colors duration-150 hover:border-texte";
 const TITRE = "text-balance font-titre text-[clamp(1.875rem,4.2vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.03em]";
 
 const DOUX = [0.2, 0.8, 0.2, 1] as const;
@@ -80,9 +77,9 @@ export function VueResultat() {
       <div role="alert" className="mx-auto max-w-2xl py-16 text-center">
         <h1 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h1>
         <p className="mt-8">
-          <button type="button" onClick={() => void lecture.mutate()} className={BOUTON_SECONDAIRE}>
+          <BoutonIA variante="contour" onClick={() => void lecture.mutate()}>
             Réessayer
-          </button>
+          </BoutonIA>
         </p>
       </div>
     );
@@ -93,9 +90,7 @@ export function VueResultat() {
       <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
         <h1 className={TITRE}>Votre IA vous attend.</h1>
         <p className="mt-10">
-          <Link href="/test" className={BOUTON_PRINCIPAL}>
-            Passer le test
-          </Link>
+          <BoutonIA href="/test">Passer le test</BoutonIA>
         </p>
       </div>
     );
@@ -148,12 +143,10 @@ export function VueResultat() {
             <p className="mt-6 max-w-md text-balance text-xl leading-8 tracking-[-0.01em]">{meilleure.candidate.doctrine}</p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-              <Link href="/seance" className={BOUTON_PRINCIPAL}>
-                La voir au pouvoir
-              </Link>
-              <button type="button" onClick={refaire} className={BOUTON_SECONDAIRE}>
+              <BoutonIA href="/seance">La voir au pouvoir</BoutonIA>
+              <BoutonIA variante="contour" onClick={refaire}>
                 Refaire le test
-              </button>
+              </BoutonIA>
             </div>
             <p className="mt-1">
               <Link
