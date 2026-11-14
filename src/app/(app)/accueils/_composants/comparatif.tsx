@@ -9,6 +9,7 @@ import { SourceBadge } from "@/components/source-badge";
 import { CANDIDATES, candidateParId } from "@/lib/candidates";
 import type { Provenance } from "@/lib/types";
 import { EnTete } from "./commun";
+import { SCHEMAS } from "./schemas";
 
 /**
  * Le président de 2026 face à une IA candidate. Uniquement des faits vrais sur la fonction, sourcés :
@@ -78,18 +79,27 @@ function Comparatif() {
         </div>
 
         <ul>
-          {CRITERES.map((c, i) => (
+          {CRITERES.map((c, i) => {
+            const { humain: SchemaHumain, ia: SchemaIA } = SCHEMAS[c.id];
+            return (
             <li key={c.id} className="border-t border-trait">
               <Reveal
                 delai={i * 0.08}
                 className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12"
               >
                 <h3 className="col-span-2 text-lg font-semibold tracking-[-0.02em] sm:col-span-1">{c.titre}</h3>
-                <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
-                <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
+                <div className="flex flex-col gap-3">
+                  <SchemaHumain />
+                  <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <SchemaIA />
+                  <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
+                </div>
               </Reveal>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
       <SourceBadge source={SOURCE_CONSTITUTION} className="mt-8" />
