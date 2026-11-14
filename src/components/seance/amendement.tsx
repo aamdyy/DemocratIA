@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { BoutonIA } from "@/components/bouton-ia";
-import { Sphere } from "@/components/sphere";
+import { SphereVocale } from "@/components/sphere-vocale";
 import { SourceBadge } from "@/components/source-badge";
 import { deCandidate } from "@/components/candidates/prenom";
 import type { Candidate } from "@/lib/candidates";
@@ -89,7 +89,7 @@ function SphereEmettrice({ candidate, ecrit }: { candidate: Candidate; ecrit: bo
         animate={{ scale: ecrit && !reduit ? [1, 1.06, 1] : 1 }}
         transition={{ duration: 1.2, repeat: ecrit && !reduit ? Infinity : 0, ease: "easeInOut" }}
       >
-        <Sphere teintes={candidate.teintes} duree={ecrit ? 6 : 14} description={`La sphère ${deCandidate(candidate.prenom)}`} />
+        <SphereVocale teintes={candidate.teintes} actif={ecrit} description={`La sphère ${deCandidate(candidate.prenom)}`} />
       </motion.div>
     </div>
   );

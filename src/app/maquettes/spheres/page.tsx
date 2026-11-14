@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Public_Sans } from "next/font/google";
 
-import { Sphere } from "@/components/sphere";
+import { Sphere, type Teintes } from "@/components/sphere";
+import { SphereVocale } from "@/components/sphere-vocale";
 import { candidateParId, type Candidate } from "@/lib/candidates";
 
 import { Aquarelle, Metaballes, Nacre, Planete, Plasma, Respiration, Verre } from "./variantes";
@@ -19,9 +20,18 @@ const MONTREES = [
 
 const TAILLE = "w-[min(280px,78vw)]";
 
+/** Le bleu exact de l'orbe de référence : profond (0,05 ; 0,38 ; 0,88) et clair (0,28 ; 0,68 ; 0,98). */
+const BLEU_REFERENCE = { profond: "rgb(12.75 96.9 224.4)", clair: "rgb(71.4 173.4 249.9)" };
+/** Teintes du même bleu, pour l'aperçu affiché avant la première image. */
+const TEINTES_REFERENCE: Teintes = ["#e6f3fe", "#47adfa", "#0d61e0", "#47adfa"];
+
 type Rendu = (c: Candidate, label: string, rang: number) => React.ReactNode;
 
 interface Proposition {
+  /** Numéro affiché, quand il diffère du rang dans la liste. */
+  numero?: number;
+  /** Légende d'une sphère, quand ce n'est pas le prénom de la candidate. */
+  legende?: (prenom: string, rang: number) => string;
   nom: string;
   idee: string;
   survol: string;
@@ -31,6 +41,26 @@ interface Proposition {
 }
 
 const PROPOSITIONS: Proposition[] = [
+  {
+    numero: 9,
+    nom: "Orbe vocale",
+    idee: "L’orbe d’un assistant vocal : une bille au bord qui ondule à peine, remplie de nuages blancs et lumineux qui dérivent dans les couleurs de la candidate, avec un reflet clair sur le pourtour. La première est dans le bleu exact de l’orbe de référence, pour comparer.",
+    survol: "elle s’éveille : les nuages accélèrent et se contrastent, le bord ondule davantage, la matière est attirée vers le pointeur et la sphère se dilate un peu.",
+    cout: "moyen",
+    pourquoi: "un shader WebGL par sphère, mis en pause hors de l’écran ; les navigateurs limitent le nombre de contextes, donc réservé aux grandes sphères.",
+    legende: (prenom, rang) => (rang === 0 ? "Bleu de référence" : prenom),
+    rendu: (c, label, rang) =>
+      rang === 0 ? (
+        <SphereVocale
+          teintes={TEINTES_REFERENCE}
+          couleurs={BLEU_REFERENCE}
+          description="Orbe dans le bleu de référence"
+          className={TAILLE}
+        />
+      ) : (
+        <SphereVocale teintes={c.teintes} description={label} className={TAILLE} />
+      ),
+  },
   {
     nom: "L’actuelle",
     idee: "Trois nuages flous et un voile blanc tournent lentement dans un disque, sous un reflet et un grain.",
@@ -109,15 +139,18 @@ export default function Spheres() {
       <main className="mx-auto max-w-[1100px] px-6 py-16 lg:px-10">
         <h1 className="text-4xl font-semibold tracking-[-0.03em]">Propositions pour les sphères</h1>
         <p className="mt-3 max-w-[62ch] text-lg leading-8 text-[#5f6573]">
-          Huit rendus possibles, chacun avec les teintes de Gaïa, d’Hygie et de Thémis. Survolez une sphère pour voir sa
-          réaction. La première est la sphère du site aujourd’hui.
+          Neuf rendus possibles, chacun avec les teintes de Gaïa, d’Hygie et de Thémis. Survolez une sphère pour voir sa
+          réaction. La neuvième, l’orbe vocale, est présentée en tête ; la première est la sphère du site aujourd’hui.
         </p>
 
         <ol className="mt-14">
-          {PROPOSITIONS.map((p, i) => (
+          {PROPOSITIONS.map((p, i) => {
+            // L'orbe vocale (9) est en tête : les suivantes gardent leur numéro d'origine.
+            const numero = p.numero ?? i;
+            return (
             <li key={p.nom} className="border-t border-[#e6e7eb] pt-12 pb-20">
               <div className="grid gap-x-10 gap-y-3 md:grid-cols-[5rem_1fr]">
-                <p className="text-5xl font-semibold tabular-nums tracking-[-0.04em] text-[#c4c7cf]">{i + 1}</p>
+                <p className="text-5xl font-semibold tabular-nums tracking-[-0.04em] text-[#c4c7cf]">{numero}</p>
                 <div className="max-w-[68ch]">
                   <h2 className="text-2xl font-semibold tracking-[-0.02em]">{p.nom}</h2>
                   <p className="mt-2 text-[16px] leading-7 text-[#3d424d]">{p.idee}</p>
@@ -134,13 +167,15 @@ export default function Spheres() {
               <div className="mt-14 flex flex-wrap justify-center gap-x-12 gap-y-16 md:justify-between">
                 {MONTREES.map(({ candidate, de }, rang) => (
                   <figure key={candidate.id} className="flex flex-col items-center">
-                    {p.rendu(candidate, `Sphère ${de}, proposition ${i + 1} : ${p.nom.toLowerCase()}`, rang)}
-                    <figcaption className="mt-8 text-[15px] font-medium text-[#3d424d]">{candidate.prenom}</figcaption>
+                    {p.rendu(candidate, `Sphère ${de}, proposition ${numero} : ${p.nom.toLowerCase()}`, rang)}
+                    <figcaption className="mt-8 text-[15px] font-medium text-[#3d424d]">{p.legende ? p.legende(candidate.prenom, rang) : candidate.prenom}
+                    </figcaption>
                   </figure>
                 ))}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
 
         <p className="mt-4 text-sm text-[#6b6f7a]">

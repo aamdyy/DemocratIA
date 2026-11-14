@@ -7,6 +7,7 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
 import { FiltreSphere, Sphere } from "@/components/sphere";
+import { SphereVocale } from "@/components/sphere-vocale";
 import { SourceBadge } from "@/components/source-badge";
 import { useScrutins } from "@/lib/api";
 import { CANDIDATES, DEFINITION_AFFINITE, type Candidate } from "@/lib/candidates";
@@ -71,13 +72,7 @@ export function ListeCandidates() {
               transition={RESSORT}
               className="w-[min(78vw,360px)] lg:w-[360px]"
             >
-              <Sphere
-                teintes={centre.teintes}
-                aquarelle
-                duree={DUREE(centre)}
-                description={`Sphère de ${centre.prenom}`}
-                className="w-full"
-              />
+              <SphereVocale teintes={centre.teintes} description={`Sphère de ${centre.prenom}`} className="w-full" />
             </motion.div>
             <div className="mt-5 grid">
               <AnimatePresence initial={false}>

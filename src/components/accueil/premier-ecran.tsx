@@ -5,9 +5,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
+import { SphereVocale } from "@/components/sphere-vocale";
 import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
 import { FOCUS } from "./reveal";
+
+/** Les couleurs des sept IA, encadrées du gris du texte secondaire : le dégradé passe puis revient. */
+const DEGRADE_IA = `linear-gradient(90deg, var(--attenue) 0%, var(--attenue) 30%, ${CANDIDATES.map((c) => c.teintes[1]).join(", ")}, var(--attenue) 75%, var(--attenue) 100%)`;
 
 /** Places du manège : au centre, à droite et à gauche en retrait ; toutes les autres attendent derrière, invisibles. */
 const CENTRE = { x: "0%", scale: 1, opacity: 1, zIndex: 2 };
@@ -64,7 +68,17 @@ export function PremierEcran() {
         <span className="sr-only">DemocratIA. </span>
         {/* La phrase de la maquette 05, gardée par l'équipe : c'est elle, en grand, qui porte la page. */}
         <span className="mx-auto block max-w-none text-[clamp(2.2rem,4.7vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
-          En 2050, on ne vote plus pour un parti. <span className="block text-attenue">On règle une sphère.</span>
+          En 2050, on ne vote plus pour un parti.{" "}
+          {/* Proposition 7 de /maquettes/titre, retenue : les couleurs des IA traversent la seconde ligne, en boucle. */}
+          <motion.span
+            className="block bg-clip-text text-transparent"
+            style={{ backgroundImage: DEGRADE_IA, backgroundSize: "300% 100%" }}
+            initial={{ backgroundPositionX: "100%" }}
+            animate={reduit ? { backgroundPositionX: "50%" } : { backgroundPositionX: ["100%", "0%"] }}
+            transition={{ duration: 3.5, delay: 0.6, ease: "easeInOut", repeat: reduit ? 0 : Infinity, repeatType: "mirror" }}
+          >
+            On règle une sphère.
+          </motion.span>
         </span>
       </motion.h1>
 
@@ -124,7 +138,12 @@ export function PremierEcran() {
               // Ressort doux, sans rebond : les sphères glissent d'une place à l'autre comme sur un rail.
               transition={{ type: "spring", visualDuration: 1.1, bounce: 0.08, opacity: { duration: 0.8, ease: "easeInOut" } }}
             >
-              <Sphere teintes={c.teintes} duree={14 + i * 3} />
+              {/* Seules les trois sphères visibles ouvrent un contexte WebGL ; celles qui attendent derrière restent légères. */}
+              {place.opacity > 0 ? (
+                <SphereVocale teintes={c.teintes} />
+              ) : (
+                <Sphere teintes={c.teintes} duree={14 + i * 3} />
+              )}
             </motion.button>
           );
         })}

@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
-import { FiltreSphere, Sphere } from "@/components/sphere";
+import { FiltreSphere } from "@/components/sphere";
+import { SphereVocale } from "@/components/sphere-vocale";
 import { useScrutins } from "@/lib/api";
 import { pourcent } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
@@ -142,10 +143,8 @@ export function VueResultat() {
         animate="visible"
       >
         <motion.div className="w-[min(260px,56vw)] shrink-0 lg:w-[min(340px,30vw)]" variants={SPHERE_ETAPE}>
-          <Sphere
+          <SphereVocale
             teintes={meilleure.candidate.teintes}
-            aquarelle
-            duree={13}
             description={`La sphère de ${meilleure.candidate.prenom}, l'IA candidate la plus proche de vous`}
           />
         </motion.div>
