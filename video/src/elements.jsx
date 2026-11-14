@@ -2,7 +2,7 @@
 import { Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 
 import { C, MONO, SANS, entre, EGAL } from "./commun.js";
-import { MOTS, SCENES } from "./temps.js";
+import { PHRASES, SCENES } from "./temps.js";
 
 /** Le liseré tricolore du site : bleu, gris clair, rouge. `p` (0 à 1) le déploie depuis le centre. */
 export function Lisere({ p = 1, hauteur = 4, style }) {
@@ -37,34 +37,18 @@ export function EnTete({ t }) {
   );
 }
 
-// Les sous-titres : des groupes de mots coupés à la ponctuation, affichés pendant que la voix les dit.
-const PHRASES = (() => {
-  const phrases = [];
-  let courante = [];
-  MOTS.forEach((m, i) => {
-    if (m.mot === ":") {
-      if (courante.length) courante[courante.length - 1] = { ...courante[courante.length - 1], mot: courante[courante.length - 1].mot + " :" };
-    } else courante.push(m);
-    const fin = /[.…:]$/.test(m.mot) || (/,$/.test(m.mot) && courante.length >= 4) || courante.length >= 9;
-    const suivant = MOTS[i + 1];
-    if (fin && !(suivant && suivant.mot === ":")) {
-      if (courante.length) phrases.push(courante);
-      courante = [];
-    }
-  });
-  if (courante.length) phrases.push(courante);
-  return phrases.map((mots, i, toutes) => ({
-    texte: mots.map((m) => m.mot).join(" ").replace(/ :/g, " :"),
-    debut: mots[0].debut - 0.08,
-    fin: Math.min(mots[mots.length - 1].fin + 0.35, toutes[i + 1] ? toutes[i + 1][0].debut - 0.08 : Infinity),
-  }));
-})();
+// Les sous-titres, en français : une phrase courte par passage de la voix anglaise.
+const SOUS_TITRES = PHRASES.map((p, i) => ({
+  texte: p.fr.replace(/ ([:;?!])/g, "\u00a0$1"),
+  debut: p.debut - 0.08,
+  fin: Math.min(p.fin + 0.35, PHRASES[i + 1] ? PHRASES[i + 1].debut - 0.1 : Infinity),
+}));
 
 export function SousTitres() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
-  const phrase = PHRASES.find((p) => t >= p.debut && t < p.fin);
+  const phrase = SOUS_TITRES.find((p) => t >= p.debut && t < p.fin);
   if (!phrase) return null;
   const o = Math.min(entre(t, phrase.debut, phrase.debut + 0.15), 1 - entre(t, phrase.fin - 0.15, phrase.fin));
   return (

@@ -7,7 +7,7 @@ import { quand } from "../temps.js";
 const ARC = CANDIDATES.map((c) => c.teintes[1]);
 
 export function Ouverture({ t }) {
-  const tIA = quand("choisit");
+  const tIA = quand("chooses");
   const fond = entre(t, 0.8, 3.0, 0, 0.2) + entre(t, tIA, tIA + 1.6, 0, 0.42, EGAL);
   const titre = entre(t, 0.75, 1.75);
   const ligne1 = entre(t, 1.5, 2.2) * (1 - entre(t, tIA - 0.35, tIA));

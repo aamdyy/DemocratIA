@@ -26,11 +26,11 @@ const melange = (a, b, p) => {
 };
 
 export function Pouvoir({ t }) {
-  const tPouvoir = quand("Puis");
-  const tSieges = quand("cinq", 1);
-  const tBascule = quand("basculent");
-  const tRedige = quand("rédige");
-  const tDirect = quand("direct.");
+  const tPouvoir = quand("Then");
+  const tSieges = quand("five", 1);
+  const tBascule = quand("switch");
+  const tRedige = quand("drafts");
+  const tDirect = quand("live.");
   const couleur = GAGNANTE.teintes[1];
   const titre = entre(t, tPouvoir - 0.3, tPouvoir + 0.5);
   const hemi = entre(t, tPouvoir, tPouvoir + 1.0);

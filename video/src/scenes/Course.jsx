@@ -25,13 +25,13 @@ const RANGS = ETAPES.map(rangs);
 
 export function Course({ t }) {
   const chapitres = [
-    { mot: "Budget", t: quand("Budget") },
-    { mot: "Crises", t: quand("crises") },
-    { mot: "Dilemmes", t: quand("dilemmes") },
+    { mot: "Budget", t: quand("Budget,") },
+    { mot: "Crises", t: quand("crises,") },
+    { mot: "Dilemmes", t: quand("dilemmas:") },
   ];
-  const tRevele = quand("révéler");
-  const tRessemble = quand("l'IA", 0);
-  const instants = [chapitres[0].t - 0.2, chapitres[1].t, chapitres[2].t, quand("réponse"), quand("course"), quand("resserre")];
+  const tRevele = quand("reveals");
+  const tRessemble = quand("AI", 2);
+  const instants = [chapitres[0].t - 0.2, chapitres[1].t, chapitres[2].t, quand("answer,"), quand("race"), quand("tightens")];
   const valeur = (tableau, i) =>
     interpolate(t, instants, tableau.map((ligne) => ligne[i]), { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EGAL });
 

@@ -16,12 +16,12 @@ function Ligne({ p, children, style }) {
 
 export function Final({ t }) {
   const [debut, fin] = SCENES.final;
-  const tEt = quand("Et");
-  const tTout = quand("Tout");
-  const tPas = quand("Pas", 1);
-  const tOutils = quand("outils");
-  const tSphere = quand("meilleure");
-  const tVotre = quand("vôtre,", 1);
+  const tEt = quand("And");
+  const tTout = quand("Everything");
+  const tPas = quand("Not");
+  const tOutils = quand("tools");
+  const tSphere = quand("best");
+  const tVotre = quand("yours,", 1);
   const tLogo = quand("DemocratIA.");
 
   const fond = entre(t, tEt, tEt + 3, 0, 0.55, EGAL);

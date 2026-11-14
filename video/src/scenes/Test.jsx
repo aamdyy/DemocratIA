@@ -9,9 +9,9 @@ import { Lisere } from "../elements.jsx";
 
 export function Test({ t }) {
   const [debut] = SCENES.test;
-  const tPour = quand("trouver") - 0.35;
-  const tAssemblee = quand("l'Assemblée");
-  const tDonnees = quand("Des", 0);
+  const tPour = quand("find") - 0.3;
+  const tAssemblee = quand("French");
+  const tDonnees = quand("Open");
   const fenetre = entre(t, debut + 0.1, debut + 1.1);
   const h1 = entre(t, tPour - 0.2, tPour + 0.5);
   const h2 = entre(t, tAssemblee - 0.3, tAssemblee + 0.4);

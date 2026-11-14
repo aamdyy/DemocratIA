@@ -164,16 +164,16 @@ function BoiteDeVerre({ u }) {
 }
 
 export function Comparatif({ t }) {
-  const t0 = quand("Un");
+  const t0 = quand("human") - 0.15;
   const titre = entre(t, t0 - 0.4, t0 + 0.4);
-  const tIA = quand("Une");
+  const tIA = quand("An");
   const accentIA = entre(t, tIA - 0.2, tIA + 0.6);
   // Moments de révélation de chaque case, calés sur la voix.
   const lignes = [
     {
       libelle: "Mandat",
-      h: quand("cinq") - 0.3,
-      ia: quand("règle") - 0.3,
+      h: quand("five") - 0.3,
+      ia: quand("tuned") - 0.3,
       schemaH: (u) => <Grille u={u} ia={false} />,
       schemaIA: (u) => <Grille u={u} ia />,
       texteH: "Cinq ans, sans retour devant les électeurs.",
@@ -181,8 +181,8 @@ export function Comparatif({ t }) {
     },
     {
       libelle: "Programme",
-      h: quand("promesses") - 0.4,
-      ia: quand("chaque", 0) + 0.4,
+      h: quand("promises") - 0.4,
+      ia: quand("every", 0) + 0.4,
       schemaH: (u) => <Promesses u={u} />,
       schemaIA: (u) => <Code u={u} />,
       texteH: "Des promesses sans valeur juridique.",
@@ -190,8 +190,8 @@ export function Comparatif({ t }) {
     },
     {
       libelle: "Décisions",
-      h: quand("juridique.") + 0.3,
-      ia: quand("chacune") - 0.1,
+      h: quand("weight.") + 0.1,
+      ia: quand("every", 1) - 0.1,
       schemaH: (u) => <BoiteNoire u={u} />,
       schemaIA: (u) => <BoiteDeVerre u={u} />,
       texteH: "Non publiques.",

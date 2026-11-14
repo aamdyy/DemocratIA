@@ -7,7 +7,7 @@
 //   modeles                 liste les modèles capables de synthèse vocale
 //   voix                    liste les voix du compte et des voix françaises de la bibliothèque
 //   ajouter <owner> <id>    copie une voix de la bibliothèque dans le compte
-//   generer <voice_id> [modele] [réglages JSON] [pauses]   génère public/voix.mp3 et public/voix-alignement.json
+//   generer <voice_id> [modele] [réglages JSON] [pauses|en]   génère public/voix.mp3 et public/voix-alignement.json
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +34,24 @@ export const TEXTE =
   "Tout ce que vous avez vu repose sur des données ouvertes, que chacun peut vérifier. " +
   "Pas une machine qui décide à notre place : des outils pour comprendre nos élus. " +
   "La meilleure sphère, c'est celle qu'on ne remplace pas : la vôtre, quand vous allez voter. " +
+  "DemocratIA.";
+
+// Version anglaise (voix off internationale ; les sous-titres restent en français).
+export const TEXTE_EN =
+  "In 2050, France no longer elects a president. It chooses an artificial intelligence. " +
+  "Seven AIs are running. No party. No career to protect. Just a public doctrine, and votes anyone can check. " +
+  "A human president is elected for five years, with no return to the voters. Their promises carry no legal weight. " +
+  "An AI is tuned with every vote, and every position it takes is published. " +
+  "To find yours, you decide on real bills voted in the French National Assembly. " +
+  "Open public data, sourced by Hémicycle. " +
+  "Budget, crises, dilemmas: with every answer, the race tightens… until it reveals the AI that matches you. " +
+  "Then it takes power. All five hundred and seventy-seven seats switch to its color, and it drafts its amendment, live. " +
+  "But let's be honest: whoever writes the rule governs. " +
+  "DemocratIA is fiction, made to ask a question. " +
+  "And yet. " +
+  "Everything you've seen rests on open data that anyone can verify. " +
+  "Not a machine deciding for us: tools to understand the people we elect. " +
+  "The best sphere is the one we never replace: yours, when you go and vote. " +
   "DemocratIA.";
 
 // Même texte, avec des respirations entre les mouvements du script (balises <break>, non prononcées).
@@ -84,11 +102,13 @@ if (commande === "modeles") {
     console.log(`${v.voice_id}\t${v.name}\t${v.category}\t${JSON.stringify(v.labels)}`);
   }
   const genre = args[0] === "femme" ? "female" : "male";
-  console.log(`== Bibliothèque, français, voix ${genre === "female" ? "de femme" : "d'homme"} ==`);
-  const partage = await appel(`/v1/shared-voices?page_size=40&language=fr&gender=${genre}&sort=usage_character_count_1y`);
+  const langue = args[1] ?? "fr";
+  const filtres = args[2] ?? "";
+  console.log(`== Bibliothèque, ${langue}, voix ${genre === "female" ? "de femme" : "d'homme"} ==`);
+  const partage = await appel(`/v1/shared-voices?page_size=40&language=${langue}&gender=${genre}&sort=usage_character_count_1y${filtres}`);
   for (const v of partage.voices) {
     console.log(
-      `${v.public_owner_id}\t${v.voice_id}\t${v.name}\t${v.age}\t${v.accent}\t${v.use_case}\t${v.descriptive}\t${(v.description ?? "").slice(0, 90)}`,
+      `${v.public_owner_id}\t${v.voice_id}\t${v.cloned_by_count ?? ""}\t${v.rate ?? ""}\t${v.name}\t${v.age}\t${v.accent}\t${v.use_case}\t${v.descriptive}\t${(v.description ?? "").slice(0, 90)}`,
     );
   }
 } else if (commande === "ajouter") {
@@ -103,10 +123,11 @@ if (commande === "modeles") {
   const r = await appel(`/v1/text-to-speech/${voiceId}/with-timestamps?output_format=mp3_44100_128`, {
     method: "POST",
     body: JSON.stringify({
-      text: rythme === "pauses" ? TEXTE_RYTHME : TEXTE,
+      text: rythme === "pauses" ? TEXTE_RYTHME : rythme === "en" ? TEXTE_EN : TEXTE,
       model_id: modele,
       // Réglages par défaut (voix posée), surchargeables en JSON, par exemple '{"stability":0.35,"style":0.45}'.
-      voice_settings: { stability: 0.6, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: 0.95, ...JSON.parse(reglages) },
+      // Avec "seuls": true, seuls les réglages donnés sont envoyés (utile pour les modèles v3/v4).
+      voice_settings: (({ seuls, ...r }) => (seuls ? r : { stability: 0.6, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: 0.95, ...r }))(JSON.parse(reglages)),
     }),
   });
   mkdirSync(join(RACINE, "public"), { recursive: true });

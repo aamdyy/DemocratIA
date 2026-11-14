@@ -2,22 +2,24 @@
 import { AbsoluteFill, Img, staticFile } from "remotion";
 
 import { C, EGAL, MONO, SANS, entre } from "../commun.js";
-import { MOTS, SCENES, quand } from "../temps.js";
+import { SCENES, quand } from "../temps.js";
 
 const PHRASE = ["Celui", "qui", "écrit", "la", "règle", "gouverne."];
 
 export function Honnetete({ t }) {
   const [debut] = SCENES.honnetete;
-  const tMais = quand("Mais");
-  const tCelui = quand("celui");
+  const tMais = quand("But");
+  const tCelui = quand("whoever");
   const tFiction = quand("DemocratIA", 0);
-  const tQuestion = quand("poser");
+  const tQuestion = quand("ask");
   const image = entre(t, debut, debut + 1.6, 0, 1, EGAL);
   const kicker = entre(t, tMais - 0.2, tMais + 0.4) * (1 - entre(t, tFiction - 0.7, tFiction - 0.2));
   const bloc1 = 1 - entre(t, tFiction - 0.7, tFiction - 0.2);
   const bloc2 = entre(t, tFiction - 0.15, tFiction + 0.5);
   const question = entre(t, tQuestion - 0.25, tQuestion + 0.4);
-  const motsVoix = MOTS.filter((m) => m.debut >= tCelui - 0.05).slice(0, PHRASE.length);
+  // La phrase française se révèle mot à mot sur la durée du passage anglais (« whoever writes the rule governs. »).
+  const pas = (quand("governs.") - tCelui + 0.15) / PHRASE.length;
+  const motsVoix = PHRASE.map((_, i) => ({ debut: tCelui + i * pas }));
   return (
     <AbsoluteFill style={{ background: "#f4f4f2", fontFamily: SANS, color: C.texte }}>
       <AbsoluteFill style={{ opacity: image }}>
@@ -52,7 +54,7 @@ export function Honnetete({ t }) {
           </div>
         </div>
       </div>
-      <div style={{ position: "absolute", left: 130, top: 380, width: 1100, opacity: bloc2 }}>
+      <div style={{ position: "absolute", left: 130, top: 380, width: 1400, opacity: bloc2 }}>
         <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: "-0.05em", lineHeight: 1.02, translate: `0 ${(1 - bloc2) * 22}px` }}>
           DemocratIA est une fiction.
         </div>

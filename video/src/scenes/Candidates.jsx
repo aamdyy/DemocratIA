@@ -6,9 +6,9 @@ import { C, CANDIDATES, SANS, entre } from "../commun.js";
 import { quand } from "../temps.js";
 
 export function Candidates({ t }) {
-  const t0 = quand("Sept");
-  const tParti = quand("parti");
-  const tDoctrine = quand("doctrine");
+  const t0 = quand("Seven");
+  const tParti = quand("party.");
+  const tDoctrine = quand("doctrine,");
   const titre = entre(t, t0 - 0.3, t0 + 0.4);
   const sous1 = entre(t, tParti - 0.5, tParti) * (1 - entre(t, tDoctrine - 0.6, tDoctrine - 0.2));
   const sous2 = entre(t, tDoctrine - 0.2, tDoctrine + 0.4);
