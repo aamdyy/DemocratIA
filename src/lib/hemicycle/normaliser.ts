@@ -166,10 +166,23 @@ function normaliserVote(valeur: unknown): VoteNominatif | null {
 
 export function normaliserResultat(valeur: unknown): ResultatScrutin {
   const r = deballer(valeur);
+  const groupesBruts = liste(r.groupes, r.positions, r.par_groupe);
+  // Hémicycle donne le groupe d'un vote par son code d'organe (« PO845401 ») : on le traduit en sigle (« RN »)
+  // grâce à la liste des groupes du même scrutin, pour placer chaque député dans son quartier de l'hémicycle.
+  const sigleParCode = new Map<string, string>();
+  for (const brut of groupesBruts) {
+    const g = objet(brut);
+    const code = texte(typeof g.groupe === "string" ? g.groupe : null, g.organe_ref, g.ref);
+    const sigle = texte(g.sigle);
+    if (code && sigle) sigleParCode.set(code, sigle);
+  }
   return {
     scrutin: normaliserScrutin(r.scrutin ?? r),
-    groupes: liste(r.groupes, r.positions, r.par_groupe).map(normaliserGroupe),
-    votes: liste(r.votes, r.deputes, r.nominatif).map(normaliserVote).filter((v): v is VoteNominatif => v !== null),
+    groupes: groupesBruts.map(normaliserGroupe),
+    votes: liste(r.votes, r.deputes, r.nominatif)
+      .map(normaliserVote)
+      .filter((v): v is VoteNominatif => v !== null)
+      .map((v) => (v.groupe && sigleParCode.has(v.groupe) ? { ...v, groupe: sigleParCode.get(v.groupe)! } : v)),
   };
 }
 

@@ -56,7 +56,6 @@ function exemple<T>(data: T): Enveloppe<T> {
   return { data, meta: { origine: "exemple", raison, recuLe: new Date().toISOString() } };
 }
 
-const estVoteSurUnTexte = (scrutin: Scrutin) => /^l['’]ensemble\b/i.test(scrutin.titre);
 
 /** Un même thème ne pèse pas plus de trois textes : le test couvre l'éventail des sujets. */
 const MAX_PAR_THEME = 3;
@@ -84,48 +83,97 @@ const scrutinsConnus = new Map<string, Scrutin>();
  * plus parlants qu'un amendement isolé. On en vise vingt, trois par thème au plus, pris dans les pages
  * déjà lues. Quatre pages au plus, soit 4 crédits, une seule fois.
  */
+/** Ligne du jeu « scrutins » d'Hémicycle (POST /jeux/interroger). */
+interface LigneScrutin {
+  uid?: string;
+  numero?: string | number;
+  legislature?: string | number;
+  date_scrutin?: string;
+  titre?: string;
+  sort_code?: string;
+  nb_pour?: number;
+  nb_contre?: number;
+  nb_abstentions?: number;
+  nb_non_votants?: number;
+}
+
+interface ReponseJeu {
+  lignes?: LigneScrutin[];
+  source?: { nom?: string; url?: string; licence?: string };
+}
+
+/** « l'ensemble du projet de loi X (première lecture). » et sa lecture suivante désignent le même texte. */
+const cleTexte = (titre: string) =>
+  titre
+    .toLowerCase()
+    .replace(/\s*\((première|deuxième|nouvelle|dernière) lecture\)\.?$/, "")
+    .replace(/\s*\(texte de la commission[^)]*\)\.?$/, "")
+    .replace(/^l['’]ensemble (du |de la |de l['’])(projet|proposition) de loi (organique )?/, "")
+    .trim();
+
+/**
+ * Les textes que le citoyen arbitre : uniquement des votes sur l'ensemble d'un texte de la 17e législature.
+ * Le flux /scrutins est noyé d'amendements (2 votes sur l'ensemble sur 400 en période budgétaire) ; on lit donc
+ * le jeu « scrutins » filtré sur l'intitulé, en deux requêtes (projets, propositions) : 2 crédits, mis en cache.
+ */
 export async function listerScrutinsDeTextes(nombre = 20): Promise<Enveloppe<Scrutin[]>> {
   try {
-    const parId = new Map<string, Scrutin>();
-    let curseur: string | undefined;
-    let derniere: ReponseHemicycle<unknown> | null = null;
-    for (let page = 0; page < 4; page++) {
-      let reponse: ReponseHemicycle<{ next_cursor?: unknown; has_more?: unknown } | null>;
-      try {
-        reponse = await hemicycle("/scrutins", {
-          requete: { legislature: 17, limit: 100, cursor: curseur },
-          // Une liste vide ne doit pas rester figée dans le cache.
-          garder: (corps) => donnees(corps).length > 0,
+    const lire = (motif: string) =>
+      hemicycle<ReponseJeu>("/jeux/interroger", {
+        methode: "POST",
+        corps: {
+          jeu: "scrutins",
+          colonnes: ["uid", "numero", "legislature", "date_scrutin", "titre", "sort_code", "nb_pour", "nb_contre", "nb_abstentions", "nb_non_votants"],
+          filtres: [{ colonne: "titre", op: "like", valeur: motif }],
+          tri: "date_scrutin",
+          ordre: "desc",
+          limite: 200,
+        },
+        garder: (corps) => Array.isArray((corps as ReponseJeu | null)?.lignes) && ((corps as ReponseJeu).lignes?.length ?? 0) > 0,
+      });
+    const [projets, propositions] = await Promise.all([lire("ensemble du projet de loi"), lire("ensemble de la proposition de loi")]);
+
+    const parTexte = new Map<string, Scrutin>();
+    for (const reponse of [projets, propositions]) {
+      const source = reponse.corps?.source;
+      for (const ligne of reponse.corps?.lignes ?? []) {
+        if (String(ligne.legislature) !== "17" || !ligne.uid || !ligne.titre) continue;
+        const scrutin = normaliserScrutin({
+          id: ligne.uid,
+          numero: ligne.numero,
+          date: ligne.date_scrutin,
+          titre: ligne.titre,
+          resultat: ligne.sort_code,
+          decompte: {
+            pour: ligne.nb_pour,
+            contre: ligne.nb_contre,
+            abstention: ligne.nb_abstentions,
+            non_votants: ligne.nb_non_votants,
+          },
+          legislature: ligne.legislature,
+          source: {
+            editeur: source?.nom ?? "Assemblée nationale",
+            url: `https://www.assemblee-nationale.fr/dyn/17/scrutins/${ligne.numero ?? ""}`,
+            licence: source?.licence ?? "Licence Ouverte 2.0",
+          },
         });
-      } catch (erreur) {
-        // La première page est indispensable ; une page suivante qui échoue ne fait pas perdre les précédentes.
-        if (page === 0) throw erreur;
-        break;
+        const cle = cleTexte(scrutin.titre);
+        const deja = parTexte.get(cle);
+        // On garde le vote le plus récent sur chaque texte (lecture définitive plutôt que première lecture).
+        if (!deja || scrutin.date > deja.date) parTexte.set(cle, scrutin);
       }
-      derniere = reponse;
-      const avant = parId.size;
-      for (const scrutin of donnees(reponse.corps).map(normaliserScrutin)) {
-        if (scrutin.id && !parId.has(scrutin.id)) parId.set(scrutin.id, scrutin);
-      }
-      if (diversifier([...parId.values()].filter(estVoteSurUnTexte), nombre).length >= nombre) break;
-      // Une page qui n'apporte rien de neuf (curseur ignoré) arrête la lecture : on ne paie pas pour des doublons.
-      if (parId.size === avant) break;
-      const suivant = reponse.corps?.next_cursor;
-      if (reponse.corps?.has_more === false || typeof suivant !== "string" || !suivant || suivant === curseur) break;
-      curseur = suivant;
     }
-    const tous = [...parId.values()];
-    if (tous.length === 0 || !derniere) {
-      throw new ErreurHemicycle(
-        502,
-        "reponse-vide",
-        "Hémicycle a répondu, mais sans aucun scrutin lisible : la liste affichée est un exemple.",
-      );
+
+    const textes = [...parTexte.values()].sort((a, b) => b.date.localeCompare(a.date));
+    if (textes.length === 0) {
+      throw new ErreurHemicycle(502, "reponse-vide", "Hémicycle a répondu, mais sans vote sur l'ensemble d'un texte : la liste affichée est un exemple.");
     }
-    for (const scrutin of tous) scrutinsConnus.set(scrutin.id, scrutin);
-    const textes = tous.filter(estVoteSurUnTexte);
-    const retenus = diversifier(textes.length >= 4 ? textes : tous, nombre);
-    return { data: retenus, meta: meta(derniere) };
+    for (const scrutin of textes) scrutinsConnus.set(scrutin.id, scrutin);
+    const derniere = projets.recuLe >= propositions.recuLe ? projets : propositions;
+    return {
+      data: diversifier(textes, nombre),
+      meta: { ...meta(derniere), credits: { cout: (projets.credits.cout ?? 0) + (propositions.credits.cout ?? 0), restant: derniere.credits.restant } },
+    };
   } catch (erreur) {
     return repli(SCRUTINS_EXEMPLE, erreur);
   }
