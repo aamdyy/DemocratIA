@@ -6,6 +6,7 @@
   "scripts": {
     "studio": "remotion studio src/index.jsx",
     "render": "remotion render src/index.jsx Democratia out/democratia.mp4",
+    "render:vertical": "remotion render src/index.jsx DemocratiaVertical out/democratia-vertical.mp4",
     "voix": "node scripts/voix.mjs",
     "visuels": "node scripts/visuels.mjs"
   },

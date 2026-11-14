@@ -3,10 +3,12 @@ import { AbsoluteFill, Img, staticFile } from "remotion";
 
 import { C, CANDIDATES, SANS, entre, EGAL } from "../commun.js";
 import { quand } from "../temps.js";
+import { useVertical } from "../format.js";
 
 const ARC = CANDIDATES.map((c) => c.teintes[1]);
 
 export function Ouverture({ t }) {
+  const v = useVertical();
   const tIA = quand("chooses");
   const fond = entre(t, 0.8, 3.0, 0, 0.2) + entre(t, tIA, tIA + 1.6, 0, 0.42, EGAL);
   const titre = entre(t, 0.75, 1.75);
@@ -30,14 +32,14 @@ export function Ouverture({ t }) {
         <AbsoluteFill
           style={{
             background:
-              "radial-gradient(ellipse 62% 48% at 50% 46%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.55) 60%, rgb(255 255 255 / 0.2) 100%)",
+              v ? "radial-gradient(ellipse 90% 34% at 50% 46%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.55) 60%, rgb(255 255 255 / 0.2) 100%)" : "radial-gradient(ellipse 62% 48% at 50% 46%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.55) 60%, rgb(255 255 255 / 0.2) 100%)",
           }}
         />
       </AbsoluteFill>
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", fontFamily: SANS, color: C.texte }}>
         <div
           style={{
-            fontSize: 260,
+            fontSize: v ? 230 : 260,
             fontWeight: 700,
             letterSpacing: "-0.055em",
             lineHeight: 1,
@@ -48,13 +50,14 @@ export function Ouverture({ t }) {
         >
           En 2050
         </div>
-        <div style={{ position: "relative", height: 90, width: 1600, marginTop: 34 }}>
+        <div style={{ position: "relative", height: v ? 150 : 90, width: v ? 900 : 1600, marginTop: v ? 40 : 34 }}>
           <div
             style={{
               position: "absolute",
               inset: 0,
               textAlign: "center",
-              fontSize: 60,
+              fontSize: v ? 58 : 60,
+              lineHeight: 1.2,
               fontWeight: 500,
               letterSpacing: "-0.03em",
               color: C.attenue,
@@ -69,7 +72,8 @@ export function Ouverture({ t }) {
               position: "absolute",
               inset: 0,
               textAlign: "center",
-              fontSize: 60,
+              fontSize: v ? 58 : 60,
+              lineHeight: 1.2,
               fontWeight: 600,
               letterSpacing: "-0.03em",
               opacity: ligne2,

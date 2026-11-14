@@ -6,6 +6,7 @@ import { AbsoluteFill } from "remotion";
 import { Sphere } from "../Sphere.jsx";
 import { C, CANDIDATES, EGAL, MONO, SANS, entre } from "../commun.js";
 import { quand } from "../temps.js";
+import { useVertical } from "../format.js";
 
 const HYGIE = CANDIDATES.find((c) => c.id === "hygie");
 const M = C.machine;
@@ -164,6 +165,12 @@ function BoiteDeVerre({ u }) {
 }
 
 export function Comparatif({ t }) {
+  const v = useVertical();
+  // Mise en page : deux colonnes à droite des libellés en paysage ; en vertical, deux colonnes de 460 px
+  // sous chaque libellé, le tout empilé entre les marges de sécurité.
+  const L = v
+    ? { titreHaut: 340, titreTaille: 60, entetes: 500, portrait: 96, colH: 60, colIA: 560, largeur: 460, rangees: [690, 925, 1160], filetG: 60, decalCase: 46 }
+    : { titreHaut: 118, titreTaille: 66, entetes: 222, portrait: 110, colH: COL_H, colIA: COL_IA, largeur: LARGEUR_COL, rangees: RANGEES, filetG: 180, decalCase: 0 };
   const t0 = quand("human") - 0.15;
   const titre = entre(t, t0 - 0.4, t0 + 0.4);
   const tIA = quand("An");
@@ -200,34 +207,55 @@ export function Comparatif({ t }) {
   ];
   return (
     <AbsoluteFill style={{ background: C.fond, fontFamily: SANS, color: C.texte }}>
-      <div style={{ position: "absolute", top: 118, left: 0, right: 0, textAlign: "center", opacity: titre, translate: `0 ${(1 - titre) * 20}px` }}>
-        <div style={{ fontSize: 66, fontWeight: 700, letterSpacing: "-0.045em" }}>Ce qu'un humain promet, une IA le tient.</div>
+      <div style={{ position: "absolute", top: L.titreHaut, left: v ? 60 : 0, right: v ? 60 : 0, textAlign: "center", opacity: titre, translate: `0 ${(1 - titre) * 20}px` }}>
+        <div style={{ fontSize: L.titreTaille, fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 1.08 }}>Ce qu'un humain promet, {v ? <br /> : null}une IA le tient.</div>
       </div>
-      {/* En-têtes des deux colonnes. */}
-      <div style={{ position: "absolute", left: COL_H, top: 222, display: "flex", alignItems: "center", gap: 22, opacity: titre }}>
-        <Silhouette taille={110} />
-        <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em" }}>Le dernier président humain</div>
-      </div>
-      <div style={{ position: "absolute", left: COL_IA, top: 222, display: "flex", alignItems: "center", gap: 22, opacity: titre }}>
-        <div style={{ scale: String(1 + 0.08 * accentIA) }}>
-          <Sphere teintes={HYGIE.teintes} taille={110} embleme="hygie" trace={1} decalage={5} />
+      {/* En-têtes des deux colonnes : côte à côte en paysage, disque au-dessus du libellé en vertical. */}
+      {[
+        { x: L.colH, contenu: <Silhouette taille={L.portrait} />, libelle: "Le dernier président humain", couleur: C.texte },
+        {
+          x: L.colIA,
+          contenu: (
+            <div style={{ scale: String(1 + 0.08 * accentIA) }}>
+              <Sphere teintes={HYGIE.teintes} taille={L.portrait} embleme="hygie" trace={1} decalage={5} />
+            </div>
+          ),
+          libelle: "La première présidente IA",
+          couleur: accentIA > 0.5 ? M : C.texte,
+        },
+      ].map((e) => (
+        <div
+          key={e.libelle}
+          style={{
+            position: "absolute",
+            left: e.x,
+            top: L.entetes,
+            width: v ? L.largeur : undefined,
+            display: "flex",
+            flexDirection: v ? "column" : "row",
+            alignItems: "center",
+            gap: v ? 14 : 22,
+            opacity: titre,
+          }}
+        >
+          {e.contenu}
+          <div style={{ fontSize: v ? 28 : 30, fontWeight: 600, letterSpacing: "-0.02em", color: e.couleur }}>{e.libelle}</div>
         </div>
-        <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em", color: accentIA > 0.5 ? M : C.texte }}>La première présidente IA</div>
-      </div>
+      ))}
       {lignes.map((l, i) => {
-        const y = RANGEES[i];
+        const y = L.rangees[i];
         const pH = entre(t, l.h, l.h + 0.6);
         const pIA = entre(t, l.ia, l.ia + 0.6);
         const filet = entre(t, t0 + i * 0.15, t0 + 0.8 + i * 0.15, 0, 1, EGAL);
         return (
           <div key={l.libelle}>
-            <div style={{ position: "absolute", left: 180, right: 180, top: y - 22, height: 1, background: C.trait, scale: `${filet} 1`, transformOrigin: "0 0" }} />
-            <div style={{ position: "absolute", left: 180, top: y + 4, fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em", opacity: filet }}>{l.libelle}</div>
-            <div style={{ position: "absolute", left: COL_H, top: y, width: LARGEUR_COL, opacity: pH, translate: `0 ${(1 - pH) * 16}px` }}>
+            <div style={{ position: "absolute", left: L.filetG, right: L.filetG, top: y - (v ? 14 : 22), height: 1, background: C.trait, scale: `${filet} 1`, transformOrigin: "0 0" }} />
+            <div style={{ position: "absolute", left: L.filetG, top: y + 4, fontSize: v ? 32 : 30, fontWeight: 600, letterSpacing: "-0.02em", opacity: filet }}>{l.libelle}</div>
+            <div style={{ position: "absolute", left: L.colH, top: y + L.decalCase, width: L.largeur, opacity: pH, translate: `0 ${(1 - pH) * 16}px` }}>
               <div style={{ height: 112, display: "flex", alignItems: "center" }}>{l.schemaH(t - l.h)}</div>
               <div style={{ fontSize: 24, color: C.attenue, marginTop: 6 }}>{l.texteH}</div>
             </div>
-            <div style={{ position: "absolute", left: COL_IA, top: y, width: LARGEUR_COL, opacity: pIA, translate: `0 ${(1 - pIA) * 16}px` }}>
+            <div style={{ position: "absolute", left: L.colIA, top: y + L.decalCase, width: L.largeur, opacity: pIA, translate: `0 ${(1 - pIA) * 16}px` }}>
               <div style={{ height: 112, display: "flex", alignItems: "center" }}>{l.schemaIA(t - l.ia)}</div>
               <div style={{ fontSize: 24, color: M, fontWeight: 500, marginTop: 6 }}>{l.texteIA}</div>
             </div>

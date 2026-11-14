@@ -3,6 +3,7 @@ import { Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 
 import { C, MONO, SANS, entre, EGAL } from "./commun.js";
 import { PHRASES, SCENES } from "./temps.js";
+import { VERTICAL, useVertical } from "./format.js";
 
 /** Le liseré tricolore du site : bleu, gris clair, rouge. `p` (0 à 1) le déploie depuis le centre. */
 export function Lisere({ p = 1, hauteur = 4, style }) {
@@ -21,12 +22,14 @@ export function Lisere({ p = 1, hauteur = 4, style }) {
 export function EnTete({ t }) {
   const lisere = entre(t, 0.7, 2.0, 0, 1, EGAL);
   const logo = entre(t, 6.2, 7.0) * (1 - entre(t, SCENES.final[0] + 0.6, SCENES.final[0] + 1.4));
+  const v = useVertical();
   return (
-    <div style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
-      <div style={{ height: 76, display: "flex", alignItems: "center", padding: "0 96px", gap: 22, opacity: logo }}>
-        <Img src={staticFile("logo-democratia.png")} style={{ height: 25 }} />
+    // En vertical, l'en-tête descend sous la zone d'interface des applications et se centre.
+    <div style={{ position: "absolute", top: v ? 160 : 0, left: 0, right: 0 }}>
+      <div style={{ height: v ? 90 : 76, display: "flex", alignItems: "center", justifyContent: v ? "center" : "flex-start", padding: v ? 0 : "0 96px", gap: 22, opacity: logo }}>
+        <Img src={staticFile("logo-democratia.png")} style={{ height: v ? 32 : 25 }} />
         <div style={{ width: 1, height: 30, background: C.trait }} />
-        <div style={{ fontFamily: SANS, fontSize: 16, lineHeight: 1.25, color: C.attenue }}>
+        <div style={{ fontFamily: SANS, fontSize: v ? 20 : 16, lineHeight: 1.25, color: C.attenue }}>
           République française
           <br />
           an 2050
@@ -51,20 +54,24 @@ export function SousTitres() {
   const phrase = SOUS_TITRES.find((p) => t >= p.debut && t < p.fin);
   if (!phrase) return null;
   const o = Math.min(entre(t, phrase.debut, phrase.debut + 0.15), 1 - entre(t, phrase.fin - 0.15, phrase.fin));
+  const v = useVertical();
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 54, display: "flex", justifyContent: "center" }}>
+    // En vertical, les sous-titres montent au-dessus de la zone d'interface des applications (bas de l'écran).
+    <div style={{ position: "absolute", left: 0, right: 0, ...(v ? { top: VERTICAL.sousTitres } : { bottom: 54 }), display: "flex", justifyContent: "center" }}>
       <div
         style={{
           fontFamily: SANS,
-          fontSize: 30,
+          fontSize: v ? 40 : 30,
+          lineHeight: 1.3,
           fontWeight: 500,
           letterSpacing: "-0.005em",
           color: "#2b2f38",
           background: "rgb(255 255 255 / 0.86)",
-          padding: "8px 20px",
+          padding: v ? "10px 24px" : "8px 20px",
           borderRadius: 10,
           opacity: o,
-          maxWidth: 1400,
+          maxWidth: v ? 940 : 1400,
+          textWrap: "balance",
           textAlign: "center",
         }}
       >

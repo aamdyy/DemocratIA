@@ -5,6 +5,7 @@ import { Sphere } from "../Sphere.jsx";
 import { C, CANDIDATES, EGAL, GAGNANTE, MONO, SANS, entre } from "../commun.js";
 import { CADRE, SIEGES } from "../elements.jsx";
 import { SCENES, quand } from "../temps.js";
+import { useVertical } from "../format.js";
 
 // État de départ : un vote ordinaire de l'Assemblée (pour, contre, abstention), déterministe.
 const ETATS = SIEGES.map((_, i) => {
@@ -26,6 +27,7 @@ const melange = (a, b, p) => {
 };
 
 export function Pouvoir({ t }) {
+  const v = useVertical();
   const tPouvoir = quand("Then");
   const tSieges = quand("five", 1);
   const tBascule = quand("switch");
@@ -45,19 +47,19 @@ export function Pouvoir({ t }) {
 
   return (
     <AbsoluteFill style={{ background: C.fond, fontFamily: SANS, color: C.texte, filter: `grayscale(${sortie})` }}>
-      <div style={{ position: "absolute", left: 130, top: 150, display: "flex", alignItems: "center", gap: 26, opacity: titre, translate: `0 ${(1 - titre) * 20}px` }}>
-        <Sphere teintes={GAGNANTE.teintes} taille={92} embleme={GAGNANTE.id} trace={1} decalage={CANDIDATES.indexOf(GAGNANTE) * 2.3} />
+      <div style={{ position: "absolute", left: v ? 80 : 130, top: v ? 350 : 150, display: "flex", alignItems: "center", gap: 26, opacity: titre, translate: `0 ${(1 - titre) * 20}px` }}>
+        <Sphere teintes={GAGNANTE.teintes} taille={v ? 104 : 92} embleme={GAGNANTE.id} trace={1} decalage={CANDIDATES.indexOf(GAGNANTE) * 2.3} />
         <div>
-          <div style={{ fontFamily: MONO, fontSize: 24, color: C.attenue }}>Au pouvoir</div>
-          <div style={{ fontSize: 72, fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 1.05 }}>{GAGNANTE.prenom} gouverne.</div>
+          <div style={{ fontFamily: MONO, fontSize: v ? 28 : 24, color: C.attenue }}>Au pouvoir</div>
+          <div style={{ fontSize: v ? 80 : 72, fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 1.05 }}>{GAGNANTE.prenom} gouverne.</div>
         </div>
       </div>
       <div
         style={{
           position: "absolute",
-          left: 130 + (1 - decal) * 270,
-          top: 300 + (1 - hemi) * 30,
-          width: 1120 - decal * 300,
+          left: v ? 40 + decal * 140 : 130 + (1 - decal) * 270,
+          top: (v ? 540 - decal * 50 : 300) + (1 - hemi) * 30,
+          width: v ? 1000 - decal * 280 : 1120 - decal * 300,
           opacity: hemi,
         }}
       >
@@ -79,17 +81,17 @@ export function Pouvoir({ t }) {
       <div
         style={{
           position: "absolute",
-          right: 120,
-          top: 300,
-          width: 700,
-          minHeight: 560,
-          padding: "36px 40px",
+          right: v ? 70 : 120,
+          top: v ? 920 : 300,
+          width: v ? 940 : 700,
+          minHeight: v ? 420 : 560,
+          padding: v ? "30px 36px" : "36px 40px",
           borderRadius: 14,
           border: `1px solid ${C.trait}`,
           background: C.fond,
           boxShadow: "0 30px 80px rgb(17 19 24 / 0.10), 0 4px 14px rgb(17 19 24 / 0.05)",
           opacity: feuille,
-          translate: `${(1 - feuille) * 90}px 0`,
+          translate: v ? `0 ${(1 - feuille) * 90}px` : `${(1 - feuille) * 90}px 0`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 18, paddingBottom: 22, borderBottom: `1px solid ${C.trait}` }}>
@@ -117,7 +119,7 @@ export function Pouvoir({ t }) {
             <div style={{ fontSize: 22, color: C.attenue, marginTop: 4 }}>rédigé par {GAGNANTE.prenom}, en direct</div>
           </div>
         </div>
-        <div style={{ fontFamily: MONO, fontSize: 25, lineHeight: 1.55, marginTop: 24, color: C.texte, whiteSpace: "pre-wrap" }}>
+        <div style={{ fontFamily: MONO, fontSize: v ? 27 : 25, lineHeight: 1.5, marginTop: 24, color: C.texte, whiteSpace: "pre-wrap" }}>
           {AMENDEMENT.slice(0, caracteres)}
           <span style={{ color: C.machine, opacity: Math.floor(t * 2) % 2 === 0 || caracteres < AMENDEMENT.length ? 1 : 0 }}>▍</span>
         </div>
