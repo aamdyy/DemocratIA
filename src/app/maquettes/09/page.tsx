@@ -26,6 +26,7 @@ function useDictee(texte: string): number {
   const [lettres, setLettres] = useState(0);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLettres(texte.length);
       return;
     }

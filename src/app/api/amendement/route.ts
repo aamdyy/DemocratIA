@@ -45,7 +45,7 @@ function raisonDuRepli(code: string): string {
 export async function POST(requete: Request) {
   const demande = lireDemande(await requete.json().catch(() => null));
   if (!demande) {
-    return Response.json({ erreur: "Indiquez le titre du texte et la position du mandat." }, { status: 400 });
+    return Response.json({ erreur: "Indiquez le titre du texte et la position de l'IA." }, { status: 400 });
   }
 
   const entetes = (origine: string, raison?: string) => ({

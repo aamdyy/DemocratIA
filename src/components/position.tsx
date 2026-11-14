@@ -16,7 +16,7 @@ export function PositionLibelle({
   className,
 }: {
   position: PositionVote;
-  /** Vrai quand la position est celle du Député IA : la pastille prend la couleur de la machine. */
+  /** Vrai quand la position est celle d'une IA : la pastille prend la couleur de la machine. */
   machine?: boolean;
   className?: string;
 }) {

@@ -6,7 +6,7 @@ import type { Position } from "@/lib/types";
 import { PRIORITE_PAR_DEFAUT, type ThemeId } from "@/lib/themes";
 
 /**
- * Le mandat citoyen : ce que le Député IA doit voter, et ce qui compte le plus.
+ * Le mandat citoyen : ce que le citoyen a tranché et ce qui compte le plus pour lui.
  * Gardé dans le navigateur pour que les trois vues partagent le même mandat.
  */
 export interface Mandat {

@@ -2,9 +2,6 @@ import type { Teintes } from "@/components/sphere";
 import { prioriteDe, type Mandat } from "@/lib/mandat";
 import { THEMES, type ThemeId } from "@/lib/themes";
 
-/** Prénom de la sphère du citoyen. Une seule constante : toutes les vues parlent de la même entité. */
-export const PRENOM_DEPUTE_IA = "Olympe";
-
 /** Couleur de chaque thème dans la sphère : plus une priorité pèse, plus sa couleur gagne du terrain. */
 export const COULEUR_THEME: Record<ThemeId, string> = {
   budget: "#c98a12",

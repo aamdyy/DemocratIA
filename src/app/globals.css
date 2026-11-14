@@ -154,7 +154,7 @@
 }
 
 /*
- * Sphère : l'incarnation d'un Député IA (src/components/sphere.tsx).
+ * Sphère : l'incarnation d'une IA candidate (src/components/sphere.tsx).
  * Les nuages dérivent par `transform` ; leur taille suit le mandat par la propriété `scale`,
  * qui se compose avec l'animation sans l'interrompre.
  */

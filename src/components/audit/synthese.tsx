@@ -2,7 +2,7 @@
 
 import { SourceBadge } from "@/components/source-badge";
 import { sourceCalcul } from "@/lib/concordance";
-import { PRENOM_DEPUTE_IA } from "@/lib/sphere-mandat";
+import type { Candidate } from "@/lib/candidates";
 
 import { DEFINITION_AUDIT, type SyntheseAudit } from "./calcul";
 
@@ -17,9 +17,9 @@ function Mesure({ libelle, valeur }: { libelle: string; valeur: string }) {
   );
 }
 
-/** Synthèse en deux colonnes : l'élu d'un côté, Olympe de l'autre. Des calculs de DemocratIA, signalés comme tels. */
-export function Synthese({ synthese, nomElu }: { synthese: SyntheseAudit; nomElu: string }) {
-  const { textes: n, commeMandat, commeGroupe, comparablesGroupe } = synthese;
+/** Synthèse en deux colonnes : l'élu d'un côté, votre IA de l'autre. Des calculs de DemocratIA, signalés comme tels. */
+export function Synthese({ synthese, nomElu, candidate }: { synthese: SyntheseAudit; nomElu: string; candidate: Candidate }) {
+  const { textes: n, commeMandat, iaCommeMandat, commeGroupe, comparablesGroupe } = synthese;
 
   return (
     <div role="status" aria-live="polite">
@@ -28,7 +28,7 @@ export function Synthese({ synthese, nomElu }: { synthese: SyntheseAudit; nomElu
           <h3 className="text-lg font-medium leading-7 text-texte">{nomElu}</h3>
           <p className="text-sm leading-6 text-attenue">Élu humain · discipline de groupe</p>
           <dl className="mt-3 border-t border-trait">
-            <Mesure libelle="A voté comme votre mandat" valeur={`${commeMandat} sur ${textes(n)}`} />
+            <Mesure libelle="A voté comme vous" valeur={`${commeMandat} sur ${textes(n)}`} />
             <Mesure
               libelle="A voté comme son groupe"
               valeur={comparablesGroupe > 0 ? `${commeGroupe} sur ${comparablesGroupe}` : "Aucun vote à comparer"}
@@ -36,12 +36,12 @@ export function Synthese({ synthese, nomElu }: { synthese: SyntheseAudit; nomElu
           </dl>
         </section>
 
-        <section aria-label={`Synthèse pour ${PRENOM_DEPUTE_IA}`}>
-          <h3 className="text-lg font-medium leading-7 text-texte">{PRENOM_DEPUTE_IA}</h3>
-          <p className="font-donnee text-sm leading-6 text-machine">Député IA · mandat citoyen</p>
+        <section aria-label={`Synthèse pour ${candidate.prenom}`}>
+          <h3 className="text-lg font-medium leading-7 text-texte">{candidate.prenom}</h3>
+          <p className="font-donnee text-sm leading-6 text-machine">Votre IA · candidate à la présidence</p>
           <dl className="mt-3 border-t border-trait">
-            <Mesure libelle="A voté comme votre mandat" valeur={`${n} sur ${textes(n)}`} />
-            <Mesure libelle="A voté comme son groupe" valeur="Ne suit aucun groupe" />
+            <Mesure libelle="Vote comme vous" valeur={`${iaCommeMandat} sur ${textes(n)}`} />
+            <Mesure libelle="Suit un groupe" valeur="Aucun, seulement son programme" />
           </dl>
         </section>
       </div>

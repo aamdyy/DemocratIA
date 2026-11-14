@@ -17,9 +17,9 @@ export const SPHERES = {
 } as const satisfies Record<string, { prenom: string; teintes: Teintes }>;
 
 /**
- * La sphère : l'incarnation d'un Député IA. Trois nuages de couleur et un voile blanc dérivent
+ * La sphère : l'incarnation d'une IA candidate. Trois nuages de couleur et un voile blanc dérivent
  * lentement dans un disque. `poids` grossit ou réduit chaque nuage (1 = taille normale), ce qui
- * permet de faire dépendre les couleurs de la sphère du mandat réglé par le citoyen.
+ * permet de faire dépendre les couleurs de la sphère du test passé par le citoyen.
  */
 export function Sphere({
   teintes,

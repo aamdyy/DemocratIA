@@ -7,7 +7,7 @@ import { MotionConfig } from "motion/react";
 import { AvisExemple } from "@/components/avis-exemple";
 import { useDeputes, useScrutins } from "@/lib/api";
 import { useMandat } from "@/lib/mandat";
-import { PRENOM_DEPUTE_IA, sphereDuMandat } from "@/lib/sphere-mandat";
+import { useClassement } from "@/lib/ma-candidate";
 import type { Depute } from "@/lib/types";
 
 import { lignesAudit, nomComplet, syntheseAudit } from "./calcul";
@@ -32,7 +32,7 @@ function useDiffere(valeur: string, delai: number) {
 }
 
 const sansAbonnement = () => () => {};
-/** Faux pendant le rendu serveur : le mandat vit dans le navigateur, on ne conclut rien avant de l'avoir lu. */
+/** Faux pendant le rendu serveur : le test vit dans le navigateur, on ne conclut rien avant de l'avoir lu. */
 const useNavigateur = () =>
   useSyncExternalStore(
     sansAbonnement,
@@ -67,26 +67,29 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
   );
 }
 
-function AucunTexte() {
+function AucunTexte({ prenom }: { prenom: string | null }) {
   return (
     <div className="border border-trait px-5 py-6">
-      <p className="font-medium text-texte">Vous n&apos;avez encore arbitré aucun texte.</p>
+      <p className="font-medium text-texte">Vous n&apos;avez encore tranché aucun texte.</p>
       <p className="mt-1 max-w-2xl text-[15px] leading-6 text-attenue">
-        L&apos;audit compare un élu à {PRENOM_DEPUTE_IA} sur les textes de votre mandat. Votez sur quelques textes de loi, puis
-        revenez ici : la comparaison se remplira d&apos;elle-même.
+        {prenom
+          ? `La comparaison se fait sur les textes de loi que vous avez tranchés. Passez le test : ${prenom} et l'élu de votre choix seront alors comparés texte par texte.`
+          : "Passez le test pour découvrir votre IA : l'audit compare un élu à elle, texte par texte."}
       </p>
-      <Link href="/mandat" className={`${LIEN} mt-4`}>
-        Régler mon mandat
+      <Link href="/test" className={`${LIEN} mt-4`}>
+        Passer le test
       </Link>
     </div>
   );
 }
 
-/** Vue 2 : l'audit d'un représentant humain face au Député IA, sur les textes arbitrés par le citoyen. */
+/** L'audit d'un représentant humain face à l'IA du citoyen, sur les textes qu'il a tranchés. */
 export function VueAudit() {
   const navigateur = useNavigateur();
   const mandat = useMandat();
   const scrutins = useScrutins();
+  const { classement, regle } = useClassement();
+  const candidate = regle ? (classement[0]?.candidate ?? null) : null;
 
   const [saisie, setSaisie] = useState("");
   const nom = useDiffere(saisie, 300);
@@ -97,9 +100,8 @@ export function VueAudit() {
   // Le détail des scrutins n'est lu qu'une fois un député choisi : pas de lecture inutile.
   const lectures = useResultats(depute ? textes.map((scrutin) => scrutin.id) : []);
 
-  const lignes = depute ? lignesAudit(textes, mandat.votes, depute, lectures.data) : [];
+  const lignes = depute && candidate ? lignesAudit(textes, mandat.votes, depute, candidate, lectures.data) : [];
   const synthese = syntheseAudit(lignes);
-  const sphere = sphereDuMandat(mandat);
 
   const metaExemple = [
     scrutins.data?.meta,
@@ -115,13 +117,13 @@ export function VueAudit() {
       <AvisExemple meta={metaExemple} />
 
       <header className="max-w-3xl">
-        <p className="text-sm text-attenue">Audit d&apos;un représentant · République française, an 2050</p>
+        <p className="text-sm text-attenue">Et votre député humain ? · République française, 2050</p>
         <h1 className="mt-3 font-titre text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.06] tracking-[-0.03em] text-texte">
-          Un élu suit son groupe. {PRENOM_DEPUTE_IA} suit votre mandat.
+          Un élu suit son groupe. {candidate ? candidate.prenom : "Votre IA"} suit son programme.
         </h1>
         <p className="mt-5 text-lg leading-8 text-attenue">
-          Choisissez un député de l&apos;ancien régime. DemocratIA place ses votes publiés à côté de ceux d&apos;{PRENOM_DEPUTE_IA},
-          votre Député IA, sur les textes que vous avez arbitrés. Rien d&apos;autre que des votes : à vous de juger.
+          Choisissez un député de l&apos;ancien régime. DemocratIA place ses votes publiés à côté de la position de votre IA
+          {candidate ? `, ${candidate.prenom},` : ""} sur les textes que vous avez tranchés. Rien d&apos;autre que des votes : à vous de juger.
         </p>
       </header>
 
@@ -140,12 +142,12 @@ export function VueAudit() {
         />
       </section>
 
-      {depute ? (
+      {depute && candidate ? (
         <section aria-labelledby="audit-fiche" className="mt-14">
           <h2 id="audit-fiche" className="sr-only">
-            {nomComplet(depute)} face à {PRENOM_DEPUTE_IA}
+            {nomComplet(depute)} face à {candidate ? candidate.prenom : "votre IA"}
           </h2>
-          <FaceAFace key={depute.id} depute={depute} sphere={sphere} />
+          <FaceAFace key={depute.id} depute={depute} candidate={candidate} />
         </section>
       ) : null}
 
@@ -155,23 +157,23 @@ export function VueAudit() {
         </h2>
         <p className="mt-1 mb-6 text-[15px] leading-6 text-attenue">
           {pret && textes.length > 0
-            ? `${textes.length > 1 ? `${textes.length} textes arbitrés` : "1 texte arbitré"} dans votre mandat.`
-            : "Sur les textes arbitrés dans votre mandat."}
+            ? `${textes.length > 1 ? `${textes.length} textes tranchés` : "1 texte tranché"} dans le test.`
+            : "Sur les textes que vous avez tranchés dans le test."}
         </p>
 
         {!pret ? (
-          <Attente lignes={3} libelle="Lecture de votre mandat et des textes…" />
+          <Attente lignes={3} libelle="Lecture de votre test et des textes…" />
         ) : scrutins.error ? (
           <Panne
             titre="La liste des textes n'a pas pu être lue."
             detail={(scrutins.error as Error).message}
             onReessayer={() => void scrutins.mutate()}
           />
-        ) : textes.length === 0 ? (
-          <AucunTexte />
+        ) : !candidate || textes.length === 0 ? (
+          <AucunTexte prenom={candidate?.prenom ?? null} />
         ) : !depute ? (
           <p className="border border-dashed border-trait px-5 py-6 text-[15px] leading-6 text-attenue">
-            Cherchez un député ci-dessus et choisissez-le : ses votes s&apos;afficheront ici, face à ceux d&apos;{PRENOM_DEPUTE_IA}.
+            Cherchez un député ci-dessus et choisissez-le : ses votes s&apos;afficheront ici, face à la position de {candidate.prenom}.
           </p>
         ) : lectures.error ? (
           <Panne
@@ -182,16 +184,16 @@ export function VueAudit() {
         ) : !lectures.data ? (
           <Attente lignes={Math.min(textes.length, 6)} libelle="Lecture des votes, scrutin par scrutin…" />
         ) : (
-          <TableauComparaison key={depute.id} lignes={lignes} nomElu={nomComplet(depute)} />
+          <TableauComparaison key={depute.id} lignes={lignes} nomElu={nomComplet(depute)} candidate={candidate} />
         )}
       </section>
 
-      {depute && pret && lectures.data && !lectures.error && synthese.textes > 0 ? (
+      {depute && candidate && pret && lectures.data && !lectures.error && synthese.textes > 0 ? (
         <section aria-labelledby="audit-synthese" className="mt-14">
           <h2 id="audit-synthese" className="mb-6 font-titre text-2xl leading-8 text-texte">
             Synthèse
           </h2>
-          <Synthese synthese={synthese} nomElu={nomComplet(depute)} />
+          <Synthese synthese={synthese} nomElu={nomComplet(depute)} candidate={candidate} />
         </section>
       ) : null}
     </MotionConfig>

@@ -1,11 +1,14 @@
+import { positionCandidate, type Candidate } from "@/lib/candidates";
 import type { Depute, Position, PositionGroupe, PositionVote, Scrutin } from "@/lib/types";
 
 import type { LectureResultats } from "./use-resultats";
 
 export interface LigneAudit {
   scrutin: Scrutin;
-  /** Position du citoyen : c'est aussi, par construction, le vote d'Olympe. */
+  /** Position du citoyen sur ce texte. */
   mandat: Position;
+  /** Position de l'IA du citoyen, déduite de son programme (règle publique). */
+  ia: Position;
   etat: "attente" | "lu" | "echec";
   erreur?: string;
   /** Vote publié de l'élu, ou null s'il ne figure pas parmi les votants du scrutin. */
@@ -16,15 +19,17 @@ export interface LigneAudit {
   groupe: PositionGroupe | null;
 }
 
-/** Une ligne par texte arbitré : le mandat, le vote de l'élu et la position de son groupe ce jour-là. */
+/** Une ligne par texte tranché : votre vote, celui de votre IA, le vote de l'élu et la position de son groupe ce jour-là. */
 export function lignesAudit(
   textes: Scrutin[],
   votes: Record<string, Position>,
   depute: Depute,
+  candidate: Candidate,
   lecture: LectureResultats | undefined,
 ): LigneAudit[] {
   return textes.map((scrutin) => {
-    const base = { scrutin, mandat: votes[scrutin.id], voteElu: null, sigleGroupe: depute.groupe, groupe: null };
+    const ia = positionCandidate(candidate, scrutin);
+    const base = { scrutin, mandat: votes[scrutin.id], ia, voteElu: null, sigleGroupe: depute.groupe, groupe: null };
     const resultat = lecture?.resultats[scrutin.id]?.data;
     if (!resultat) {
       const erreur = lecture?.echecs[scrutin.id];
@@ -35,6 +40,7 @@ export function lignesAudit(
     return {
       scrutin: resultat.scrutin,
       mandat: votes[scrutin.id],
+      ia,
       etat: "lu",
       voteElu: vote?.position ?? null,
       sigleGroupe,
@@ -46,8 +52,10 @@ export function lignesAudit(
 export interface SyntheseAudit {
   /** Textes arbitrés dont le résultat a été lu. */
   textes: number;
-  /** Textes où l'élu a voté comme le mandat. */
+  /** Textes où l'élu a voté comme vous. */
   commeMandat: number;
+  /** Textes où votre IA vote comme vous. */
+  iaCommeMandat: number;
   /** Textes où l'élu s'est exprimé et où son groupe avait une position majoritaire. */
   comparablesGroupe: number;
   /** Parmi eux, ceux où l'élu a voté comme son groupe. */
@@ -57,11 +65,12 @@ export interface SyntheseAudit {
 const exprime = (vote: PositionVote | null): vote is Position => vote !== null && vote !== "non_votant";
 
 export function syntheseAudit(lignes: LigneAudit[]): SyntheseAudit {
-  const synthese: SyntheseAudit = { textes: 0, commeMandat: 0, comparablesGroupe: 0, commeGroupe: 0 };
+  const synthese: SyntheseAudit = { textes: 0, commeMandat: 0, iaCommeMandat: 0, comparablesGroupe: 0, commeGroupe: 0 };
   for (const ligne of lignes) {
     if (ligne.etat !== "lu") continue;
     synthese.textes += 1;
     if (ligne.voteElu === ligne.mandat) synthese.commeMandat += 1;
+    if (ligne.ia === ligne.mandat) synthese.iaCommeMandat += 1;
     if (exprime(ligne.voteElu) && ligne.groupe?.position) {
       synthese.comparablesGroupe += 1;
       if (ligne.voteElu === ligne.groupe.position) synthese.commeGroupe += 1;
@@ -71,6 +80,6 @@ export function syntheseAudit(lignes: LigneAudit[]): SyntheseAudit {
 }
 
 export const DEFINITION_AUDIT =
-  "Périmètre : uniquement les textes que vous avez arbitrés dans votre mandat. « Comme votre mandat » compte les textes où le vote publié de l'élu est le vôtre ; un texte où il n'a pas pris part au vote ne compte pas comme un accord. « Comme son groupe » compte, parmi les textes où l'élu a voté pour, contre ou s'est abstenu, ceux où son vote est la position majoritaire de son groupe ce jour-là.";
+  "Périmètre : uniquement les textes que vous avez tranchés dans le test. « Comme vous » compte les textes où le vote publié de l'élu, ou celui de votre IA, est le vôtre ; un texte où l'élu n'a pas pris part au vote ne compte pas comme un accord. « Comme son groupe » compte, parmi les textes où l'élu a voté pour, contre ou s'est abstenu, ceux où son vote est la position majoritaire de son groupe ce jour-là. La position de votre IA suit la règle publique de ses priorités.";
 
 export const nomComplet = (depute: Depute) => `${depute.prenom} ${depute.nom}`.trim();

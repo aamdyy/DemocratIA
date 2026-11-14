@@ -42,6 +42,8 @@ export function useEtape(durees: readonly number[], repos = durees.length - 1): 
   const [etape, setEtape] = useState(0);
   useEffect(() => {
     if (mouvementReduit()) {
+      // Préférence lue dans le navigateur uniquement : le premier rendu doit rester identique au rendu serveur.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEtape(repos);
       return;
     }
@@ -57,6 +59,7 @@ export function useCompteur(depart: number, cible: number, duree: number, cle: u
   const image = useRef(0);
   useEffect(() => {
     if (mouvementReduit()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValeur(cible);
       return;
     }
@@ -76,6 +79,8 @@ export function useCompteur(depart: number, cible: number, duree: number, cle: u
 /** Navigation entre maquettes. Absente quand la maquette est affichée en vignette dans la galerie. */
 export function Barre({ n }: { n: number }) {
   const [visible, setVisible] = useState(false);
+  // Lu dans le navigateur uniquement (hydratation identique au rendu serveur).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setVisible(window.self === window.top), []);
   if (!visible) return null;
 

@@ -49,7 +49,7 @@ export interface PositionMandat {
 }
 
 /**
- * Ce que vote le Député IA sur un texte. Si le citoyen ne l'a pas arbitré, il suit le groupe
+ * Ce que vote une IA sur un texte. Si le citoyen ne l'a pas arbitré, il suit le groupe
  * dont le mandat est le plus proche : une extrapolation, affichée comme telle.
  */
 export function positionDuMandat(

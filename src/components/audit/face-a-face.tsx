@@ -5,14 +5,13 @@ import { motion } from "motion/react";
 import { SourceBadge } from "@/components/source-badge";
 import { Sphere } from "@/components/sphere";
 import { sourceCalcul } from "@/lib/concordance";
-import { PRENOM_DEPUTE_IA, type SphereMandat } from "@/lib/sphere-mandat";
+import type { Candidate } from "@/lib/candidates";
 import type { Depute } from "@/lib/types";
 
 import { nomComplet } from "./calcul";
 
-/** L'élu choisi, un disque gris neutre pour portrait, face à la sphère du Député IA. */
-export function FaceAFace({ depute, sphere }: { depute: Depute; sphere: SphereMandat }) {
-  const priorites = sphere.dominantes.map((d) => d.libelle.toLowerCase()).join(", ");
+/** L'élu choisi, un disque gris neutre pour portrait, face à la sphère de votre IA. */
+export function FaceAFace({ depute, candidate }: { depute: Depute; candidate: Candidate }) {
 
   return (
     <motion.div
@@ -53,20 +52,20 @@ export function FaceAFace({ depute, sphere }: { depute: Depute; sphere: SphereMa
       </article>
 
       <article className="flex gap-5">
-        <Sphere teintes={sphere.teintes} poids={sphere.poids} className="size-24 shrink-0 sm:size-28" />
+        <Sphere teintes={candidate.teintes} className="size-24 shrink-0 sm:size-28" />
         <div className="min-w-0">
-          <p className="font-donnee text-sm text-machine">Député IA · mandat citoyen</p>
-          <h3 className="mt-1 font-titre text-2xl leading-8 text-texte">{PRENOM_DEPUTE_IA}</h3>
+          <p className="font-donnee text-sm text-machine">Votre IA · candidate à la présidence</p>
+          <h3 className="mt-1 font-titre text-2xl leading-8 text-texte">{candidate.prenom}</h3>
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[15px] leading-6">
             <dt className="text-attenue">Groupe</dt>
             <dd>Aucun</dd>
             <dt className="text-attenue">Profession</dt>
-            <dd>Applique votre mandat, texte par texte</dd>
+            <dd>Applique son programme, texte par texte</dd>
           </dl>
           <SourceBadge
             className="mt-3"
             source={sourceCalcul(
-              `Les couleurs de la sphère viennent de vos trois priorités les plus fortes : ${priorites}. ${PRENOM_DEPUTE_IA} est un personnage de fiction.`,
+              `${candidate.prenom} est une candidate de fiction : sa sphère est la sienne, et son programme est public. Elle est la mieux placée pour vous selon le test.`,
             )}
           />
         </div>

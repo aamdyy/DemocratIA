@@ -5,7 +5,8 @@ import { motion } from "motion/react";
 import { PositionLibelle } from "@/components/position";
 import { SourceBadge } from "@/components/source-badge";
 import { dateLongue, titreLisible } from "@/lib/format";
-import { PRENOM_DEPUTE_IA } from "@/lib/sphere-mandat";
+import { REGLE_POSITION, type Candidate } from "@/lib/candidates";
+import { sourceCalcul } from "@/lib/concordance";
 
 import type { LigneAudit } from "./calcul";
 
@@ -20,7 +21,7 @@ function CelluleElu({ ligne }: { ligne: LigneAudit }) {
     <>
       <PositionLibelle position={ligne.voteElu} />
       <span className={NOTE}>
-        {ligne.voteElu === ligne.mandat ? "Comme votre mandat" : "Différent de votre mandat"}
+        {ligne.voteElu === ligne.mandat ? "Comme vous" : "Différent de vous"}
       </span>
     </>
   );
@@ -74,26 +75,29 @@ function Ligne({ ligne, rang }: { ligne: LigneAudit; rang: number }) {
         <CelluleGroupe ligne={ligne} />
       </td>
       <td className={`${CELLULE} bg-machine/5 text-machine`}>
-        <PositionLibelle position={ligne.mandat} machine />
-        <span className="mt-1 block font-donnee text-sm leading-5">Applique votre mandat</span>
+        <PositionLibelle position={ligne.ia} machine />
+        <span className="mt-1 block font-donnee text-sm leading-5">
+          {ligne.ia === ligne.mandat ? "Comme vous" : "Différent de vous"}
+        </span>
       </td>
     </motion.tr>
   );
 }
 
-/** Comparaison texte par texte : le mandat, le vote publié de l'élu, la position de son groupe, et Olympe. */
-export function TableauComparaison({ lignes, nomElu }: { lignes: LigneAudit[]; nomElu: string }) {
+/** Comparaison texte par texte : votre vote, le vote publié de l'élu, la position de son groupe, et votre IA. */
+export function TableauComparaison({ lignes, nomElu, candidate }: { lignes: LigneAudit[]; nomElu: string; candidate: Candidate }) {
   return (
+    <>
     <div
       role="region"
-      aria-label={`Comparaison texte par texte entre ${nomElu} et ${PRENOM_DEPUTE_IA}`}
+      aria-label={`Comparaison texte par texte entre ${nomElu} et ${candidate.prenom}`}
       tabIndex={0}
       className="overflow-x-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
     >
       <table className="w-full min-w-[52rem] border-collapse text-left">
         <caption className="sr-only">
-          Pour chaque texte que vous avez arbitré : votre mandat, le vote publié de {nomElu}, la position majoritaire de son
-          groupe ce jour-là, et le vote de {PRENOM_DEPUTE_IA}.
+          Pour chaque texte que vous avez tranché : votre vote, le vote publié de {nomElu}, la position majoritaire de son
+          groupe ce jour-là, et la position de {candidate.prenom}.
         </caption>
         <thead>
           <tr className="border-b border-trait text-sm text-attenue">
@@ -101,7 +105,7 @@ export function TableauComparaison({ lignes, nomElu }: { lignes: LigneAudit[]; n
               Texte
             </th>
             <th scope="col" className="px-3 py-3 font-normal">
-              Votre mandat
+              Votre vote
             </th>
             <th scope="col" className="px-3 py-3 font-medium text-texte">
               {nomElu}
@@ -110,7 +114,7 @@ export function TableauComparaison({ lignes, nomElu }: { lignes: LigneAudit[]; n
               Son groupe
             </th>
             <th scope="col" className="bg-machine/5 px-3 py-3 font-donnee font-normal text-machine">
-              {PRENOM_DEPUTE_IA}
+              {candidate.prenom}
             </th>
           </tr>
         </thead>
@@ -121,5 +125,7 @@ export function TableauComparaison({ lignes, nomElu }: { lignes: LigneAudit[]; n
         </tbody>
       </table>
     </div>
+    <SourceBadge source={sourceCalcul(REGLE_POSITION)} className="mt-4 max-w-4xl" />
+    </>
   );
 }

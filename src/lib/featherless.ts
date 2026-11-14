@@ -10,20 +10,20 @@ export const modeleFeatherless = () => process.env.FEATHERLESS_MODEL?.trim() || 
 export interface DemandeAmendement {
   titre: string;
   date: string;
-  /** Position que le mandat citoyen impose sur ce texte. */
+  /** Position que l'IA au pouvoir prend sur ce texte. */
   position: "pour" | "contre" | "abstention";
   /** Priorités réglées par le citoyen, de 0 à 100. */
   priorites: { theme: string; poids: number }[];
 }
 
-const CONSIGNE = `Tu es le Législateur automatique de DemocratIA, une fiction d'anticipation satirique située en France en 2050 : une IA rédige les amendements à la place des députés, à partir du mandat réglé par un citoyen.
+const CONSIGNE = `Tu es le Législateur automatique de DemocratIA, une fiction d'anticipation satirique située en France en 2050 : une IA rédige les amendements à la place des députés, à partir du programme de l'IA que le citoyen a choisie.
 
 Rédige un seul amendement au texte indiqué, au format de l'Assemblée nationale, dans cet ordre :
 AMENDEMENT N° IA-(quatre chiffres)
 ARTICLE (numéro plausible)
 le dispositif, en une ou deux phrases juridiques (« Rédiger ainsi… », « Après l'alinéa…, insérer… », « Supprimer… »)
 EXPOSÉ SOMMAIRE
-trois à quatre phrases qui justifient l'amendement par les priorités du mandat, citées avec leur poids.
+trois à quatre phrases qui justifient l'amendement par les priorités de l'IA au pouvoir, citées avec leur poids.
 
 Règles : style administratif français, froid et précis. 170 mots au plus. Texte brut, sans markdown ni préambule. Ne cite aucune personne réelle. N'attribue aucun fait, chiffre ou position à une personne ou à un groupe politique réel.`;
 
@@ -35,11 +35,11 @@ function question(demande: DemandeAmendement): string {
     .map((p) => `- ${p.theme} : ${p.poids} sur 100`)
     .join("\n");
   const sens = {
-    pour: "Le mandat approuve ce texte : l'amendement le renforce dans le sens des priorités.",
-    contre: "Le mandat rejette ce texte : l'amendement le réécrit pour le rendre conforme aux priorités.",
-    abstention: "Le mandat est indifférent à ce texte : l'amendement y ajoute la priorité la plus forte.",
+    pour: "L'IA au pouvoir approuve ce texte : l'amendement le renforce dans le sens des priorités.",
+    contre: "L'IA au pouvoir rejette ce texte : l'amendement le réécrit pour le rendre conforme aux priorités.",
+    abstention: "L'IA au pouvoir est indifférente à ce texte : l'amendement y ajoute la priorité la plus forte.",
   }[demande.position];
-  return `Texte soumis à l'hémicycle automatisé : « ${demande.titre} » (scrutin du ${demande.date}).\n${sens}\nPriorités du mandat citoyen :\n${priorites || "- aucune priorité réglée"}`;
+  return `Texte soumis à l'hémicycle automatisé : « ${demande.titre} » (scrutin du ${demande.date}).\n${sens}\nPriorités de l'IA au pouvoir :\n${priorites || "- aucune priorité réglée"}`;
 }
 
 /**
@@ -190,10 +190,10 @@ export function fluxExemple(demande: DemandeAmendement, signal: AbortSignal): Re
   const texte = `AMENDEMENT N° IA-0000 (exemple)
 ARTICLE 1er
 
-Compléter cet article par un alinéa ainsi rédigé : « Les dispositions du présent texte s'appliquent dans le respect de la priorité ${priorite ? `« ${priorite.theme} »` : "fixée par le mandat"}, telle que réglée par le citoyen mandant. »
+Compléter cet article par un alinéa ainsi rédigé : « Les dispositions du présent texte s'appliquent dans le respect de la priorité ${priorite ? `« ${priorite.theme} »` : "fixée par l'IA au pouvoir"}, telle que portée par l'IA au pouvoir. »
 
 EXPOSÉ SOMMAIRE
-Ce texte est un exemple écrit à l'avance : aucun modèle n'a été appelé, car la clé Featherless n'est pas renseignée. Avec la clé, le Législateur automatique rédige ici un amendement à « ${demande.titre} » à partir de votre mandat${priorite ? `, dont la première priorité est « ${priorite.theme} » (${priorite.poids} sur 100)` : ""}.`;
+Ce texte est un exemple écrit à l'avance : aucun modèle n'a été appelé, car la clé Featherless n'est pas renseignée. Avec la clé, le Législateur automatique rédige ici un amendement à « ${demande.titre} » à partir du programme de l'IA au pouvoir${priorite ? `, dont la première priorité est « ${priorite.theme} » (${priorite.poids} sur 100)` : ""}.`;
   const mots = texte.split(/(?<=\s)/);
   const encodeur = new TextEncoder();
   let indice = 0;
