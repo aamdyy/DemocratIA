@@ -1,7 +1,10 @@
 "use client";
 
+import { motion } from "motion/react";
+
 import { Jauge } from "@/components/graphiques";
 import { SourceBadge } from "@/components/source-badge";
+import { CASCADE, ENTREE, VUE } from "@/lib/animation";
 import { sourceCalcul } from "@/lib/concordance";
 import type { Candidate } from "@/lib/candidates";
 
@@ -17,8 +20,10 @@ function Colonne({
   valeur,
   total,
   couleur,
+  rang = 0,
   children,
 }: {
+  rang?: number;
   nom: string;
   sousTitre: string;
   machine?: boolean;
@@ -28,7 +33,14 @@ function Colonne({
   children?: React.ReactNode;
 }) {
   return (
-    <section aria-label={`Synthèse pour ${nom}`} className="flex items-center gap-6">
+    <motion.section
+      aria-label={`Synthèse pour ${nom}`}
+      className="flex items-center gap-6"
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={VUE}
+      transition={{ ...ENTREE.transition, delay: rang * CASCADE * 3 }}
+    >
       <Jauge
         valeur={valeur}
         total={total}
@@ -43,7 +55,7 @@ function Colonne({
         </p>
         {children}
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -67,6 +79,7 @@ export function Synthese({ synthese, nomElu, candidate }: { synthese: SyntheseAu
           machine
           valeur={iaCommeMandat}
           total={n}
+          rang={1}
           couleur={candidate.teintes[1]}
         />
       </div>

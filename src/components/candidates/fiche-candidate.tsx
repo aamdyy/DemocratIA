@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { MotionConfig, motion } from "motion/react";
+import { useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
@@ -11,15 +11,17 @@ import { PositionLibelle } from "@/components/position";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { useScrutins } from "@/lib/api";
+import { CASCADE, DOUX, DUREE, ENTREE, VUE } from "@/lib/animation";
 import { DEFINITION_AFFINITE, REGLE_POSITION, positionCandidate, type Candidate } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
-import { titreLisible } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { useMandat } from "@/lib/mandat";
 import { libelleTheme, themeDe, THEMES } from "@/lib/themes";
 import type { Position, Scrutin } from "@/lib/types";
 
+import { Chiffre } from "./chiffre";
 import { affinitePourcent } from "./prenom";
+import { titreCourt } from "./titre";
 
 const LIEN =
   "inline-flex min-h-11 items-center text-[15px] text-attenue underline decoration-trait underline-offset-4 outline-none transition-colors duration-150 hover:text-texte hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
@@ -29,19 +31,41 @@ const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-
 
 const PAR_PAGE = 5;
 
+/** L'entrée de la fiche, orchestrée : chaque enfant arrive à son tour. */
+const SCENE = { initial: "cache", animate: "visible", variants: { cache: {}, visible: { transition: { staggerChildren: CASCADE * 1.5 } } } } as const;
+const ACTEUR = {
+  variants: {
+    cache: { opacity: 0, y: 14 },
+    visible: { opacity: 1, y: 0, transition: ENTREE.transition },
+  },
+} as const;
+
 /** Le programme : un poids de 0 à 100 par thème, du plus fort au plus faible, en barres qui se remplissent. */
 function Programme({ candidate }: { candidate: Candidate }) {
   const themes = THEMES.map((t) => ({ id: t.id, libelle: t.libelle, poids: candidate.poids[t.id] })).sort(
     (a, b) => b.poids - a.poids,
   );
   return (
-    <section aria-labelledby="programme" className="mt-24">
-      <h2 id="programme" className={H2}>
+    <section aria-labelledby="programme" className="mt-20">
+      <motion.h2
+        id="programme"
+        className={H2}
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={VUE}
+        transition={ENTREE.transition}
+      >
         Son programme
-      </h2>
+      </motion.h2>
       <ul role="list" className="mt-8 grid gap-x-16 gap-y-5 lg:grid-cols-2">
         {themes.map((t, i) => (
-          <li key={t.id}>
+          <motion.li
+            key={t.id}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={VUE}
+            transition={{ ...ENTREE.transition, delay: i * CASCADE }}
+          >
             <div className="flex items-baseline justify-between gap-4 text-[15px] leading-6 text-texte">
               <span>{t.libelle}</span>
               <span className="font-semibold tabular-nums">{t.poids}</span>
@@ -51,23 +75,42 @@ function Programme({ candidate }: { candidate: Candidate }) {
               valeur={t.poids}
               couleur={candidate.teintes[1]}
               etiquette={`${t.libelle} : ${t.poids} sur 100`}
-              delai={(i % 5) * 0.06}
+              delai={0.15 + i * CASCADE}
+              duree={DUREE.scene}
             />
-          </li>
+          </motion.li>
         ))}
       </ul>
     </section>
   );
 }
 
-function LigneVote({ scrutin, candidate, moi }: { scrutin: Scrutin; candidate: Candidate; moi: Position | false | null }) {
+function LigneVote({
+  scrutin,
+  candidate,
+  moi,
+  rang,
+}: {
+  scrutin: Scrutin;
+  candidate: Candidate;
+  moi: Position | false | null;
+  rang: number;
+}) {
   const elle = positionCandidate(candidate, scrutin);
   const { pour, abstention, contre, non_votants } = scrutin.decompte;
   const adopte = scrutin.resultat === "adopte";
   return (
-    <li className="border-b border-trait py-6">
-      <p className="text-sm leading-6 font-medium text-texte">{libelleTheme(themeDe(scrutin.titre))}</p>
-      <h3 className="mt-1 max-w-3xl text-lg leading-7 font-medium text-texte">{titreLisible(scrutin.titre)}</h3>
+    <motion.li
+      layout="position"
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, transition: { duration: DUREE.micro } }}
+      viewport={VUE}
+      transition={{ ...ENTREE.transition, delay: (rang % PAR_PAGE) * CASCADE }}
+      className="border-b border-trait py-6"
+    >
+      <p className="text-sm leading-6 font-medium text-attenue">{libelleTheme(themeDe(scrutin.titre))}</p>
+      <h3 className="mt-1 max-w-3xl text-lg leading-7 font-medium text-texte">{titreCourt(scrutin.titre)}</h3>
       <dl className="mt-4 grid gap-x-8 gap-y-3 text-[15px] leading-6 sm:grid-cols-[7rem_7rem_minmax(0,1fr)]">
         <div>
           <dt className="text-attenue">{candidate.prenom}</dt>
@@ -109,7 +152,7 @@ function LigneVote({ scrutin, candidate, moi }: { scrutin: Scrutin; candidate: C
           </dd>
         </div>
       </dl>
-    </li>
+    </motion.li>
   );
 }
 
@@ -120,10 +163,17 @@ function Votes({ candidate, testFait, votes }: { candidate: Candidate; testFait:
   const visibles = tout ? textes : textes.slice(0, PAR_PAGE);
 
   return (
-    <section aria-labelledby="votes" className="mt-24" aria-busy={scrutins.isLoading}>
-      <h2 id="votes" className={H2}>
+    <section aria-labelledby="votes" className="mt-20" aria-busy={scrutins.isLoading}>
+      <motion.h2
+        id="votes"
+        className={H2}
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={VUE}
+        transition={ENTREE.transition}
+      >
         Ses votes sur les vrais textes
-      </h2>
+      </motion.h2>
 
       {scrutins.isLoading ? (
         <div role="status" className="mt-8">
@@ -147,9 +197,17 @@ function Votes({ candidate, testFait, votes }: { candidate: Candidate; testFait:
       ) : (
         <>
           <ul role="list" className="mt-6 border-t border-trait">
-            {visibles.map((s) => (
-              <LigneVote key={s.id} scrutin={s} candidate={candidate} moi={testFait ? (votes[s.id] ?? false) : null} />
-            ))}
+            <AnimatePresence initial={false}>
+              {visibles.map((s, i) => (
+                <LigneVote
+                  key={s.id}
+                  rang={i}
+                  scrutin={s}
+                  candidate={candidate}
+                  moi={testFait ? (votes[s.id] ?? false) : null}
+                />
+              ))}
+            </AnimatePresence>
           </ul>
           <div className="mt-6 space-y-2">
             <SourceBadge source={textes[0].source} />
@@ -166,73 +224,145 @@ function Votes({ candidate, testFait, votes }: { candidate: Candidate; testFait:
   );
 }
 
+const sansAbonnement = () => () => {};
+/** Faux pendant le rendu serveur : l'affinité vit dans le navigateur. */
+const useNavigateur = () =>
+  useSyncExternalStore(
+    sansAbonnement,
+    () => true,
+    () => false,
+  );
+
 /** /candidates/[id] : la fiche d'une IA candidate. */
 export function FicheCandidate({ candidate }: { candidate: Candidate }) {
-  const { classement, regle } = useClassement();
+  const navigateur = useNavigateur();
+  const { classement, regle, chargement } = useClassement();
   const rang = classement.findIndex((a) => a.candidate.id === candidate.id);
   const affinite = regle && rang >= 0 ? classement[rang] : null;
   const { votes: mandatVotes } = useMandat();
   const scrutins = useScrutins();
+  // L'affinité n'apparaît qu'une fois le test et les textes lus : pas de bouton remplacé sous les yeux.
+  const affiniteLue = navigateur && !(regle && chargement);
 
   return (
-    <MotionConfig reducedMotion="user">
+    <>
       <FiltreSphere />
       <div className="mx-auto max-w-5xl">
         <AvisExemple meta={scrutins.data?.meta} />
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-        className="mx-auto max-w-5xl"
-      >
-        <p>
+      <div className="mx-auto max-w-5xl">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: DUREE.etat, ease: DOUX }}>
           <Link href="/candidates" className={LIEN}>
+            <span aria-hidden className="mr-1.5">←</span>
             Toutes les candidates
           </Link>
-        </p>
+        </motion.p>
 
-        <header className="mt-6 flex flex-col items-center gap-10 text-center lg:flex-row lg:gap-20 lg:text-left">
-          <Sphere
-            teintes={candidate.teintes}
-            aquarelle
-            duree={16}
-            description={`La sphère de ${candidate.prenom}`}
+        <motion.header
+          {...SCENE}
+          className="mt-6 flex flex-col items-center gap-10 text-center lg:flex-row lg:gap-20 lg:text-left"
+        >
+          <motion.div
+            variants={{
+              cache: { opacity: 0, scale: 0.9 },
+              visible: { opacity: 1, scale: 1, transition: { duration: DUREE.scene, ease: DOUX } },
+            }}
             className="w-[min(64vw,18rem)] shrink-0 lg:w-80"
-          />
+          >
+            <Sphere
+              teintes={candidate.teintes}
+              aquarelle
+              duree={16}
+              description={`La sphère de ${candidate.prenom}`}
+              className="w-full"
+            />
+          </motion.div>
           <div className="min-w-0">
-            <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
+            <motion.p {...ACTEUR} className="font-donnee text-[13px] leading-5 tracking-[0.04em] text-attenue uppercase">
+              IA candidate · présidentielle 2050
+            </motion.p>
+            <motion.h1
+              {...ACTEUR}
+              className="mt-2 font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte"
+            >
               {candidate.prenom}
-            </h1>
-            <p className="mt-3 max-w-xl text-xl leading-8 text-texte">{candidate.doctrine}</p>
+            </motion.h1>
+            <motion.p {...ACTEUR} className="mt-3 max-w-xl text-xl leading-8 text-texte">
+              {candidate.doctrine}
+            </motion.p>
 
-            <div aria-live="polite" className="mt-8 flex flex-col items-center gap-3 lg:items-start">
-              {affinite ? (
-                <div className="w-full max-w-sm">
-                  <p className="flex items-baseline justify-between gap-4 text-lg leading-7 text-texte">
-                    <span>{rang === 0 ? <strong className="font-semibold">Votre IA</strong> : "Affinité avec vous"}</span>
-                    <span className="font-semibold tabular-nums">{affinitePourcent(affinite.score)}</span>
-                  </p>
-                  <Barre
-                    className="mt-2"
-                    valeur={affinite.score * 100}
-                    couleur={candidate.teintes[1]}
-                    etiquette={`${candidate.prenom} : ${affinitePourcent(affinite.score)} d'affinité avec vous${rang > 0 ? `, ${rang + 1}e sur ${classement.length}` : ""}`}
-                  />
-                  <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-3" />
-                </div>
-              ) : (
-                <BoutonIA href="/test" teintes={candidate.teintes}>
-                  Mesurer mon affinité
-                </BoutonIA>
-              )}
-            </div>
+            <motion.div
+              {...ACTEUR}
+              aria-live="polite"
+              className="mt-8 flex min-h-[7.5rem] flex-col items-center gap-3 lg:items-start"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {!affiniteLue ? null : affinite ? (
+                  <motion.div
+                    key="affinite"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: DUREE.etat, ease: DOUX }}
+                    className="w-full max-w-sm"
+                  >
+                    <p className="flex items-baseline justify-between gap-4 text-lg leading-7 text-texte">
+                      <span>{rang === 0 ? <strong className="font-semibold">Votre IA</strong> : "Affinité avec vous"}</span>
+                      <Chiffre valeur={Math.round(affinite.score * 100)} suffixe=" %" duree={DUREE.scene} className="font-semibold" />
+                    </p>
+                    <Barre
+                      className="mt-2"
+                      valeur={affinite.score * 100}
+                      couleur={candidate.teintes[1]}
+                      duree={DUREE.scene}
+                      etiquette={`${candidate.prenom} : ${affinitePourcent(affinite.score)} d'affinité avec vous${rang > 0 ? `, ${rang + 1}e sur ${classement.length}` : ""}`}
+                    />
+                    <SourceBadge source={sourceCalcul(DEFINITION_AFFINITE)} className="mt-3" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="test"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: DUREE.etat, ease: DOUX }}
+                    className="flex flex-col items-center gap-3 lg:items-start"
+                  >
+                    <BoutonIA href="/test" teintes={candidate.teintes}>
+                      Mesurer mon affinité
+                    </BoutonIA>
+                    <p className="text-sm leading-6 text-attenue">Le test dit en quelques minutes si elle vous ressemble.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </div>
-        </header>
+        </motion.header>
 
         <Programme candidate={candidate} />
         <Votes candidate={candidate} testFait={regle} votes={mandatVotes} />
-      </motion.div>
-    </MotionConfig>
+      </div>
+    </>
+  );
+}
+
+/** La fiche grisée, le temps de lire l'adresse : mêmes places que la vraie fiche. */
+export function FicheEnAttente() {
+  return (
+    <div role="status" className="mx-auto max-w-5xl">
+      <span className="sr-only">Ouverture de la fiche…</span>
+      <div aria-hidden>
+        <div className="h-11" />
+        <div className="mt-6 flex flex-col items-center gap-10 lg:flex-row lg:gap-20">
+          <div className="aspect-square w-[min(64vw,18rem)] shrink-0 rounded-full bg-relief motion-safe:animate-pulse lg:w-80" />
+          <div className="flex w-full max-w-xl flex-col items-center gap-4 lg:items-start">
+            <div className="h-4 w-48 rounded-full bg-relief" />
+            <div className="h-12 w-56 rounded-full bg-relief" />
+            <div className="h-5 w-80 max-w-full rounded-full bg-relief" />
+            <div className="mt-6 h-14 w-60 rounded-full bg-relief" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

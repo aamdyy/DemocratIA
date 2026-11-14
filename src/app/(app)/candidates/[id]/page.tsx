@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { FicheCandidate } from "@/components/candidates/fiche-candidate";
+import { FicheCandidate, FicheEnAttente } from "@/components/candidates/fiche-candidate";
 import { candidateParId, CANDIDATES } from "@/lib/candidates";
 
 export function generateStaticParams() {
@@ -17,9 +18,18 @@ export async function generateMetadata({ params }: PageProps<"/candidates/[id]">
   return { title: titre, description, openGraph: { title: titre, description } };
 }
 
-export default async function PageCandidate({ params }: PageProps<"/candidates/[id]">) {
+/** L'identifiant n'est connu qu'avec l'adresse : la lecture des paramètres attend sous une Suspense, la fiche grisée tient sa place. */
+async function Fiche({ params }: { params: PageProps<"/candidates/[id]">["params"] }) {
   const { id } = await params;
   const candidate = candidateParId(id);
   if (!candidate) notFound();
   return <FicheCandidate candidate={candidate} />;
+}
+
+export default function PageCandidate({ params }: PageProps<"/candidates/[id]">) {
+  return (
+    <Suspense fallback={<FicheEnAttente />}>
+      <Fiche params={params} />
+    </Suspense>
+  );
 }

@@ -111,6 +111,7 @@ export function ChapitreTextes({
           retour={retour}
           geste={geste}
           peutAnnuler={historique.length > 0}
+          montrerGeste={traites === 0 && historique.length === 0}
           onArbitrer={arbitrer}
           onPasser={passer}
           onAnnuler={annuler}

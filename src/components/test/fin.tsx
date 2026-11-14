@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 
+import { RESSORT_LENT } from "@/lib/animation";
 import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
 import type { Affinite } from "@/lib/candidates";
@@ -38,7 +39,7 @@ export function FinDuTest({
         className="size-36 sm:size-44"
         initial={{ opacity: 0, scale: 0.3, rotate: -90 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 1.2 }}
+        transition={RESSORT_LENT}
       >
         {tete && aCommence ? <Sphere teintes={tete.candidate.teintes} duree={9} className="size-full" /> : null}
       </motion.div>

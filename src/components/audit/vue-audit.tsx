@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { MotionConfig, motion } from "motion/react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
+import { titreCourt } from "@/components/candidates/titre";
+import { PositionLibelle } from "@/components/position";
 import { useDeputes, useScrutins } from "@/lib/api";
+import { CASCADE, DOUX, DUREE, ENTREE } from "@/lib/animation";
+import { positionCandidate, type Candidate } from "@/lib/candidates";
 import { useMandat } from "@/lib/mandat";
 import { useClassement } from "@/lib/ma-candidate";
-import type { Depute } from "@/lib/types";
+import type { Depute, Position, Scrutin } from "@/lib/types";
 
 import { lignesAudit, nomComplet, syntheseAudit } from "./calcul";
 import { FaceAFace } from "./face-a-face";
@@ -65,14 +69,79 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
   );
 }
 
+/** Sans test, pas d'audit : on montre ce que l'audit fera, et le chemin pour y arriver. */
 function AucunTexte() {
   return (
-    <div className="rounded-md bg-relief px-5 py-6">
-      <p className="font-medium text-texte">Vous n&apos;avez encore tranché aucun texte.</p>
-      <BoutonIA href="/test" variante="contour" className="mt-5">
-        Trouver mon IA
-      </BoutonIA>
-    </div>
+    <motion.div
+      {...ENTREE}
+      className="flex flex-col items-center gap-8 rounded-lg bg-relief px-6 py-10 text-center sm:px-10 md:flex-row md:text-left"
+    >
+      <div aria-hidden className="flex shrink-0 items-center gap-4">
+        <motion.span
+          className="size-20 rounded-full border border-trait bg-fond"
+          initial={{ x: -12, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ ...ENTREE.transition, delay: 0.15 }}
+        />
+        <span className="font-donnee text-[13px] tracking-[0.04em] text-attenue uppercase">face à</span>
+        <motion.span
+          className="size-20 rounded-full border border-dashed border-attenue"
+          initial={{ x: 12, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ ...ENTREE.transition, delay: 0.25 }}
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="font-titre text-xl font-semibold leading-7 tracking-[-0.02em] text-texte">
+          L&apos;audit part de vos propres choix.
+        </p>
+        <p className="mt-2 max-w-xl text-[15px] leading-6 text-attenue">
+          Tranchez quelques vrais textes dans le test : vous verrez ensuite, texte par texte, comment un député a voté et
+          ce qu&apos;aurait fait votre IA.
+        </p>
+        <BoutonIA href="/test" className="mt-5">
+          Passer le test
+        </BoutonIA>
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Avant le choix d'un député : la comparaison est déjà dressée avec vos votes et ceux de votre IA ; la colonne du
+ * député attend, en pointillés. On voit ce qui va se révéler.
+ */
+function ApercuComparaison({ textes, votes, candidate }: { textes: Scrutin[]; votes: Record<string, Position>; candidate: Candidate }) {
+  return (
+    <motion.div {...ENTREE}>
+      <ul role="list" className="border-t border-trait">
+        {textes.map((scrutin, i) => (
+          <motion.li
+            key={scrutin.id}
+            className="grid grid-cols-1 gap-x-6 gap-y-2 border-b border-trait py-4 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7.5rem] sm:items-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...ENTREE.transition, delay: i * CASCADE }}
+          >
+            <span className="text-[15px] leading-6 font-medium text-texte">{titreCourt(scrutin.titre)}</span>
+            <span className="text-[15px] leading-6">
+              <span className="sr-only">Votre vote : </span>
+              <PositionLibelle position={votes[scrutin.id]} />
+            </span>
+            <span className="inline-flex h-8 w-fit items-center rounded-full border border-dashed border-attenue px-3 text-sm text-attenue">
+              Député : ?
+            </span>
+            <span className="text-[15px] leading-6 text-machine">
+              <span className="sr-only">{candidate.prenom} : </span>
+              <PositionLibelle position={positionCandidate(candidate, scrutin)} machine />
+            </span>
+          </motion.li>
+        ))}
+      </ul>
+      <p className="mt-4 text-sm leading-6 text-attenue">
+        Vous, le député, {candidate.prenom} : choisissez un nom plus haut pour révéler la colonne du milieu.
+      </p>
+    </motion.div>
   );
 }
 
@@ -105,85 +174,121 @@ export function VueAudit() {
   const rechercheAJour = saisie.trim() === nom.trim();
   const pret = navigateur && !scrutins.isLoading;
 
+  const sansTest = pret && !scrutins.error && (!candidate || textes.length === 0);
+  const groupeDuJour = lignes.find((ligne) => ligne.sigleGroupe)?.sigleGroupe ?? null;
+
+  // Une fois le député choisi, la page descend doucement jusqu'au face-à-face s'il est hors de l'écran.
+  const reduit = useReducedMotion();
+  const fiche = useRef<HTMLElement>(null);
+  const choisir = (suivant: Depute) => {
+    setDepute(suivant);
+    window.setTimeout(() => {
+      const zone = fiche.current?.getBoundingClientRect();
+      if (zone && zone.top > window.innerHeight * 0.7) {
+        fiche.current?.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "start" });
+      }
+    }, 60);
+  };
+
   return (
-    <MotionConfig reducedMotion="user">
+    <>
       <AvisExemple meta={metaExemple} />
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-      >
-      <header className="max-w-3xl">
+      <motion.header {...ENTREE} className="max-w-3xl">
         <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
           Un élu suit son groupe. {candidate ? candidate.prenom : "Votre IA"} suit son programme.
         </h1>
-        <p className="mt-5 text-lg leading-8 text-attenue">Choisissez un député : ses votes publiés, face à votre IA.</p>
-      </header>
+        <p className="mt-5 text-lg leading-8 text-attenue">
+          Choisissez un député : ses votes publiés, texte par texte, face à vos choix et à votre IA.
+        </p>
+      </motion.header>
 
-      <section aria-labelledby="audit-recherche" className="mt-14">
-        <h2 id="audit-recherche" className="sr-only">
-          Choisir un député
-        </h2>
-        <RechercheDepute
-          saisie={saisie}
-          onSaisie={setSaisie}
-          enAttente={!rechercheAJour || deputes.isLoading || deputes.isValidating}
-          erreur={deputes.error ? (deputes.error as Error).message : null}
-          resultats={rechercheAJour ? (deputes.data?.data ?? null) : null}
-          choisiId={depute?.id ?? null}
-          onChoisir={setDepute}
-        />
-      </section>
-
-      {depute && candidate ? (
-        <section aria-labelledby="audit-fiche" className="mt-16">
-          <h2 id="audit-fiche" className="sr-only">
-            {nomComplet(depute)} face à {candidate ? candidate.prenom : "votre IA"}
-          </h2>
-          <FaceAFace key={depute.id} depute={depute} candidate={candidate} />
-        </section>
-      ) : null}
-
-      <section aria-labelledby="audit-comparaison" className="mt-20">
-        <h2 id="audit-comparaison" className={`mb-8 ${H2}`}>
-          {pret && textes.length > 0
-            ? `Comparaison sur ${textes.length > 1 ? `${textes.length} textes` : "1 texte"}`
-            : "Comparaison texte par texte"}
-        </h2>
-
-        {!pret ? (
+      {!pret ? (
+        <div className="mt-14">
           <Attente lignes={3} libelle="Lecture de votre test et des textes…" />
-        ) : scrutins.error ? (
+        </div>
+      ) : scrutins.error ? (
+        <div className="mt-14">
           <Panne
             titre="La liste des textes n'a pas pu être lue."
             detail={(scrutins.error as Error).message}
             onReessayer={() => void scrutins.mutate()}
           />
-        ) : !candidate || textes.length === 0 ? (
+        </div>
+      ) : sansTest || !candidate ? (
+        <section aria-label="Commencer par le test" className="mt-14">
           <AucunTexte />
-        ) : !depute ? null : lectures.error ? (
-          <Panne
-            titre="Le détail des scrutins n'a pas pu être lu."
-            detail={lectures.error.message}
-            onReessayer={() => void lectures.mutate()}
-          />
-        ) : !lectures.data ? (
-          <Attente lignes={Math.min(textes.length, 6)} libelle="Lecture des votes, scrutin par scrutin…" />
-        ) : (
-          <TableauComparaison key={depute.id} lignes={lignes} nomElu={nomComplet(depute)} candidate={candidate} />
-        )}
-      </section>
-
-      {depute && candidate && pret && lectures.data && !lectures.error && synthese.textes > 0 ? (
-        <section aria-labelledby="audit-synthese" className="mt-20">
-          <h2 id="audit-synthese" className={`mb-8 ${H2}`}>
-            Synthèse
-          </h2>
-          <Synthese synthese={synthese} nomElu={nomComplet(depute)} candidate={candidate} />
         </section>
-      ) : null}
-      </motion.div>
-    </MotionConfig>
+      ) : (
+        <>
+          <motion.section
+            aria-labelledby="audit-recherche"
+            className="mt-12"
+            initial={ENTREE.initial}
+            animate={ENTREE.animate}
+            transition={{ ...ENTREE.transition, delay: CASCADE * 2 }}
+          >
+            <h2 id="audit-recherche" className="sr-only">
+              Choisir un député
+            </h2>
+            <RechercheDepute
+              saisie={saisie}
+              onSaisie={setSaisie}
+              enAttente={!rechercheAJour || deputes.isLoading || deputes.isValidating}
+              erreur={deputes.error ? (deputes.error as Error).message : null}
+              resultats={rechercheAJour ? (deputes.data?.data ?? null) : null}
+              choisiId={depute?.id ?? null}
+              onChoisir={choisir}
+            />
+          </motion.section>
+
+          <section ref={fiche} aria-labelledby="audit-fiche" className="scroll-mt-24">
+            <h2 id="audit-fiche" className="sr-only">
+              {depute ? `${nomComplet(depute)} face à ${candidate.prenom}` : "Le député choisi"}
+            </h2>
+            <AnimatePresence mode="wait">
+              {depute ? (
+                <motion.div
+                  key={depute.id}
+                  className="mt-14"
+                  exit={{ opacity: 0, transition: { duration: DUREE.micro, ease: DOUX } }}
+                >
+                  <FaceAFace depute={depute} candidate={candidate} groupeDuJour={groupeDuJour} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </section>
+
+          <section aria-labelledby="audit-comparaison" className="mt-16">
+            <h2 id="audit-comparaison" className={`mb-8 ${H2}`}>
+              {`Comparaison sur ${textes.length > 1 ? `${textes.length} textes` : "1 texte"}`}
+            </h2>
+
+            {!depute ? (
+              <ApercuComparaison textes={textes} votes={mandat.votes} candidate={candidate} />
+            ) : lectures.error ? (
+              <Panne
+                titre="Le détail des scrutins n'a pas pu être lu."
+                detail={lectures.error.message}
+                onReessayer={() => void lectures.mutate()}
+              />
+            ) : !lectures.data ? (
+              <Attente lignes={Math.min(textes.length, 6)} libelle="Lecture des votes, scrutin par scrutin…" />
+            ) : (
+              <TableauComparaison key={depute.id} lignes={lignes} nomElu={nomComplet(depute)} candidate={candidate} />
+            )}
+          </section>
+
+          {depute && lectures.data && !lectures.error && synthese.textes > 0 ? (
+            <section aria-labelledby="audit-synthese" className="mt-20">
+              <h2 id="audit-synthese" className={`mb-8 ${H2}`}>
+                Synthèse
+              </h2>
+              <Synthese key={depute.id} synthese={synthese} nomElu={nomComplet(depute)} candidate={candidate} />
+            </section>
+          ) : null}
+        </>
+      )}
+    </>
   );
 }

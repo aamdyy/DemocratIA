@@ -1,5 +1,10 @@
+"use client";
+
+import { motion } from "motion/react";
+
 import { BarreEmpilee } from "@/components/graphiques";
 import { PositionLibelle } from "@/components/position";
+import { CASCADE, ENTREE, VUE } from "@/lib/animation";
 import { LIBELLE_POSITION, nombre } from "@/lib/format";
 import type { Position, PositionGroupe } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -68,8 +73,16 @@ export function TableauGroupes({
         </div>
       </div>
       <div role="rowgroup" className="border-t border-trait md:border-t-0">
-        {groupes.map((groupe) => (
-          <div key={groupe.sigle} role="row" className={LIGNE}>
+        {groupes.map((groupe, i) => (
+          <motion.div
+            key={groupe.sigle}
+            role="row"
+            className={LIGNE}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={VUE}
+            transition={{ ...ENTREE.transition, delay: i * CASCADE }}
+          >
             <div role="cell" className="min-w-0">
               <span className="text-[15px] leading-5 font-medium text-texte">{groupe.sigle}</span>
               <span className="block truncate text-[13px] leading-5 text-attenue" title={groupe.libelle}>
@@ -108,7 +121,7 @@ export function TableauGroupes({
             <div role="cell" className="col-start-3 row-start-1 self-center md:col-start-auto md:row-start-auto">
               <Accord groupe={groupe} prenom={prenom} position={position} />
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

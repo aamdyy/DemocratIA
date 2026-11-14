@@ -8,7 +8,7 @@ import { mandat, type Mandat } from "@/lib/mandat";
 import type { Chapitre } from "@/lib/questions/chapitres";
 import { libelleTheme } from "@/lib/themes";
 
-import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, RESSORT_VIF, TITRE_CARTE } from "./chapitre";
+import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, SORTIE, TITRE_CARTE } from "./chapitre";
 
 /**
  * Chapitre « Dilemmes » : un arbitrage à la fois entre deux thèmes, deux grands boutons, ou « Les deux » / « Aucun ».
@@ -135,7 +135,7 @@ function CarteDilemme({ dilemme }: { dilemme: Dilemme }) {
       className={`${CADRE} min-h-[14rem]`}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0, transition: RESSORT }}
-      exit={{ opacity: 0, y: -8, transition: RESSORT_VIF }}
+      exit={{ opacity: 0, y: -8, transition: SORTIE }}
     >
       <h3 className={TITRE_CARTE}>{dilemme.question}</h3>
       <div aria-hidden className="mt-auto flex items-center gap-3 pt-8 font-donnee text-xs text-machine">

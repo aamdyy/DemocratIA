@@ -1,23 +1,26 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { MotionConfig, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
 import { BarreEmpilee, type Segment } from "@/components/graphiques";
 import { BoutonIA } from "@/components/bouton-ia";
 import { Hemicycle, NOMBRE_SIEGES } from "@/components/hemicycle";
+import { Chiffre } from "@/components/candidates/chiffre";
 import { deCandidate } from "@/components/candidates/prenom";
+import { titreCourt } from "@/components/candidates/titre";
 import { PositionLibelle } from "@/components/position";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { useResultat, useScrutins } from "@/lib/api";
+import { CASCADE, DOUX, DUREE, ENTREE, RESSORT, VUE } from "@/lib/animation";
 import { CANDIDATES, REGLE_POSITION, positionCandidate, type Candidate } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
-import { nombre, titreLisible } from "@/lib/format";
+import { nombre } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { useMandat } from "@/lib/mandat";
-import type { Position, ResultatScrutin, Scrutin } from "@/lib/types";
+import type { Position, ResultatScrutin } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import { Amendement } from "./amendement";
@@ -29,11 +32,25 @@ import {
   simuler2050,
   type Simulation2050,
 } from "./calcul";
+import { SelecteurTexte } from "./selecteur-texte";
 import { TableauGroupes } from "./tableau-groupes";
 
 type Seance = "2026" | "2050";
 
 const H2 = "font-titre text-2xl font-semibold leading-8 tracking-[-0.03em] text-texte";
+
+/** Pas entre deux sièges qui changent de couleur : la vague traverse les 577 sièges en un temps de scène et demi. */
+const PAS_SIEGE_MS = 2.6;
+/** Durée de la vague complète, en secondes : les compteurs défilent pendant ce temps, le verdict tombe à la fin. */
+const VAGUE = (NOMBRE_SIEGES * PAS_SIEGE_MS) / 1000;
+
+/** Entrée d'un bloc quand il arrive à l'écran en défilant. */
+const A_LA_VUE = {
+  initial: { opacity: 0, y: 14 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: VUE,
+  transition: ENTREE.transition,
+} as const;
 
 const sansAbonnement = () => () => {};
 /** Faux pendant le rendu serveur : le mandat vit dans le navigateur, on ne conclut rien avant de l'avoir lu. */
@@ -67,42 +84,17 @@ function Panne({ titre, detail, onReessayer }: { titre: string; detail: string; 
   );
 }
 
-/** Choix du texte : un champ natif, au clavier comme au toucher. */
-function ChoixTexte({
-  textes,
-  choisi,
-  arbitres,
+/** La bascule : l'Assemblée de 2026, puis l'hémicycle de 2050. La pastille noire glisse d'un côté à l'autre. */
+function ChoixSeance({
+  seance,
+  invite,
   onChoisir,
 }: {
-  textes: Scrutin[];
-  choisi: string | null;
-  arbitres: Set<string>;
-  onChoisir: (id: string) => void;
+  seance: Seance;
+  /** Vrai tant que le visiteur n'a jamais basculé : un point respire sur 2050 pour l'y inviter. */
+  invite: boolean;
+  onChoisir: (seance: Seance) => void;
 }) {
-  return (
-    <div className="min-w-0 flex-1">
-      <label htmlFor="seance-texte" className="text-sm leading-5 text-attenue">
-        Texte examiné
-      </label>
-      <select
-        id="seance-texte"
-        value={choisi ?? ""}
-        onChange={(evenement) => onChoisir(evenement.target.value)}
-        className="mt-2 block h-13 w-full truncate rounded-full border border-trait bg-fond pr-10 pl-5 text-[15px] text-texte outline-none transition-colors duration-150 hover:border-attenue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte"
-      >
-        {textes.map((texte) => (
-          <option key={texte.id} value={texte.id}>
-            {titreLisible(texte.titre)}
-            {arbitres.has(texte.id) ? " (tranché par vous)" : ""}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-/** La bascule : l'Assemblée de 2026, puis l'hémicycle de 2050. */
-function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance: Seance) => void }) {
   return (
     <div role="group" aria-label="Choisir la séance" className="flex w-full gap-1 rounded-full bg-relief p-1 md:w-fit">
       {(
@@ -117,11 +109,25 @@ function ChoixSeance({ seance, onChoisir }: { seance: Seance; onChoisir: (seance
           aria-pressed={seance === valeur}
           onClick={() => onChoisir(valeur)}
           className={cn(
-            "inline-flex min-h-11 cursor-pointer items-center justify-center flex-1 whitespace-nowrap rounded-full px-3 text-[15px] font-medium outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte sm:px-6 md:flex-none",
-            seance === valeur ? "bg-texte text-fond" : "text-attenue hover:text-texte",
+            "relative inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center whitespace-nowrap rounded-full px-3 text-[15px] font-medium outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte active:scale-[0.98] sm:px-6 md:flex-none",
+            seance === valeur ? "text-fond" : "text-attenue hover:text-texte",
           )}
         >
-          {libelle}
+          {seance === valeur ? (
+            <motion.span
+              layoutId="seance-pastille"
+              transition={RESSORT}
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-texte"
+            />
+          ) : null}
+          <span className="relative">{libelle}</span>
+          {invite && valeur === "2050" ? (
+            <span aria-hidden className="relative ml-2 inline-flex size-2">
+              <span className="absolute inset-0 rounded-full bg-machine opacity-60 motion-safe:animate-ping" />
+              <span className="relative size-2 rounded-full bg-machine" />
+            </span>
+          ) : null}
         </button>
       ))}
     </div>
@@ -137,37 +143,56 @@ function ScenePublique({
   description,
   seance,
   candidate,
+  attente = false,
 }: {
   etats: Parameters<typeof Hemicycle>[0]["etats"];
   description: string;
   seance: Seance;
   candidate: Candidate;
+  /** Vrai tant que les votes ne sont pas lus : les sièges gris respirent doucement. */
+  attente?: boolean;
 }) {
   const machine = seance === "2050";
+  const reduit = useReducedMotion();
   return (
     <div
-      className="@container relative mx-auto w-full max-w-4xl overflow-hidden"
-      style={{ "--machine": candidate.teintes[1], "--pas-siege": "2.6ms" } as React.CSSProperties}
+      className={cn("@container relative mx-auto w-full max-w-3xl overflow-hidden", attente && "motion-safe:animate-pulse")}
+      style={{ "--machine": candidate.teintes[1], "--pas-siege": `${PAS_SIEGE_MS}ms` } as React.CSSProperties}
     >
       <Hemicycle etats={etats} description={description} className="block w-full" />
+      {/* L'onde : au passage en 2050, un anneau à la couleur de l'IA part du creux de l'arc et balaie les gradins. */}
+      <AnimatePresence>
+        {machine && !reduit ? (
+          <motion.span
+            key={`onde-${candidate.id}`}
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-1/2 aspect-square w-[18cqw] -translate-x-1/2 translate-y-1/2 rounded-full border-[0.6cqw]"
+            style={{ borderColor: candidate.teintes[1] }}
+            initial={{ scale: 0.6, opacity: 0.7 }}
+            animate={{ scale: 6, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: VAGUE, ease: DOUX }}
+          />
+        ) : null}
+      </AnimatePresence>
       <motion.div
         aria-hidden
         className="absolute -bottom-[7.4cqw] left-1/2 w-[18cqw] -translate-x-1/2 @2xl:-bottom-[8.9cqw] @2xl:w-[21cqw]"
         initial={false}
-        animate={{ y: machine ? "0%" : "55%", opacity: machine ? 1 : 0 }}
-        transition={{ duration: 1.2, ease: [0.2, 0.8, 0.2, 1] }}
+        animate={{ y: machine ? "0%" : "55%", opacity: machine ? 1 : 0, scale: machine ? 1 : 0.85 }}
+        transition={{ duration: DUREE.scene, ease: DOUX }}
       >
         <Sphere teintes={candidate.teintes} duree={12} />
       </motion.div>
-      <p
+      <motion.p
         aria-hidden
-        className={cn(
-          "absolute bottom-[11.4cqw] left-1/2 -translate-x-1/2 text-[13px] leading-none font-semibold transition-opacity duration-700 @2xl:bottom-[13.8cqw] @2xl:text-[length:2.2cqw]",
-          machine ? "opacity-100" : "opacity-0",
-        )}
+        className="absolute bottom-[11.4cqw] left-1/2 -translate-x-1/2 text-[13px] leading-none font-semibold @2xl:bottom-[13.8cqw] @2xl:text-[length:2.2cqw]"
+        initial={false}
+        animate={{ opacity: machine ? 1 : 0, y: machine ? 0 : 6 }}
+        transition={{ duration: DUREE.entree, delay: machine ? DUREE.etat : 0, ease: DOUX }}
       >
         {candidate.prenom}
-      </p>
+      </motion.p>
     </div>
   );
 }
@@ -302,6 +327,101 @@ function Decomptes({
   );
 }
 
+/**
+ * Le tableau d'affichage, juste sous l'arc : quatre compteurs qui défilent au rythme de la vague, et le verdict qui
+ * tombe quand la vague a fini de passer. C'est la conclusion de la bascule, lisible sans défiler.
+ */
+function TableauAffichage({
+  seance,
+  candidate,
+  reel,
+  simulation,
+  onBasculer,
+}: {
+  seance: Seance;
+  candidate: Candidate;
+  reel: ResultatScrutin | null;
+  simulation: Simulation2050;
+  onBasculer: (seance: Seance) => void;
+}) {
+  const en2050 = seance === "2050";
+  const d = reel?.scrutin.decompte;
+  const valeurs = en2050
+    ? { pour: simulation.pour, contre: simulation.contre, abstention: simulation.abstention, absents: 0 }
+    : { pour: d?.pour ?? 0, contre: d?.contre ?? 0, abstention: d?.abstention ?? 0, absents: d?.non_votants ?? 0 };
+  const verdict = en2050 ? adopte(simulation.adopte ? "adopte" : "rejete") : reel ? adopte(reel.scrutin.resultat) : null;
+  // En 2050, le verdict attend la fin de la vague ; en 2026, il suit les compteurs.
+  const delaiVerdict = en2050 ? VAGUE * 0.85 : DUREE.etat;
+  const compteurs = [
+    { cle: "pour", libelle: "Pour", valeur: valeurs.pour, fond: "bg-pour" },
+    { cle: "contre", libelle: "Contre", valeur: valeurs.contre, fond: "bg-contre" },
+    { cle: "abstention", libelle: valeurs.abstention > 1 ? "Abstentions" : "Abstention", valeur: valeurs.abstention, fond: "bg-abstention" },
+    { cle: "absents", libelle: "Non-votants", valeur: valeurs.absents, fond: "bg-absent" },
+  ];
+  const annonce = verdict
+    ? en2050
+      ? `En 2050, avec ${candidate.prenom} : ${verdict.toLowerCase()}, ${valeurs.pour} pour, ${valeurs.contre} contre, ${valeurs.abstention} abstentions.`
+      : `Assemblée de 2026 : ${verdict.toLowerCase()}, ${valeurs.pour} pour, ${valeurs.contre} contre, ${valeurs.abstention} abstentions.`
+    : "";
+
+  return (
+    <div className="mx-auto mt-4 flex max-w-3xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <p role="status" className="sr-only">
+        {annonce}
+      </p>
+      {/* Le verdict : il tombe d'un cran et se pose, sans rebond. */}
+      <div aria-hidden className="flex min-w-0 items-center gap-4">
+        <div className="grid min-h-16 min-w-36">
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.div
+              key={`${seance}:${verdict ?? "attente"}`}
+              initial={{ opacity: 0, y: -18, scale: 1.08 }}
+              animate={{ opacity: 1, y: 0, scale: 1, transition: { ...RESSORT, delay: delaiVerdict } }}
+              exit={{ opacity: 0, y: 10, transition: { duration: DUREE.micro } }}
+              className="col-start-1 row-start-1 origin-left"
+            >
+              <p className={cn("text-[13px] leading-5 text-attenue", en2050 && "font-donnee text-machine")}>
+                {en2050 ? `2050 · ${candidate.prenom} préside` : "2026 · vote réel"}
+              </p>
+              <p className="font-titre text-[2.5rem] leading-none font-semibold tracking-[-0.03em] text-texte">
+                {verdict ?? <span className="text-attenue">…</span>}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <ul role="list" aria-hidden className="grid grid-cols-4 gap-x-4 sm:gap-x-6">
+        {compteurs.map((c) => (
+          <li key={c.cle} className={cn("transition-opacity duration-300", c.valeur === 0 && "opacity-45")}>
+            <span className="flex items-center gap-1.5 text-[13px] leading-5 text-attenue">
+              <span aria-hidden className={cn("size-2 rounded-full", en2050 && c.valeur > 0 ? "bg-machine" : c.fond)} />
+              {c.libelle}
+            </span>
+            <Chiffre
+              valeur={c.valeur}
+              duree={en2050 ? VAGUE : DUREE.scene}
+              className="mt-0.5 block font-titre text-2xl leading-8 font-semibold tracking-[-0.02em] text-texte sm:text-[1.75rem]"
+            />
+          </li>
+        ))}
+      </ul>
+
+      {/* Le geste suivant, toujours à portée : basculer, ou revenir. */}
+      <div className="sm:hidden">
+        <BoutonIA
+          variante={en2050 ? "contour" : "plein"}
+          teintes={candidate.teintes}
+          onClick={() => onBasculer(en2050 ? "2026" : "2050")}
+          className="w-full justify-center"
+        >
+          {en2050 ? "Revenir à 2026" : `Basculer en 2050`}
+        </BoutonIA>
+      </div>
+    </div>
+  );
+}
+
 /** L'IA au pouvoir : l'IA en tête du classement du citoyen ou, à défaut, la première candidate. */
 function useIaPresidente(): { candidate: Candidate; testFait: boolean } {
   const { classement, regle } = useClassement();
@@ -315,7 +435,12 @@ export function VueSeance() {
   const scrutins = useScrutins();
   const { candidate, testFait } = useIaPresidente();
   const [choix, setChoix] = useState<string | null>(null);
-  const [seance, setSeance] = useState<Seance>("2026");
+  const [seance, setSeanceBrute] = useState<Seance>("2026");
+  const [aBascule, setABascule] = useState(false);
+  const setSeance = (suivante: Seance) => {
+    setSeanceBrute(suivante);
+    if (suivante === "2050") setABascule(true);
+  };
 
   const textes = scrutins.data?.data ?? [];
   const arbitres = new Set(textes.filter((texte) => mandat.votes[texte.id]).map((texte) => texte.id));
@@ -341,76 +466,115 @@ export function VueSeance() {
         ? `Assemblée de 2026 : ${reel.scrutin.decompte.pour} pour, ${reel.scrutin.decompte.contre} contre, ${reel.scrutin.decompte.abstention} abstentions, ${reel.scrutin.decompte.non_votants} non-votants.`
         : "Assemblée de 2026 : les votes du texte choisi ne sont pas encore affichés.";
 
-  const demande = texte && position ? { titre: titreLisible(texte.titre), date: texte.date, position } : null;
+  const demande = texte && position ? { titre: titreCourt(texte.titre), date: texte.date, position } : null;
+  const enPanne = pret && (scrutins.error || !texte || !position || !simulation);
 
   return (
-    <MotionConfig reducedMotion="user">
+    <>
       <AvisExemple meta={metaExemple} />
 
-      {/* Une seule entrée pour toute la page ; le reste ne bouge que sur un geste du visiteur. */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-      >
-        <header className="mx-auto flex max-w-2xl flex-col items-center text-center">
+      <motion.header {...ENTREE} className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <div className="flex items-center gap-4">
           <Sphere
             teintes={candidate.teintes}
             duree={14}
             description={`La sphère ${deCandidate(candidate.prenom)}`}
-            className="size-24 shrink-0 sm:size-28"
+            className="size-12 shrink-0 sm:size-14"
           />
-          <h1 className="mt-6 font-titre text-[clamp(2.25rem,4.5vw,3.5rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
+          <h1 className="font-titre text-[clamp(2.25rem,4.5vw,3rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-texte">
             Au pouvoir
           </h1>
-          <p aria-live="polite" className="mt-3 text-lg leading-7 text-attenue">
-            {testFait ? "Votre IA, " : null}
-            <strong className="font-medium text-texte">{candidate.prenom}</strong>
-            {testFait ? ", préside et tranche un vrai texte de 2026." : " préside en attendant la vôtre."}
-          </p>
-          {!testFait ? (
-            <BoutonIA href="/test" className="mt-6">
-              Trouver mon IA
-            </BoutonIA>
-          ) : null}
-        </header>
+        </div>
+        <p className="mt-3 text-lg leading-7 text-attenue">
+          {navigateur && testFait ? "Votre IA, " : null}
+          <strong className="font-medium text-texte">{candidate.prenom}</strong>
+          {navigateur && testFait ? ", préside. " : " préside en attendant la vôtre. "}
+          Choisissez un vrai texte de 2026, puis basculez en 2050.
+        </p>
+      </motion.header>
 
-        <section aria-labelledby="seance-hemicycle" className="mx-auto mt-12 max-w-4xl">
-          <h2 id="seance-hemicycle" className="sr-only">
-            L&apos;hémicycle
-          </h2>
+      <motion.section
+        aria-labelledby="seance-hemicycle"
+        className="mx-auto mt-8 max-w-4xl"
+        initial={ENTREE.initial}
+        animate={ENTREE.animate}
+        transition={{ ...ENTREE.transition, delay: CASCADE * 2 }}
+      >
+        <h2 id="seance-hemicycle" className="sr-only">
+          L&apos;hémicycle
+        </h2>
 
-          {!pret ? (
-            <Attente libelle="Lecture de vos choix et des textes…" hauteur="h-80" />
-          ) : scrutins.error ? (
+        {enPanne ? (
+          scrutins.error ? (
             <Panne
               titre="La liste des textes n'a pas pu être lue."
               detail={(scrutins.error as Error).message}
               onReessayer={() => void scrutins.mutate()}
             />
-          ) : !texte || !position || !simulation ? (
+          ) : (
             <div className="rounded-md bg-relief px-5 py-6">
               <p className="font-medium text-texte">Aucun texte à examiner pour le moment.</p>
             </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-4 md:flex-row md:items-end">
-                <ChoixTexte textes={textes} choisi={texte.id} arbitres={arbitres} onChoisir={setChoix} />
-                <ChoixSeance seance={seance} onChoisir={setSeance} />
-              </div>
+          )
+        ) : (
+          <>
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              {texte ? (
+                <SelecteurTexte textes={textes} choisi={texte} votes={mandat.votes} onChoisir={setChoix} />
+              ) : (
+                <div aria-hidden className="min-w-0 flex-1">
+                  <div className="h-5 w-28 rounded-full bg-relief" />
+                  <div className="mt-2 h-12 rounded-full bg-relief motion-safe:animate-pulse" />
+                </div>
+              )}
+              <ChoixSeance seance={seance} invite={!aBascule && !!reel} onChoisir={setSeance} />
+            </div>
 
-              <div className="mt-8" aria-busy={resultat.isLoading}>
-                <ScenePublique etats={etats} description={description} seance={seance} candidate={candidate} />
-              </div>
-
-              <div className="mt-10" aria-busy={resultat.isLoading}>
-                {resultat.error ? (
+            <div className="mt-6" aria-busy={!reel && !resultat.error}>
+              {/* L'arc est là dès la première image : gris le temps de la lecture, puis la couleur balaie les sièges. */}
+              <ScenePublique
+                etats={pret ? etats : []}
+                description={pret ? description : "Lecture de vos choix et des textes…"}
+                seance={seance}
+                candidate={candidate}
+                attente={!reel && !resultat.error && seance === "2026"}
+              />
+              {resultat.error ? (
+                <div className="mt-6">
                   <Panne
                     titre="Le détail de ce scrutin n'est pas disponible."
                     detail={`${(resultat.error as Error).message} Choisissez un autre texte, ou réessayez.`}
                     onReessayer={() => void resultat.mutate()}
                   />
-                ) : !reel ? (
+                </div>
+              ) : simulation ? (
+                <TableauAffichage
+                  seance={seance}
+                  candidate={candidate}
+                  reel={reel}
+                  simulation={simulation}
+                  onBasculer={setSeance}
+                />
+              ) : (
+                <div aria-hidden className="mx-auto mt-4 h-16 max-w-3xl" />
+              )}
+            </div>
+
+            {navigateur && !testFait ? (
+              <motion.div {...A_LA_VUE} className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 rounded-lg bg-relief px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
+                <p className="text-[15px] leading-6 text-texte">
+                  {candidate.prenom} préside par défaut. Et si c&apos;était votre IA ?
+                </p>
+                <BoutonIA href="/test" className="shrink-0">
+                  Trouver mon IA
+                </BoutonIA>
+              </motion.div>
+            ) : null}
+
+            {texte && position && simulation ? (
+              <motion.div {...A_LA_VUE} className="mt-14" aria-busy={resultat.isLoading}>
+                <h3 className="mb-6 text-[15px] font-semibold leading-6 text-texte">Le détail du décompte</h3>
+                {resultat.error ? null : !reel ? (
                   <Attente libelle="Lecture des votes du scrutin…" hauteur="h-48" />
                 ) : (
                   <Decomptes
@@ -421,40 +585,43 @@ export function VueSeance() {
                     dateCalcul={resultat.data?.meta.recuLe ?? null}
                   />
                 )}
-              </div>
+              </motion.div>
+            ) : null}
+          </>
+        )}
+      </motion.section>
+
+      {texte && position ? (
+        <motion.section {...A_LA_VUE} aria-labelledby="seance-amendement" className="mx-auto mt-20 max-w-4xl">
+          <h2 id="seance-amendement" className={`mb-2 ${H2}`}>
+            L&apos;amendement {deCandidate(candidate.prenom)}
+          </h2>
+          <p className="mb-6 text-[15px] leading-6 text-attenue">
+            Elle ne fait pas que voter : elle réécrit le texte selon ses priorités, sous vos yeux.
+          </p>
+          <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
+        </motion.section>
+      ) : null}
+
+      {texte && position ? (
+        <motion.section {...A_LA_VUE} aria-labelledby="seance-groupes" className="mx-auto mt-20 max-w-4xl">
+          <h2 id="seance-groupes" className={`mb-6 ${H2}`}>
+            Les groupes en 2026
+          </h2>
+          {reel ? (
+            <>
+              <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
+              <SourceBadge source={reel.scrutin.source} className="mt-4" />
             </>
+          ) : resultat.error ? (
+            <p className="rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">
+              Groupes indisponibles pour ce scrutin.
+            </p>
+          ) : (
+            <Attente libelle="Lecture des groupes…" hauteur="h-56" />
           )}
-        </section>
-
-        {texte && position ? (
-          <section aria-labelledby="seance-amendement" className="mx-auto mt-20 max-w-4xl">
-            <h2 id="seance-amendement" className={`mb-6 ${H2}`}>
-              L&apos;amendement {deCandidate(candidate.prenom)}
-            </h2>
-            <Amendement key={`${candidate.id}:${texte.id}:${position}`} demande={demande} candidate={candidate} />
-          </section>
-        ) : null}
-
-        {texte && position ? (
-          <section aria-labelledby="seance-groupes" className="mx-auto mt-20 max-w-4xl">
-            <h2 id="seance-groupes" className={`mb-6 ${H2}`}>
-              Les groupes en 2026
-            </h2>
-            {reel ? (
-              <>
-                <TableauGroupes groupes={reel.groupes} prenom={candidate.prenom} position={position} />
-                <SourceBadge source={reel.scrutin.source} className="mt-4" />
-              </>
-            ) : resultat.error ? (
-              <p className="rounded-md bg-relief px-5 py-5 text-[15px] leading-6 text-attenue">
-                Groupes indisponibles pour ce scrutin.
-              </p>
-            ) : (
-              <Attente libelle="Lecture des groupes…" hauteur="h-56" />
-            )}
-          </section>
-        ) : null}
-      </motion.div>
-    </MotionConfig>
+        </motion.section>
+      ) : null}
+    </>
   );
 }

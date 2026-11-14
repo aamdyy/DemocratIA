@@ -8,7 +8,7 @@ import { mandat, type Mandat } from "@/lib/mandat";
 import { AFFIRMATIONS, CRANS, libelleCran } from "@/lib/questions/accords";
 import type { Chapitre } from "@/lib/questions/chapitres";
 
-import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, RESSORT_VIF, TITRE_CARTE } from "./chapitre";
+import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, RESSORT_VIF, SORTIE, TITRE_CARTE } from "./chapitre";
 
 /** Couleur de la pastille par cran : rouge (pas du tout) → gris (sans avis) → bleu (tout à fait). Le libellé et le signe disent la même chose. */
 const COULEUR_CRAN: Record<number, string> = {
@@ -75,7 +75,7 @@ export function ChapitreAccords({
                 variants={{
                   entree: (s: number) => ({ opacity: 0, x: 48 * s }),
                   posee: { opacity: 1, x: 0, transition: RESSORT },
-                  sortie: (s: number) => ({ opacity: 0, x: -48 * s, transition: RESSORT_VIF }),
+                  sortie: (s: number) => ({ opacity: 0, x: -48 * s, transition: SORTIE }),
                 }}
                 initial="entree"
                 animate="posee"

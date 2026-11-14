@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { deCandidate } from "@/components/candidates/prenom";
+import { DOUX, DUREE, RESSORT } from "@/lib/animation";
 import type { Candidate } from "@/lib/candidates";
 import { THEMES } from "@/lib/themes";
 import type { Position } from "@/lib/types";
@@ -113,6 +114,7 @@ export function Amendement({
   const [etat, setEtat] = useState<Etat>(REPOS);
   const controleur = useRef<AbortController | null>(null);
   const ecrit = etat.statut === "ecriture";
+  const reduit = useReducedMotion();
 
   // Si la vue disparaît pendant la dictée, on coupe la connexion.
   useEffect(() => () => controleur.current?.abort(), []);
@@ -202,7 +204,19 @@ export function Amendement({
         <SphereEmettrice candidate={candidate} ecrit={ecrit} />
         <div className="min-w-0 flex-1">
           <p className="font-donnee text-[13px] leading-5 tracking-[0.04em] text-texte uppercase">
-            Amendement n° <span className="whitespace-nowrap">{numero ?? "IA-…"}</span>
+            Amendement n°{" "}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={numero ?? "attente"}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: DUREE.etat, ease: DOUX }}
+                className="inline-block whitespace-nowrap"
+              >
+                {numero ?? "IA-…"}
+              </motion.span>
+            </AnimatePresence>
           </p>
           <p className="text-[15px] leading-6 text-attenue">
             Présenté par <span className="font-medium text-texte">{prenom}</span>, présidente IA
@@ -210,7 +224,34 @@ export function Amendement({
         </div>
         {/* Le statut, annoncé poliment ; l'emplacement reste réservé pour que l'en-tête ne saute pas. */}
         <p role="status" className="sr-only text-sm leading-5 whitespace-nowrap text-attenue sm:not-sr-only">
-          {statut}
+          <AnimatePresence mode="wait" initial={false}>
+            {etat.statut === "termine" ? (
+              <motion.span
+                key="depose"
+                initial={{ opacity: 0, scale: 1.25 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={RESSORT}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-texte px-3 font-donnee text-[13px] tracking-[0.04em] text-texte uppercase"
+              >
+                <svg aria-hidden viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2.5 6.3 5 8.6l4.5-5.2" />
+                </svg>
+                Déposé
+                <span className="sr-only"> : {statut}</span>
+              </motion.span>
+            ) : statut ? (
+              <motion.span
+                key={statut}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: DUREE.etat, ease: DOUX }}
+              >
+                {statut}
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
         </p>
       </header>
 
@@ -220,47 +261,84 @@ export function Amendement({
         </p>
       ) : null}
 
-      <div className="relative px-5 py-6 sm:px-8 sm:py-7">
-        {vierge ? (
-          <>
-            {/* La feuille vierge : des lignes en attente, et l'action au centre. */}
-            <div aria-hidden className="space-y-3.5">
-              {LIGNES_EN_ATTENTE.map((largeur, i) => (
-                <div key={i} className={cn("h-2 rounded-full bg-relief", largeur)} />
-              ))}
-            </div>
-            <div className="absolute inset-0 grid place-items-center px-5">
-              <div className="flex max-w-md flex-col items-center gap-3 rounded-xl bg-fond/95 px-6 py-5 text-center">
-                {etat.statut === "erreur" ? (
-                  <p role="alert" className="text-[15px] leading-6 text-texte">
-                    {etat.message}
-                  </p>
-                ) : null}
-                <BoutonIA teintes={teintes} onClick={() => void demander()} desactive={!demande}>
-                  {etat.statut === "erreur" ? "Réessayer" : "Rédiger l'amendement"}
-                </BoutonIA>
-                {etat.statut !== "erreur" ? (
-                  <p className="text-sm leading-5 text-attenue">{prenom} l&apos;écrit en direct, selon ses priorités.</p>
-                ) : null}
+      <div className="relative grid px-5 py-6 sm:px-8 sm:py-7">
+        <AnimatePresence initial={false} mode="popLayout">
+          {vierge ? (
+            <motion.div
+              key="vierge"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: DUREE.etat, ease: DOUX } }}
+              className="relative col-start-1 row-start-1"
+            >
+              {/* La feuille vierge : des lignes en attente, et l'action au centre. */}
+              <div aria-hidden className="space-y-3.5">
+                {LIGNES_EN_ATTENTE.map((largeur, i) => (
+                  <div key={i} className={cn("h-2 rounded-full bg-relief", largeur)} />
+                ))}
               </div>
-            </div>
-          </>
-        ) : (
-          <div
-            aria-live="polite"
-            aria-busy={ecrit}
-            className={cn(
-              "min-h-44 font-donnee text-[14px] leading-7 whitespace-pre-wrap text-texte [overflow-wrap:anywhere] sm:text-[15px]",
-              ecrit && "curseur-machine",
-            )}
-          >
-            {ecrit || corps.trim() ? corps : etat.texte}
-          </div>
-        )}
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="flex max-w-md flex-col items-center gap-3 rounded-xl bg-fond/95 px-6 py-5 text-center">
+                  {etat.statut === "erreur" ? (
+                    <p role="alert" className="text-[15px] leading-6 text-texte">
+                      {etat.message}
+                    </p>
+                  ) : null}
+                  <BoutonIA teintes={teintes} onClick={() => void demander()} desactive={!demande}>
+                    {etat.statut === "erreur" ? "Réessayer" : "Rédiger l'amendement"}
+                  </BoutonIA>
+                  {etat.statut !== "erreur" ? (
+                    <p className="text-sm leading-5 text-attenue">{prenom} l&apos;écrit en direct, selon ses priorités.</p>
+                  ) : null}
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="feuille"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DUREE.etat, ease: DOUX }}
+              className="col-start-1 row-start-1 min-h-44"
+            >
+              <div
+                aria-live="polite"
+                aria-busy={ecrit}
+                className={cn(
+                  "font-donnee text-[14px] leading-7 whitespace-pre-wrap text-texte [overflow-wrap:anywhere] sm:text-[15px]",
+                  ecrit && "curseur-machine",
+                )}
+              >
+                {ecrit || corps.trim() ? corps : etat.texte}
+              </div>
+              {/* Tant que la première phrase n'est pas arrivée, les lignes à venir respirent sous le curseur. */}
+              {ecrit && !corps.trim() ? (
+                <div aria-hidden className="mt-3 space-y-3.5">
+                  {LIGNES_EN_ATTENTE.slice(0, 5).map((largeur, i) => (
+                    <motion.div
+                      key={i}
+                      className={cn("h-2 rounded-full bg-relief", largeur)}
+                      animate={reduit ? undefined : { opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
+      <AnimatePresence initial={false}>
       {!vierge ? (
-        <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-trait px-5 py-4 sm:px-8">
+        <motion.footer
+          key="pied"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: DUREE.etat, ease: DOUX }}
+          className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-trait px-5 py-4 sm:px-8"
+        >
           <div className="min-w-0 space-y-1">
             {statut ? (
               <p aria-hidden className="text-sm leading-5 text-texte sm:hidden">
@@ -300,8 +378,9 @@ export function Amendement({
               {etat.statut === "erreur" ? "Réessayer" : "Réécrire l'amendement"}
             </BoutonIA>
           )}
-        </footer>
+        </motion.footer>
       ) : null}
+      </AnimatePresence>
     </article>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { CASCADE, DOUX, DUREE } from "@/lib/animation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
@@ -9,7 +10,7 @@ import type { Chapitre } from "@/lib/questions/chapitres";
 import { SCENARIOS, type OptionScenario, type Scenario } from "@/lib/questions/scenarios";
 import { libelleTheme, type ThemeId } from "@/lib/themes";
 
-import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, RESSORT_VIF } from "./chapitre";
+import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, SORTIE } from "./chapitre";
 
 /** Chapitre « Scénarios 2050 » : une dépêche fictive qui s'écrit, trois réponses en cartes, l'effet du choix. */
 export function ChapitreScenarios({
@@ -55,7 +56,7 @@ export function ChapitreScenarios({
             key={scenario.id}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0, transition: RESSORT }}
-            exit={{ opacity: 0, y: -12, transition: RESSORT_VIF }}
+            exit={{ opacity: 0, y: -12, transition: SORTIE }}
           >
             <Depeche scenario={scenario} />
             <Options
@@ -106,7 +107,7 @@ function Depeche({ scenario }: { scenario: Scenario }) {
         className="absolute inset-x-0 top-0 h-0.5 origin-left bg-texte"
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
-        transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+        transition={{ duration: DUREE.scene, ease: DOUX }}
       />
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-attenue">
         <span className="inline-flex items-center gap-2 font-medium text-texte">
@@ -132,9 +133,9 @@ function Depeche({ scenario }: { scenario: Scenario }) {
             key={i}
             aria-hidden
             className="inline-block whitespace-pre"
-            initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.3, delay: 0.25 + i * 0.045, ease: [0.2, 0.8, 0.2, 1] }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DUREE.etat, delay: 0.25 + i * (CASCADE / 2), ease: DOUX }}
           >
             {mot}
             {i < mots.length - 1 ? " " : ""}

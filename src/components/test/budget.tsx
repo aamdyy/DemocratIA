@@ -1,6 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { DOUX, DUREE } from "@/lib/animation";
 import { useEffect, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
@@ -149,7 +150,7 @@ function Montant({ valeur }: { valeur: number }) {
   const courant = useMotionValue(valeur);
   const arrondi = useTransform(courant, (v) => Math.round(v));
   useEffect(() => {
-    const lecture = animate(courant, valeur, { duration: reduit ? 0 : 0.35, ease: [0.2, 0.8, 0.2, 1] });
+    const lecture = animate(courant, valeur, { duration: reduit ? 0 : DUREE.etat, ease: DOUX });
     return () => lecture.stop();
   }, [courant, valeur, reduit]);
   return <motion.span>{arrondi}</motion.span>;

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { DOUX, DUREE } from "@/lib/animation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
@@ -9,7 +10,7 @@ import { mandat, type Mandat } from "@/lib/mandat";
 import type { Chapitre } from "@/lib/questions/chapitres";
 import type { Scrutin } from "@/lib/types";
 
-import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, TITRE_CARTE } from "./chapitre";
+import { BOUTON_DISCRET, CADRE, EnteteChapitre, FOCUS, FinChapitre, RESSORT, SORTIE, TITRE_CARTE } from "./chapitre";
 
 type Pari = "adopte" | "rejete";
 const LIBELLE: Record<Pari, string> = { adopte: "Adopté", rejete: "Rejeté" };
@@ -74,7 +75,7 @@ export function ChapitrePronostics({
               className={`${CADRE} relative min-h-[20rem] overflow-hidden`}
               initial={{ opacity: 0, y: 16, rotateX: -8 }}
               animate={{ opacity: 1, y: 0, rotateX: 0, transition: RESSORT }}
-              exit={{ opacity: 0, y: -12, transition: { duration: 0.18 } }}
+              exit={{ opacity: 0, y: -12, transition: SORTIE }}
             >
               <p className="text-sm text-attenue">
                 {scrutin.numero ? `Scrutin n° ${scrutin.numero}, ` : "Scrutin "}du {dateLongue(scrutin.date)}
@@ -182,7 +183,7 @@ function Revelation({ scrutin, pari }: { scrutin: Scrutin; pari: Pari }) {
                   pathLength={100}
                   initial={{ strokeDasharray: `0 100`, strokeDashoffset: -debut }}
                   animate={{ strokeDasharray: `${part} ${100 - part}`, strokeDashoffset: -debut }}
-                  transition={{ duration: 0.7, delay: 0.1 + i * 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+                  transition={{ duration: DUREE.entree, delay: 0.1 + i * 0.35, ease: DOUX }}
                 />
               );
             })}
@@ -208,7 +209,7 @@ function Revelation({ scrutin, pari }: { scrutin: Scrutin; pari: Pari }) {
           className="rounded-xl border-[3px] border-texte px-4 py-1.5 font-titre text-2xl font-bold tracking-[-0.01em]"
           initial={{ opacity: 0, scale: 1.8, rotate: -14 }}
           animate={{ opacity: 1, scale: 1, rotate: -6 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.45, delay: 1.35 }}
+          transition={{ ...RESSORT, delay: 1.35 }}
         >
           {LIBELLE[scrutin.resultat]}
         </motion.p>
@@ -232,7 +233,7 @@ function Compte({ valeur, delai }: { valeur: number; delai: number }) {
   const arrondi = useTransform(courant, (v) => nombre(Math.round(v)));
   useEffect(() => {
     if (reduit) return;
-    const lecture = animate(courant, valeur, { duration: 0.8, delay: delai, ease: [0.2, 0.8, 0.2, 1] });
+    const lecture = animate(courant, valeur, { duration: DUREE.entree, delay: delai, ease: DOUX });
     return () => lecture.stop();
   }, [courant, valeur, delai, reduit]);
   return <motion.span className="font-medium text-texte">{arrondi}</motion.span>;

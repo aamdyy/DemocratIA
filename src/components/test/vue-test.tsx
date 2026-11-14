@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AvisExemple } from "@/components/avis-exemple";
+import { DUREE, ENTREE, RESSORT } from "@/lib/animation";
 import { useScrutins } from "@/lib/api";
 import { classerCandidates } from "@/lib/candidates";
 import { DILEMMES } from "@/lib/dilemmes";
@@ -17,10 +18,10 @@ import type { Scrutin } from "@/lib/types";
 
 import { ChapitreAccords } from "./accords";
 import { ChapitreBudget } from "./budget";
-import { DOUX, IntroChapitre, Sommaire, type Avancement } from "./chapitre";
+import { ContexteTest, IntroChapitre, Sommaire, type Avancement, type EtatTest } from "./chapitre";
 import { ChapitreTextes } from "./chapitre-textes";
 import { ChapitreClassement } from "./classement";
-import { CourseIA } from "./course";
+import { CourseCompacte, CourseIA } from "./course";
 import { ChapitreDilemmes } from "./dilemmes";
 import { FinDuTest } from "./fin";
 import { PileEnAttente, PileEnErreur } from "./pile-textes";
@@ -35,11 +36,37 @@ const TEXTES_REQUIS = 5;
 /** Ou, à défaut, la précision à partir de laquelle le lien « Voir mon IA » apparaît. */
 const PRECISION_POUR_VOIR = 30;
 
+/** Le passage d'un écran à l'autre : l'ancien s'efface vite, le nouveau monte en place. */
 const ECRAN = {
-  entree: { opacity: 0, y: 28, filter: "blur(6px)" },
-  pose: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", bounce: 0, duration: 0.6 } },
-  sortie: { opacity: 0, y: -18, filter: "blur(4px)", transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
+  entree: { opacity: 0, y: 20 },
+  pose: { opacity: 1, y: 0, transition: RESSORT },
+  sortie: { opacity: 0, y: -10, transition: { duration: DUREE.micro, ease: "easeIn" } },
 } as const;
+
+/**
+ * Une boîte dont la hauteur suit son contenu en douceur : quand une carte change,
+ * le bas de la page glisse au lieu de sauter.
+ */
+function HauteurDouce({ children, className }: { children: React.ReactNode; className?: string }) {
+  const interieur = useRef<HTMLDivElement>(null);
+  const [hauteur, setHauteur] = useState<number | "auto">("auto");
+
+  useEffect(() => {
+    const el = interieur.current;
+    if (!el) return;
+    const observateur = new ResizeObserver(([entree]) => setHauteur(entree.borderBoxSize[0]?.blockSize ?? el.offsetHeight));
+    observateur.observe(el);
+    return () => observateur.disconnect();
+  }, []);
+
+  return (
+    <motion.div initial={false} animate={{ height: hauteur }} transition={RESSORT} className={className}>
+      <div ref={interieur} className="relative">
+        {children}
+      </div>
+    </motion.div>
+  );
+}
 
 /**
  * Le test, en chapitres : la course des IA et la précision en haut, un sommaire, puis chaque chapitre
@@ -57,6 +84,19 @@ export function VueTest() {
   const [intro, setIntro] = useState(true);
   const [annonce, setAnnonce] = useState("");
   const zone = useRef<HTMLDivElement>(null);
+
+  // La grande course sort de l'écran ? Une version compacte reste visible en haut.
+  const course = useRef<HTMLDivElement>(null);
+  const [courseCachee, setCourseCachee] = useState(false);
+  useEffect(() => {
+    const el = course.current;
+    if (!el) return;
+    const observateur = new IntersectionObserver(([e]) => setCourseCachee(!e.isIntersecting && e.boundingClientRect.top < 0), {
+      rootMargin: "-40px 0px 0px 0px",
+    });
+    observateur.observe(el);
+    return () => observateur.disconnect();
+  }, []);
 
   const classement = useMemo(() => classerCandidates(reglages, scrutins), [reglages, scrutins]);
   const resume = resumeDuMandat(reglages, scrutins);
@@ -97,6 +137,11 @@ export function VueTest() {
   const suivant = () => aller(courant + 1);
   const chapitre = CHAPITRES[courant] ?? null;
   const peutVoir = aCommence && (resume.textes >= TEXTES_REQUIS || precision >= PRECISION_POUR_VOIR);
+  const etat: EtatTest = {
+    tete: aCommence ? (classement[0] ?? null) : null,
+    precision,
+    suivant: CHAPITRES[courant + 1] ?? null,
+  };
 
   function contenu() {
     if (!chapitre) {
@@ -117,6 +162,7 @@ export function VueTest() {
           chapitre={chapitre}
           numero={courant + 1}
           dejaFait={avancements[chapitre.id]}
+          accueil={courant === 0 && !aCommence}
           onCommencer={() => {
             setIntro(false);
             setAnnonce(`${chapitre.titre} : c'est parti.`);
@@ -151,39 +197,44 @@ export function VueTest() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="mx-auto max-w-3xl">
-        <AvisExemple meta={lecture.data?.meta} />
+      <ContexteTest value={etat}>
+        <div className="mx-auto max-w-3xl">
+          <AvisExemple meta={lecture.data?.meta} />
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: DOUX }}>
-          <CourseIA classement={classement} actif={aCommence} />
-          <Precision valeur={precision} />
-        </motion.div>
+          <motion.div ref={course} {...ENTREE}>
+            <CourseIA classement={classement} actif={aCommence} />
+            <Precision valeur={precision} />
+          </motion.div>
 
-        <div ref={zone} className="scroll-mt-4">
-          <Sommaire courant={courant} avancements={avancements} peutVoir={peutVoir} onAller={(i) => aller(i)} />
-          <h1 className="sr-only">Le test : trouvez l&apos;IA candidate qui vous ressemble</h1>
+          <div ref={zone} className="scroll-mt-20">
+            <Sommaire courant={courant} avancements={avancements} peutVoir={peutVoir} onAller={(i) => aller(i)} />
+            <h1 className="sr-only">Le test : trouvez l&apos;IA candidate qui vous ressemble</h1>
 
-          <LayoutGroup>
-            <div className="relative mt-6">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
-                  key={`${courant}-${intro ? "intro" : "questions"}`}
-                  variants={ECRAN}
-                  initial="entree"
-                  animate="pose"
-                  exit="sortie"
-                >
-                  {contenu()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </LayoutGroup>
+            <LayoutGroup>
+              {/* Hauteur minimale : la plupart des écrans y tiennent, le bas de page ne bouge pas d'un écran à l'autre. */}
+              <HauteurDouce className="mt-4 min-h-[36rem]">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.div
+                    key={`${courant}-${intro ? "intro" : "questions"}`}
+                    variants={ECRAN}
+                    initial="entree"
+                    animate="pose"
+                    exit="sortie"
+                  >
+                    {contenu()}
+                  </motion.div>
+                </AnimatePresence>
+              </HauteurDouce>
+            </LayoutGroup>
+          </div>
         </div>
-      </div>
 
-      <p role="status" aria-live="polite" className="sr-only">
-        {annonce}
-      </p>
+        <CourseCompacte classement={classement} precision={precision} visible={courseCachee && aCommence && chapitre !== null} />
+
+        <p role="status" aria-live="polite" className="sr-only">
+          {annonce}
+        </p>
+      </ContexteTest>
     </MotionConfig>
   );
 }

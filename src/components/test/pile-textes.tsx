@@ -2,6 +2,7 @@
 
 import {
   AnimatePresence,
+  animate,
   motion,
   useIsPresent,
   useMotionValue,
@@ -17,14 +18,17 @@ import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import type { Candidate } from "@/lib/candidates";
 import { nombre, titreLisible } from "@/lib/format";
+import { DOUX, DUREE, RESSORT } from "@/lib/animation";
 import { libelleTheme, themeDe } from "@/lib/themes";
 import type { Position, Scrutin } from "@/lib/types";
+
+import { BilanChapitre } from "./chapitre";
 
 /** Distance, en pixels, au-delà de laquelle un glissement vaut une réponse. */
 const SEUIL = 120;
 
 /** Durée du retour après une réponse, en millisecondes. */
-export const DUREE_RETOUR = 1200;
+export const DUREE_RETOUR = 2600;
 
 /** Sens de la dernière réponse : la carte sort de ce côté. « passe » la fait partir vers le haut. */
 export type Geste = Position | "passe" | null;
@@ -47,7 +51,7 @@ const REPONSES: { position: Position; touche: string }[] = [
 const TOUCHES_NEUTRES = new Set(["Tab", "Shift", "Control", "Alt", "Meta", "CapsLock", "Escape"]);
 
 const CADRE =
-  "col-start-1 row-start-1 flex min-h-[18rem] flex-col rounded-2xl border border-trait bg-surface p-6 sm:p-8";
+  "col-start-1 row-start-1 flex min-h-[20rem] flex-col rounded-2xl border border-trait bg-surface p-6 sm:p-8";
 
 const TITRE = "text-balance font-titre text-[clamp(1.5rem,3.2vw,2.125rem)] font-semibold leading-[1.12] tracking-[-0.03em]";
 
@@ -62,22 +66,22 @@ const CARTE = {
     scale: 1,
     x: 0,
     y: 0,
-    transition: { duration: 0.4, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] as const },
+    transition: { ...RESSORT, delay: 0.08 },
   },
   sortie: (geste: Geste) => ({
     opacity: 0,
     x: geste === "pour" ? 420 : geste === "contre" ? -420 : 0,
     y: geste === "abstention" ? 150 : geste === "passe" ? -60 : 0,
     scale: geste ? 1 : 0.96,
-    transition: { duration: 0.32, ease: [0.4, 0, 0.8, 0.4] as const },
+    transition: { duration: DUREE.etat, ease: "easeIn" as const },
   }),
 };
 
 /** Le retour apparaît à la place de la carte et s'efface sur place. */
 const RETOUR = {
   entree: { opacity: 0, y: 14 },
-  posee: { opacity: 1, y: 0, transition: { duration: 0.28, delay: 0.12, ease: [0.2, 0.8, 0.2, 1] as const } },
-  sortie: { opacity: 0, y: -8, transition: { duration: 0.2, ease: "easeIn" as const } },
+  posee: { opacity: 1, y: 0, transition: { duration: DUREE.etat, delay: 0.12, ease: DOUX } },
+  sortie: { opacity: 0, y: -8, transition: { duration: DUREE.micro, ease: "easeIn" as const } },
 };
 
 /** La pile : le texte en cours, trois réponses, « Passer », et le retour instantané après chaque réponse. */
@@ -86,6 +90,7 @@ export function PileTextes({
   retour,
   geste,
   peutAnnuler,
+  montrerGeste = false,
   onArbitrer,
   onPasser,
   onAnnuler,
@@ -98,6 +103,8 @@ export function PileTextes({
   retour: Retour | null;
   geste: Geste;
   peutAnnuler: boolean;
+  /** Vrai sur la toute première carte : elle esquisse le glisser, une fois, pour montrer le geste. */
+  montrerGeste?: boolean;
   onArbitrer: (position: Position) => void;
   onPasser: () => void;
   onAnnuler: () => void;
@@ -145,6 +152,16 @@ export function PileTextes({
         Textes à trancher
       </h2>
 
+      {/* La légende du geste, alignée sur ses deux directions. */}
+      {scrutin && !retour ? (
+        <p aria-hidden className="mb-2 flex items-center justify-between px-1 text-sm text-attenue">
+          <span>← Contre</span>
+          <span className="text-xs">Glissez la carte</span>
+          <span>Pour →</span>
+        </p>
+      ) : (
+        <p aria-hidden className="mb-2 h-5" />
+      )}
       <div className="relative grid pb-2">
         {/* Une carte qui dépasse derrière : il en reste d'autres à trancher. */}
         {actif ? <div aria-hidden className="col-start-1 row-start-1 translate-y-2 scale-[0.95] rounded-2xl border border-trait" /> : null}
@@ -152,7 +169,7 @@ export function PileTextes({
           {retour ? (
             <CarteRetour key={`retour-${retour.scrutin.id}`} retour={retour} onContinuer={onContinuer} />
           ) : scrutin ? (
-            <CarteTexte key={scrutin.id} scrutin={scrutin} onArbitrer={onArbitrer} />
+            <CarteTexte key={scrutin.id} scrutin={scrutin} montrerGeste={montrerGeste} onArbitrer={onArbitrer} />
           ) : (
             <CarteFin key="fin" prendreLeFocus={geste !== null} onTerminer={onTerminer} />
           )}
@@ -194,8 +211,31 @@ export function PileTextes({
   );
 }
 
-function CarteTexte({ scrutin, onArbitrer }: { scrutin: Scrutin; onArbitrer: (position: Position) => void }) {
+function CarteTexte({
+  scrutin,
+  montrerGeste,
+  onArbitrer,
+}: {
+  scrutin: Scrutin;
+  montrerGeste: boolean;
+  onArbitrer: (position: Position) => void;
+}) {
   const x = useMotionValue(0);
+  const reduit = useReducedMotion();
+  const demo = useRef<ReturnType<typeof animate> | null>(null);
+
+  // Une seule fois : la carte part un peu à droite (« Pour » s'allume), puis à gauche, puis revient.
+  useEffect(() => {
+    if (!montrerGeste || reduit) return;
+    const lecture = animate(x, [0, 78, 0, -78, 0], {
+      duration: 2.2,
+      delay: 0.9,
+      times: [0, 0.28, 0.5, 0.78, 1],
+      ease: "easeInOut",
+    });
+    demo.current = lecture;
+    return () => lecture.stop();
+  }, [montrerGeste, reduit, x]);
   // Une carte en train de sortir ne doit plus rien enregistrer : elle ne répond pas pour le texte suivant.
   const presente = useIsPresent();
   const rotate = useTransform(x, [-320, 320], [-7, 7]);
@@ -215,6 +255,7 @@ function CarteTexte({ scrutin, onArbitrer }: { scrutin: Scrutin; onArbitrer: (po
       exit="sortie"
       drag={presente ? "x" : false}
       dragSnapToOrigin
+      onPointerDown={() => demo.current?.stop()}
       onDragEnd={(_, mouvement) => {
         if (!presente) return;
         if (mouvement.offset.x > SEUIL) onArbitrer("pour");
@@ -343,6 +384,7 @@ function CarteFin({ prendreLeFocus, onTerminer }: { prendreLeFocus: boolean; onT
       <h3 ref={titre} tabIndex={-1} className={`${TITRE} outline-none`}>
         Tous les textes sont parcourus.
       </h3>
+      <BilanChapitre />
       <div className="mt-auto pt-8">
         <BoutonIA onClick={onTerminer}>Chapitre suivant</BoutonIA>
       </div>
