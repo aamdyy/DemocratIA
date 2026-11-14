@@ -379,3 +379,10 @@
     transition: none;
   }
 }
+
+/* L'emblème d'une candidate n'apparaît que sur les sphères assez grandes pour qu'il se lise. */
+@container (max-width: 72px) {
+  .sphere-embleme {
+    display: none;
+  }
+}

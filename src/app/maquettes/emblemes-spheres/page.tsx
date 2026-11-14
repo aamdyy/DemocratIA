@@ -22,7 +22,7 @@ function Proposition({ c, lettre }: { c: Candidate; lettre: "A" | Lettre }) {
   const legende = lettre === "A" ? LEGENDES_A[c.id] : VARIANTES[c.id][lettre].legende;
   return (
     <li className="flex w-[220px] flex-col items-center">
-      <Sphere
+      <Sphere sansEmbleme
         teintes={c.teintes}
         description={`Emblème de ${c.prenom}, proposition ${lettre} : ${legende}`}
         className="w-[220px]"

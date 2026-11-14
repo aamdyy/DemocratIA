@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { EmblemeDeSphere } from "@/components/sphere-embleme";
 
 export type Teintes = readonly [fond: string, nuage1: string, nuage2: string, nuage3: string];
 
@@ -28,6 +29,7 @@ export function Sphere({
   duree = 16,
   description,
   className,
+  sansEmbleme = false,
   children,
 }: {
   teintes: Teintes;
@@ -39,6 +41,8 @@ export function Sphere({
   /** Texte lu par les lecteurs d'écran. Sans lui, la sphère est décorative. */
   description?: string;
   className?: string;
+  /** Vrai pour ne pas poser l'emblème de la candidate sur la sphère (il est posé par défaut). */
+  sansEmbleme?: boolean;
   children?: React.ReactNode;
 }) {
   const style = {
@@ -68,6 +72,7 @@ export function Sphere({
       <div className="sphere-courant" />
       <div className="sphere-volume" />
       <div className="sphere-grain" />
+      {sansEmbleme ? null : <EmblemeDeSphere teintes={teintes} />}
       {children}
     </div>
   );
