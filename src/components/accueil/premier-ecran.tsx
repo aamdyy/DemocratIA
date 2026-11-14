@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
 import { Sphere } from "@/components/sphere";
-import { SphereVocale } from "@/components/sphere-vocale";
 import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
 import { FOCUS } from "./reveal";
@@ -138,12 +137,7 @@ export function PremierEcran() {
               // Ressort doux, sans rebond : les sphères glissent d'une place à l'autre comme sur un rail.
               transition={{ type: "spring", visualDuration: 1.1, bounce: 0.08, opacity: { duration: 0.8, ease: "easeInOut" } }}
             >
-              {/* Seules les trois sphères visibles ouvrent un contexte WebGL ; celles qui attendent derrière restent légères. */}
-              {place.opacity > 0 ? (
-                <SphereVocale teintes={c.teintes} />
-              ) : (
-                <Sphere teintes={c.teintes} duree={14 + i * 3} />
-              )}
+              <Sphere teintes={c.teintes} duree={14 + i * 3} />
             </motion.button>
           );
         })}
