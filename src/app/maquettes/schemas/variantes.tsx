@@ -1,19 +1,28 @@
 "use client";
 
-import { animate, motion, useInView, useMotionValue, useMotionValueEvent, useReducedMotion } from "motion/react";
+import { animate, motion, useInView, useMotionValue, useMotionValueEvent } from "motion/react";
 import type { TargetAndTransition, Transition } from "motion/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 
 import { SCHEMAS } from "@/app/(app)/accueils/_composants/schemas";
+import { useMouvementReduit } from "@/components/accueil/hooks";
 
 /**
  * Propositions de schémas animés pour la section « Ce qu'un humain promet, une IA le tient. ».
  * Pour chaque ligne : A = le schéma actuel, B et C = deux idées nouvelles, en SVG de 240 × 90.
  * Chaque schéma démarre à son entrée à l'écran, boucle doucement, et se fige sur un état parlant
  * si l'utilisateur a demandé moins d'animations. Humain en gris, IA en --machine.
+ *
+ * Les quatre schémas retenus pour l'accueil (Mandat C, Programme C, Décisions B, Assemblée B) racontent
+ * leur idée en un cycle court de CYCLE secondes : un début, une action, une résolution, une pause.
+ * L'humain et l'IA d'une même ligne partagent le même départ (LigneSynchro) : leurs cycles battent ensemble.
  */
 
 const DUREE = 9;
+/** Le cycle des quatre schémas retenus, en secondes. */
+const CYCLE = 6;
+/** Le court temps de pose avant le premier cycle, le temps que la ligne finisse d'entrer à l'écran. */
+const DEPART = 0.35;
 
 type Scene = { joue: boolean; reduit: boolean };
 type Valeurs = readonly (number | string)[];
@@ -46,28 +55,89 @@ function kf(sc: Scene, times: readonly number[], props: Record<string, Valeurs>,
     animate: (sc.joue ? boucle : fixe) as TargetAndTransition,
     transition: (sc.reduit || !sc.joue
       ? { duration: 0 }
-      : { duration: duree, times: [...times], repeat: Infinity, ease }) as Transition,
+      : { duration: duree, times: [...times], repeat: Infinity, ease, delay: DEPART }) as Transition,
   };
 }
 
-/** Le cadre commun : SVG accessible, déclenché une fois à l'entrée à l'écran. */
+/** Raccourci pour les schémas retenus : une boucle de CYCLE secondes. */
+function cy(sc: Scene, times: readonly number[], props: Record<string, Valeurs>, options: Omit<OptionsKf, "duree"> = {}) {
+  return kf(sc, times, props, { ...options, duree: CYCLE });
+}
+
+/** L'entrée à l'écran d'une ligne du comparatif, partagée par ses deux schémas. */
+const SynchroLigne = createContext<boolean | null>(null);
+
+/**
+ * Enveloppe une ligne du comparatif : ses deux schémas démarrent à la même image, au moment où la ligne
+ * entre à l'écran, et bouclent ensuite au même rythme.
+ */
+export function LigneSynchro({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const vu = useInView(ref, { once: true, amount: 0.45 });
+  return (
+    <div ref={ref}>
+      <SynchroLigne.Provider value={vu}>{children}</SynchroLigne.Provider>
+    </div>
+  );
+}
+
+/** Le cadre commun : SVG accessible, déclenché une fois à l'entrée à l'écran (celle de sa ligne, s'il en a une). */
 function Cadre({ label, children }: { label: string; children: (sc: Scene) => React.ReactNode }) {
   const ref = useRef<SVGSVGElement>(null);
   const vu = useInView(ref, { once: true, amount: 0.5 });
-  const reduit = useReducedMotion() ?? false;
-  const sc: Scene = { joue: vu && !reduit, reduit };
+  const ligne = useContext(SynchroLigne);
+  // Faux au rendu serveur comme au premier rendu client : pas d'écart d'hydratation.
+  const reduit = useMouvementReduit();
+  const sc: Scene = { joue: (ligne ?? vu) && !reduit, reduit };
   return (
     <svg
       ref={ref}
       viewBox="0 0 240 90"
       role="img"
       aria-label={label}
-      className="block h-auto w-full max-w-[240px] overflow-visible"
+      className="block h-auto w-full max-w-[280px] overflow-visible"
     >
       {children(sc)}
     </svg>
   );
 }
+
+/**
+ * Suit le cycle en cours (progression de 0 à 1, et nombre de tours déjà accomplis) pour en tirer
+ * une valeur discrète : un compteur, une étiquette. `calcul` doit être une fonction de module.
+ * Le cycle démarre en même temps que les images clés de `cy` : compteur et dessin restent accordés.
+ */
+function useSuivi<T extends string | number>(sc: Scene, calcul: (p: number, tour: number) => T, repos: T): T {
+  const progression = useMotionValue(0);
+  const tour = useRef(0);
+  const avant = useRef(0);
+  const [valeur, setValeur] = useState<T>(() => calcul(0, 0));
+  useMotionValueEvent(progression, "change", (v) => {
+    if (v < avant.current - 0.5) tour.current += 1;
+    avant.current = v;
+    setValeur(calcul(v, tour.current));
+  });
+  useEffect(() => {
+    if (!sc.joue) return;
+    const lecture = animate(progression, [0, 1], { duration: CYCLE, ease: "linear", repeat: Infinity, delay: DEPART });
+    return () => lecture.stop();
+  }, [sc.joue, progression]);
+  return sc.reduit ? repos : valeur;
+}
+
+/** Un texte SVG dont le contenu suit le cycle (voir useSuivi). */
+function TexteSuivi({
+  sc,
+  calcul,
+  repos,
+  ...props
+}: { sc: Scene; calcul: (p: number, tour: number) => string; repos: string } & Omit<React.SVGProps<SVGTextElement>, "children">) {
+  const valeur = useSuivi(sc, calcul, repos);
+  return <text {...props}>{valeur}</text>;
+}
+
+/** « 1 vote », « 3 votes » : le pluriel français, zéro compris au singulier. */
+const pluriel = (n: number, mot: string) => `${n} ${n > 1 ? `${mot}s` : mot}`;
 
 /** Un identifiant utilisable dans un url(#…) SVG. */
 function useIdSvg() {
@@ -223,99 +293,187 @@ export function MandatBIA() {
 
 const COLONNES = 12;
 const LIGNES = 5;
-const PAS = 15;
-const CAL_X = 30;
-const CAL_Y = 9;
+const PAS = 14;
+const COTE = 10.5;
+const CAL_X = 44;
+const CAL_Y = 4;
+/** Le curseur parcourt les cinq années, mois après mois, entre ces deux instants du cycle. */
+const CURSEUR_DEBUT = 0.06;
+const CURSEUR_FIN = 0.8;
+const ANNEE = (CURSEUR_FIN - CURSEUR_DEBUT) / LIGNES;
+/** L'instant où le curseur atteint le mois `col` de l'année `rang`. */
+const passage = (rang: number, col: number) => CURSEUR_DEBUT + rang * ANNEE + (col * ANNEE) / COLONNES;
+
 const CASES = Array.from({ length: COLONNES * LIGNES }, (_, i) => ({
   i,
+  rang: Math.floor(i / COLONNES),
+  col: i % COLONNES,
   x: CAL_X + (i % COLONNES) * PAS,
   y: CAL_Y + Math.floor(i / COLONNES) * PAS,
-  /** Un ordre d'allumage qui paraît aléatoire mais ne change jamais (37 est premier avec 60). */
-  ordre: (i * 37) % (COLONNES * LIGNES),
+  /** Une intensité qui varie d'une case à l'autre, sans jamais changer (le flux paraît vivant). */
+  intensite: arrondi(0.5 + (0.5 * ((i * 37) % 7)) / 6),
 }));
 
-function Calendrier({ ia }: { ia: boolean }) {
+/** Le trajet du curseur : il glisse le long d'une année, puis saute au début de la suivante. */
+const TRAJET = (() => {
+  const times: number[] = [0];
+  const x: number[] = [0];
+  const y: number[] = [0];
+  for (let r = 0; r < LIGNES; r++) {
+    const debut = passage(r, 0);
+    const fin = passage(r, COLONNES - 1);
+    times.push(debut, fin, r < LIGNES - 1 ? passage(r + 1, 0) - 0.004 : 0.88);
+    x.push(0, (COLONNES - 1) * PAS, (COLONNES - 1) * PAS);
+    y.push(r * PAS, r * PAS, r * PAS);
+  }
+  times.push(0.94, 1);
+  x.push(0, 0);
+  y.push(0, 0);
+  return { times, x, y };
+})();
+
+function Calendrier({ sc, ia }: { sc: Scene; ia: boolean }) {
   return (
     <>
       {CASES.map((c) => (
-        <rect key={c.i} x={c.x} y={c.y} width={11} height={11} rx={2.5} className="fill-none stroke-trait" strokeWidth={1} />
+        <rect key={c.i} x={c.x} y={c.y} width={COTE} height={COTE} rx={2.5} className="fill-none stroke-trait" strokeWidth={1} />
       ))}
-      {Array.from({ length: LIGNES }, (_, r) => (
-        <text
-          key={r}
-          x={CAL_X - 5}
-          y={CAL_Y + r * PAS + 9}
-          textAnchor="end"
-          className={ia ? "fill-machine" : "fill-attenue"}
-          fontSize={8}
-          opacity={0.8}
-        >
-          {`An ${r + 1}`}
-        </text>
-      ))}
+      {Array.from({ length: LIGNES }, (_, r) => {
+        const debut = passage(r, 0);
+        const fin = r < LIGNES - 1 ? passage(r + 1, 0) : CURSEUR_FIN + 0.04;
+        return (
+          <motion.text
+            key={r}
+            x={CAL_X - 6}
+            y={CAL_Y + r * PAS + 8.5}
+            textAnchor="end"
+            className={ia ? "fill-machine" : "fill-attenue"}
+            fontSize={8.5}
+            fontWeight={500}
+            {...cy(sc, [0, debut - 0.01, debut + 0.01, fin - 0.01, fin + 0.01, 1], { opacity: [0.45, 0.45, 1, 1, 0.45, 0.45] }, { repos: 2 })}
+          >
+            {`An ${r + 1}`}
+          </motion.text>
+        );
+      })}
+      {/* Le curseur : une case cerclée qui avance d'un mois à l'autre, et s'efface pour revenir au début. */}
+      <motion.g {...cy(sc, [0, CURSEUR_DEBUT - 0.02, 0.88, 0.92, 1], { opacity: [0, 1, 1, 0, 0] }, { repos: 3 })}>
+      <motion.rect
+        x={CAL_X - 2}
+        y={CAL_Y - 2}
+        width={COTE + 4}
+        height={COTE + 4}
+        rx={4}
+        className={ia ? "fill-none stroke-machine" : "fill-none stroke-attenue"}
+        strokeWidth={1.6}
+        {...cy(
+          sc,
+          TRAJET.times,
+          { x: TRAJET.x, y: TRAJET.y },
+          { ease: "linear" },
+        )}
+      />
+      </motion.g>
     </>
   );
 }
 
 export function MandatCHumain() {
   return (
-    <Cadre label="Un calendrier de cinq ans, soixante mois : une seule case s'allume, celle du vote au tout début, puis le temps passe sans aucun autre vote.">
+    <Cadre label="Un calendrier de cinq ans : la case du vote s'allume au premier mois de l'An 1, puis le curseur parcourt les quatre années suivantes sans rien allumer. Aucun autre vote avant la fin du mandat.">
       {(sc) => (
         <>
-          <Calendrier ia={false} />
+          <Calendrier sc={sc} ia={false} />
+          {/* La seule case allumée : le vote de l'élection, au tout début. */}
           <motion.rect
-            x={CAL_X - 2}
-            y={CAL_Y - 2}
-            width={COLONNES * PAS - 1}
-            height={PAS}
-            rx={4}
+            x={CAL_X}
+            y={CAL_Y}
+            width={COTE}
+            height={COTE}
+            rx={2.5}
             className="fill-attenue"
-            opacity={0.12}
-            {...kf(sc, [0, 0.05, 0.85, 0.92, 1], { y: [0, 0, PAS * 4, PAS * 4, 0] }, { ease: "linear", repos: 0 })}
+            style={CENTRE}
+            {...cy(sc, [0, CURSEUR_DEBUT, CURSEUR_DEBUT + 0.04, 0.92, 0.97, 1], { opacity: [0, 0, 1, 1, 0, 0], scale: [0.4, 0.4, 1, 1, 0.8, 0.4] }, { repos: 3 })}
           />
-          <rect x={CAL_X} y={CAL_Y} width={11} height={11} rx={2.5} className="fill-attenue" />
-          {sc.joue ? (
-            <motion.rect
-              x={CAL_X}
-              y={CAL_Y}
-              width={11}
-              height={11}
-              rx={2.5}
-              className="fill-none stroke-attenue"
-              strokeWidth={1.2}
-              style={CENTRE}
-              initial={{ scale: 1, opacity: 0.7 }}
-              animate={{ scale: [1, 1.9], opacity: [0.7, 0] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
-            />
-          ) : null}
+          <motion.rect
+            x={CAL_X}
+            y={CAL_Y}
+            width={COTE}
+            height={COTE}
+            rx={2.5}
+            className="fill-none stroke-attenue"
+            strokeWidth={1.2}
+            style={CENTRE}
+            {...cy(sc, [0, CURSEUR_DEBUT + 0.02, CURSEUR_DEBUT + 0.2, 1], { opacity: [0, 0.8, 0, 0], scale: [1, 1, 2.4, 2.4] }, { ease: "easeOut", repos: 3 })}
+          />
+          <motion.text
+            x={CAL_X}
+            y={86}
+            className="fill-attenue"
+            fontSize={9.5}
+            fontWeight={600}
+            {...cy(sc, [0, CURSEUR_DEBUT + 0.02, CURSEUR_DEBUT + 0.06, 0.92, 0.97, 1], { opacity: [0, 0, 1, 1, 0, 0] }, { repos: 3 })}
+          >
+            1 vote
+          </motion.text>
+          {/* Dès l'An 2, la mention : le temps passe, rien ne s'allume. */}
+          <motion.g
+            {...cy(
+              sc,
+              [0, passage(1, 0), passage(1, 0) + 0.05, 0.92, 0.97, 1],
+              { opacity: [0, 0, 1, 1, 0, 0], x: [-4, -4, 0, 0, 0, -4] },
+              { repos: 3 },
+            )}
+          >
+            <line x1={84} y1={83} x2={124} y2={83} className="stroke-trait" strokeWidth={1.2} strokeDasharray="2 3" strokeLinecap="round" />
+            <text x={CAL_X + (COLONNES - 1) * PAS + COTE} y={86} textAnchor="end" className="fill-attenue" fontSize={9.5}>
+              puis aucun vote
+            </text>
+          </motion.g>
         </>
       )}
     </Cadre>
   );
 }
 
+/** Le nombre de cases déjà allumées par le curseur, à cet instant du cycle. */
+function votesAllumes(p: number): number {
+  if (p >= 0.93) return 0;
+  return CASES.filter((c) => passage(c.rang, c.col) <= p).length;
+}
+const libelleVotes = (p: number) => pluriel(votesAllumes(p), "vote");
+
 export function MandatCIA() {
   return (
-    <Cadre label="Le même calendrier de cinq ans : les cases s'allument en flux, partout et sans arrêt, au rythme des votes des citoyens.">
+    <Cadre label="Le même calendrier de cinq ans : à chaque mois que le curseur traverse, une case s'allume. Les votes des citoyens arrivent en flux continu, du premier au dernier jour.">
       {(sc) => (
         <>
-          <Calendrier ia />
+          <Calendrier sc={sc} ia />
           {CASES.map((c) => {
-            const t0 = 0.04 + (0.72 * c.ordre) / (CASES.length - 1);
+            const t = passage(c.rang, c.col);
             return (
               <motion.rect
                 key={c.i}
                 x={c.x}
                 y={c.y}
-                width={11}
-                height={11}
+                width={COTE}
+                height={COTE}
                 rx={2.5}
                 className="fill-machine"
-                {...kf(sc, [0, t0, t0 + 0.03, t0 + 0.16, 1], { opacity: [0, 0, 1, 0.55, 0] }, { repos: 3 })}
+                style={CENTRE}
+                {...cy(
+                  sc,
+                  [0, t, t + 0.02, t + 0.1, 0.93, 0.98, 1],
+                  { opacity: [0, 0, 1, c.intensite, c.intensite, 0, 0], scale: [0.4, 0.4, 1.12, 1, 1, 0.8, 0.4] },
+                  { repos: 4 },
+                )}
               />
             );
           })}
+          <TexteSuivi sc={sc} calcul={libelleVotes} repos={pluriel(CASES.length, "vote")} x={CAL_X} y={86} className="fill-machine font-mono" fontSize={9.5} fontWeight={600} />
+          <text x={CAL_X + (COLONNES - 1) * PAS + COTE} y={86} textAnchor="end" className="fill-machine" fontSize={9.5}>
+            à tout moment
+          </text>
         </>
       )}
     </Cadre>
@@ -399,36 +557,83 @@ export function ProgrammeBIA() {
   );
 }
 
-/* ---------- Programme C : un texte qui se brouille contre un code qui s'exécute ---------- */
+/* ---------- Programme C : des promesses qui se barrent et se brouillent, contre un code qui s'exécute ---------- */
+
+/** Trois promesses de campagne génériques (aucune n'est attribuée à quiconque), avec la largeur estimée du texte. */
+const PROMESSES_C = [
+  { texte: "Baisser les impôts", largeur: 116 },
+  { texte: "Créer des emplois", largeur: 112 },
+  { texte: "Rénover les écoles", largeur: 120 },
+] as const;
+const PROMESSE_X = 44;
+/** L'instant où la promesse `i` est barrée ; elle se brouille juste après. */
+const barre = (i: number) => 0.1 + i * 0.24;
 
 export function ProgrammeCHumain() {
   return (
-    <Cadre label="Un paragraphe de promesses qui se brouille peu à peu jusqu'à devenir illisible : ce qui est promis n'engage à rien.">
+    <Cadre label="Trois promesses de campagne lisibles, « Baisser les impôts », « Créer des emplois », « Rénover les écoles », se barrent puis se brouillent l'une après l'autre : rien ne les rend obligatoires.">
       {(sc) => (
         <>
-          {[
-            { y: 28, texte: "Je m'engage à", dx: -3 },
-            { y: 52, texte: "tout changer,", dx: 4 },
-            { y: 76, texte: "dès demain.", dx: -2 },
-          ].map((l, i) => (
-            <motion.text
-              key={l.texte}
-              x={120}
-              y={l.y}
-              textAnchor="middle"
-              className="fill-attenue"
-              fontSize={17}
-              fontWeight={500}
-              {...kf(
-                sc,
-                [0, 0.12 + i * 0.08, 0.4 + i * 0.08, 0.88, 1],
-                { filter: ["blur(0px)", "blur(0px)", "blur(4px)", "blur(4px)", "blur(0px)"], opacity: [1, 1, 0.4, 0.4, 1], x: [0, 0, l.dx, l.dx, 0] },
-                { repos: 2 },
-              )}
-            >
-              {l.texte}
-            </motion.text>
-          ))}
+          {PROMESSES_C.map((p, i) => {
+            const y = 22 + i * 25;
+            const t = barre(i);
+            return (
+              <g key={p.texte}>
+                {/* La puce : un engagement qui pâlit. */}
+                <motion.circle
+                  cx={PROMESSE_X - 14}
+                  cy={y - 4.5}
+                  r={3}
+                  className="fill-attenue"
+                  {...cy(sc, [0, t, t + 0.08, 0.9, 0.97, 1], { opacity: [1, 1, 0.3, 0.3, 1, 1] }, { repos: 3 })}
+                />
+                {/* Le texte net, puis sa copie floue qui le remplace : le brouillage se fait en fondu. */}
+                <motion.text
+                  x={PROMESSE_X}
+                  y={y}
+                  className="fill-texte"
+                  fontSize={14}
+                  fontWeight={500}
+                  {...cy(sc, [0, t + 0.08, t + 0.17, 0.9, 0.97, 1], { opacity: [1, 1, 0, 0, 1, 1] }, { repos: 0 })}
+                >
+                  {p.texte}
+                </motion.text>
+                <motion.text
+                  x={PROMESSE_X}
+                  y={y}
+                  className="fill-attenue"
+                  fontSize={14}
+                  fontWeight={500}
+                  style={{ filter: "blur(2.4px)" }}
+                  aria-hidden
+                  {...cy(
+                    sc,
+                    [0, t + 0.08, t + 0.17, 0.9, 0.97, 1],
+                    { opacity: [0, 0, 0.55, 0.55, 0, 0], x: [0, 0, 3, 3, 0, 0] },
+                    { repos: 0 },
+                  )}
+                >
+                  {p.texte}
+                </motion.text>
+                {/* Le trait qui barre la promesse, tiré de gauche à droite. */}
+                <motion.rect
+                  x={PROMESSE_X - 3}
+                  y={y - 5.5}
+                  width={p.largeur + 6}
+                  height={1.8}
+                  rx={0.9}
+                  className="fill-attenue"
+                  style={{ transformBox: "fill-box", transformOrigin: "0% 50%" }}
+                  {...cy(
+                    sc,
+                    [0, t, t + 0.07, t + 0.17, 0.9, 0.95, 1],
+                    { scaleX: [0, 0, 1, 1, 1, 1, 0], opacity: [1, 1, 1, 0.45, 0.45, 0, 0] },
+                    { repos: 2 },
+                  )}
+                />
+              </g>
+            );
+          })}
         </>
       )}
     </Cadre>
@@ -436,42 +641,66 @@ export function ProgrammeCHumain() {
 }
 
 const LIGNES_CODE = [
-  { x: 18, texte: "pour chaque texte :" },
-  { x: 34, texte: "appliquer(règle)" },
-  { x: 34, texte: "voter(position)" },
-  { x: 34, texte: "publier()" },
+  { x: 14, texte: "pour chaque texte :" },
+  { x: 28, texte: "appliquer(règle)" },
+  { x: 28, texte: "voter(position)" },
+  { x: 28, texte: "publier()" },
 ] as const;
+const CODE_Y = 15;
+const CODE_PAS = 18;
+/** Les instants où le curseur arrive sur chaque ligne de code. */
+const ARRIVEES = [0.04, 0.2, 0.38, 0.56] as const;
+const FIN_TEXTE = 0.74;
+function textesTraites(p: number, tour: number): string {
+  const n = tour + (p >= FIN_TEXTE ? 1 : 0);
+  return `${n} ${n > 1 ? "textes traités" : "texte traité"}`;
+}
 
 export function ProgrammeCIA() {
+  // Le curseur : il reste sur une ligne le temps de l'exécuter, puis glisse à la suivante.
+  const times = [0, ...ARRIVEES.flatMap((t, i) => (i === 0 ? [t + 0.12] : [t, t + 0.12])), 0.84, 0.88, 0.94, 1];
+  const y = [0, 0, ...[1, 2, 3].flatMap((i) => [i * CODE_PAS, i * CODE_PAS]), 3 * CODE_PAS, 3 * CODE_PAS, 0, 0];
+  const opacite = times.map((t) => (t >= 0.86 && t < 0.97 ? 0 : 1));
   return (
-    <Cadre label="Quatre lignes de code public exécutées l'une après l'autre : la règle est appliquée à chaque texte, ligne à ligne.">
+    <Cadre label="Quatre lignes de code public exécutées l'une après l'autre : un curseur passe sur chaque ligne, une coche s'inscrit, et le compteur de textes traités avance d'un cran à chaque tour.">
       {(sc) => (
         <>
+          <motion.g {...cy(sc, times, { y, opacity: opacite }, { repos: 0 })}>
+            <rect x={4} y={CODE_Y - 12} width={232} height={17} rx={5} className="fill-machine" opacity={0.1} />
+            <rect x={4} y={CODE_Y - 12} width={3} height={17} rx={1.5} className="fill-machine" />
+          </motion.g>
           {LIGNES_CODE.map((l, i) => {
-            const y = 22 + i * 21;
-            const t0 = 0.08 + i * 0.19;
+            const ligneY = CODE_Y + i * CODE_PAS;
+            const fin = ARRIVEES[i] + 0.12;
             return (
               <g key={l.texte}>
-                <motion.g {...kf(sc, [0, t0, t0 + 0.03, t0 + 0.16, t0 + 0.19, 1], { opacity: [0, 0, 1, 1, 0, 0] }, { repos: 0 })}>
-                  <rect x={6} y={y - 14} width={228} height={20} rx={5} className="fill-machine" opacity={0.1} />
-                  <rect x={6} y={y - 14} width={3} height={20} rx={1.5} className="fill-machine" />
-                </motion.g>
-                <text x={l.x} y={y} className="fill-machine font-mono" fontSize={11.5}>
+                <text x={l.x} y={ligneY} className="fill-machine font-mono" fontSize={11}>
                   {l.texte}
                 </text>
                 {i > 0 ? (
                   <motion.path
-                    d={`M212 ${y - 3} l4 4 l8 -9`}
+                    d={`M210 ${ligneY - 4} l4 4 l8 -9`}
                     className="fill-none stroke-machine"
                     strokeWidth={2}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    {...kf(sc, [0, t0 + 0.06, t0 + 0.1, 0.9, 1], { pathLength: [0, 0, 1, 1, 0], opacity: [0, 0, 1, 1, 0] }, { repos: 3 })}
+                    {...cy(sc, [0, fin - 0.04, fin, 0.86, 0.9, 1], { pathLength: [0, 0, 1, 1, 0, 0], opacity: [0, 0, 1, 1, 0, 0] }, { repos: 3 })}
                   />
                 ) : null}
               </g>
             );
           })}
+          <line x1={4} y1={74} x2={236} y2={74} className="stroke-trait" strokeWidth={1} />
+          <motion.g
+            style={CENTRE}
+            {...cy(sc, [0, FIN_TEXTE, FIN_TEXTE + 0.03, FIN_TEXTE + 0.08, 1], { scale: [1, 1, 1.08, 1, 1] }, { repos: 0 })}
+          >
+            <circle cx={9} cy={83} r={2.6} className="fill-machine" />
+            <TexteSuivi sc={sc} calcul={textesTraites} repos="1 texte traité" x={17} y={86.5} className="fill-machine font-mono" fontSize={9.5} fontWeight={600} />
+          </motion.g>
+          <text x={236} y={86.5} textAnchor="end" className="fill-attenue font-mono" fontSize={9}>
+            code public
+          </text>
         </>
       )}
     </Cadre>
@@ -482,82 +711,178 @@ export function ProgrammeCIA() {
    DÉCISIONS
    ===================================================================================== */
 
-/* ---------- Décisions B : une boîte noire contre une boîte de verre ---------- */
+/* ---------- Décisions B : une boîte noire qui se referme contre une boîte de verre qui publie ---------- */
+
+/** Les trois temps de la ligne : un dossier entre (humain) ou une position sort (IA), au même rythme. */
+const TEMPS_DECISION = [0.08, 0.3, 0.52] as const;
+
+/** Un petit document : une feuille au coin plié, deux lignes de texte. */
+function Dossier({ x, y, classe }: { x: number; y: number; classe: string }) {
+  return (
+    <g>
+      <path d={`M${x} ${y} h11 l5 5 v15 h-16 z`} className={`${classe} stroke-attenue`} strokeWidth={1.2} strokeLinejoin="round" />
+      <path d={`M${x + 11} ${y} v5 h5`} className="fill-none stroke-attenue" strokeWidth={1} strokeLinejoin="round" />
+      <rect x={x + 3} y={y + 9} width={9} height={1.8} rx={0.9} className="fill-attenue" opacity={0.6} />
+      <rect x={x + 3} y={y + 13} width={7} height={1.8} rx={0.9} className="fill-attenue" opacity={0.6} />
+    </g>
+  );
+}
+
+const BOITE = { x: 110, y: 30, l: 64, h: 42 } as const;
 
 export function DecisionsBHumain() {
   return (
-    <Cadre label="Une boîte noire : des dossiers y entrent, des décisions en sortent, et rien de ce qui s'y passe n'est visible.">
+    <Cadre label="Une boîte noire : trois dossiers y entrent l'un après l'autre, le couvercle se referme et rien n'en sort. Le délibéré n'est pas public.">
       {(sc) => (
         <>
-          {[0, 1, 2].map((i) => {
-            const t0 = 0.06 + i * 0.2;
-            const t1 = t0 + 0.2;
+          {/* Les dossiers attendent en pile, puis sautent un à un dans la boîte ouverte. */}
+          {TEMPS_DECISION.map((t, i) => {
+            const x = 14 + i * 4;
+            const y = 40 - i * 4;
+            const dx = BOITE.x + BOITE.l / 2 - 8 - x;
+            const dy = BOITE.y + 10 - y;
             return (
-              <g key={i}>
-                <motion.circle
-                  cx={14}
-                  cy={45}
-                  r={5}
-                  className="fill-attenue"
-                  {...kf(sc, [0, t0, t0 + 0.02, t0 + 0.12, t0 + 0.13, 1], { x: [0, 0, 0, 74, 74, 0], opacity: [0, 0, 1, 1, 0, 0] }, { repos: 0 })}
-                />
-                <motion.circle
-                  cx={152}
-                  cy={45}
-                  r={4.6}
-                  className="fill-fond stroke-attenue"
-                  strokeWidth={1.6}
-                  {...kf(sc, [0, t1, t1 + 0.02, t1 + 0.12, t1 + 0.16, 1], { x: [0, 0, 0, 62, 62, 0], opacity: [0, 0, 1, 1, 0, 0] }, { repos: 0 })}
-                />
-              </g>
+              <motion.g
+                key={t}
+                {...cy(
+                  sc,
+                  [0, t, t + 0.07, t + 0.13, t + 0.14, 0.92, 0.98, 1],
+                  {
+                    x: [0, 0, dx * 0.55, dx, dx, 0, 0, 0],
+                    y: [0, 0, -30 + (dy * 0.2), dy, dy, 0, 0, 0],
+                    opacity: [1, 1, 1, 1, 0, 0, 1, 1],
+                  },
+                  { repos: 4 },
+                )}
+              >
+                <Dossier x={x} y={y} classe="fill-fond" />
+              </motion.g>
             );
-          })}
-          <rect x={88} y={16} width={64} height={58} rx={9} className="fill-attenue" />
-          <rect x={88} y={16} width={64} height={58} rx={9} className="fill-none stroke-fond" strokeWidth={1} opacity={0.25} />
-          <text x={120} y={56} textAnchor="middle" className="fill-fond" fontSize={30} fontWeight={600}>
-            ?
-          </text>
+          }).reverse()}
+          {/* La boîte : son corps, puis son couvercle, ouvert, qui se rabat après le dernier dossier. */}
+          <motion.g style={CENTRE} {...cy(sc, [0, 0.72, 0.745, 0.78, 1], { y: [0, 0, 1.5, 0, 0] }, { repos: 0 })}>
+            <rect x={BOITE.x} y={BOITE.y} width={BOITE.l} height={BOITE.h} rx={6} className="fill-attenue" />
+            <motion.text
+              x={BOITE.x + BOITE.l / 2}
+              y={BOITE.y + 30}
+              textAnchor="middle"
+              className="fill-fond"
+              fontSize={22}
+              fontWeight={600}
+              {...cy(sc, [0, 0.74, 0.79, 0.92, 0.96, 1], { opacity: [0, 0, 1, 1, 0, 0] }, { repos: 3 })}
+            >
+              ?
+            </motion.text>
+          </motion.g>
+          <motion.rect
+            x={BOITE.x - 3}
+            y={BOITE.y - 6}
+            width={BOITE.l + 6}
+            height={6}
+            rx={2.5}
+            className="fill-attenue"
+            style={{ transformBox: "fill-box", transformOrigin: "100% 100%" }}
+            {...cy(sc, [0, 0.66, 0.73, 0.93, 0.99, 1], { rotate: [38, 38, 0, 0, 38, 38] }, { repos: 3 })}
+          />
+          {/* La sortie attendue reste vide. */}
+          <path d={`M${BOITE.x + BOITE.l + 8} 51 h16`} className="fill-none stroke-trait" strokeWidth={1.4} strokeDasharray="2 3" strokeLinecap="round" />
+          <path d={`M${BOITE.x + BOITE.l + 21} 47 l4 4 l-4 4`} className="fill-none stroke-trait" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={206} y={41} width={18} height={21} rx={2.5} className="fill-none stroke-trait" strokeWidth={1.2} strokeDasharray="2.5 2.5" />
+          <motion.text
+            x={BOITE.x + BOITE.l / 2}
+            y={87}
+            textAnchor="middle"
+            className="fill-attenue"
+            fontSize={9.5}
+            {...cy(sc, [0, 0.76, 0.82, 0.92, 0.96, 1], { opacity: [0, 0, 1, 1, 0, 0], y: [3, 3, 0, 0, 0, 3] }, { repos: 3 })}
+          >
+            délibéré non public
+          </motion.text>
         </>
       )}
     </Cadre>
   );
 }
 
-const PASTILLES = [96, 120, 144] as const;
-const instantAuPassage = (x: number) => 0.05 + (0.8 * (x - 14)) / 198;
+const REGISTRE = [
+  { heure: "09:14", avis: "pour" },
+  { heure: "09:31", avis: "contre" },
+  { heure: "10:02", avis: "pour" },
+] as const;
+const VERRE = { x: 6, y: 16, l: 78, h: 58 } as const;
+const REGISTRE_X = 100;
+const ETAPES_VERRE = [44, 58, 72] as const;
+
+/** Les pulsations d'une étape de la boîte de verre : elle s'allume brièvement pour chaque position traitée. */
+function pulsations(decalage: number) {
+  const times: number[] = [0];
+  const opacity: number[] = [0.25];
+  for (const t of TEMPS_DECISION) {
+    const a = t + decalage;
+    times.push(a, a + 0.025, a + 0.11);
+    opacity.push(0.25, 1, 0.25);
+  }
+  times.push(1);
+  opacity.push(0.25);
+  return { times, opacity };
+}
 
 export function DecisionsBIA() {
   return (
-    <Cadre label="Une boîte de verre : le dossier traverse, et chaque étape s'allume en pastille visible à l'intérieur. Tout est publié et vérifiable.">
+    <Cadre label="Une boîte de verre : on voit le dossier à l'intérieur et chaque étape s'allumer, puis chaque position en sort et s'inscrit, horodatée, dans un registre public.">
       {(sc) => (
         <>
-          <rect x={80} y={10} width={80} height={70} rx={9} className="fill-machine stroke-machine" fillOpacity={0.06} strokeWidth={1.6} />
-          <line x1={80} y1={62} x2={160} y2={62} className="stroke-machine" strokeWidth={1} opacity={0.2} strokeDasharray="2 3" />
-          {PASTILLES.map((x) => {
-            const t = instantAuPassage(x);
+          {/* La boîte de verre : on voit le dossier et les étapes qui s'allument. */}
+          <rect x={VERRE.x} y={VERRE.y} width={VERRE.l} height={VERRE.h} rx={8} className="fill-machine stroke-machine" fillOpacity={0.06} strokeWidth={1.6} />
+          <path d="M16 30 h11 l5 5 v15 h-16 z" className="fill-fond stroke-machine" strokeWidth={1.2} strokeLinejoin="round" />
+          <rect x={19} y={39} width={9} height={1.8} rx={0.9} className="fill-machine" opacity={0.5} />
+          <rect x={19} y={43} width={7} height={1.8} rx={0.9} className="fill-machine" opacity={0.5} />
+          {ETAPES_VERRE.map((x, k) => {
+            const { times, opacity } = pulsations(k * 0.035);
             return (
               <g key={x}>
-                <circle cx={x} cy={32} r={7.5} className="fill-none stroke-machine" strokeWidth={1.2} opacity={0.35} />
+                <circle cx={x} cy={40} r={4.2} className="fill-none stroke-machine" strokeWidth={1} opacity={0.35} />
+                <motion.circle cx={x} cy={40} r={4.2} className="fill-machine" {...cy(sc, times, { opacity }, { ease: "easeOut", repos: 2 })} />
+              </g>
+            );
+          })}
+          <text x={VERRE.x + VERRE.l / 2} y={64} textAnchor="middle" className="fill-machine font-mono" fontSize={8.5} opacity={0.8}>
+            règle · vote
+          </text>
+          {/* Le registre public, où chaque position s'empile avec son heure. */}
+          <text x={REGISTRE_X} y={10} className="fill-machine" fontSize={9} fontWeight={600}>
+            Registre public
+          </text>
+          {REGISTRE.map((r, i) => {
+            const y = 18 + i * 22;
+            const t = TEMPS_DECISION[i] + 0.11;
+            return (
+              <g key={r.heure}>
+                <rect x={REGISTRE_X} y={y} width={136} height={17} rx={8.5} className="fill-none stroke-trait" strokeWidth={1} strokeDasharray="2 3" />
                 <motion.g
+                  {...cy(
+                    sc,
+                    [0, t, t + 0.09, 0.9, 0.96, 1],
+                    { x: [-58, -58, 0, 0, 0, -58], opacity: [0, 0, 1, 1, 0, 0], scale: [0.8, 0.8, 1, 1, 1, 0.8] },
+                    { repos: 3 },
+                  )}
                   style={CENTRE}
-                  {...kf(sc, [0, t - 0.03, t, t + 0.05, 0.9, 1], { opacity: [0.25, 0.25, 1, 1, 1, 0.25], scale: [1, 1, 1.25, 1, 1, 1] }, { repos: 4 })}
                 >
-                  <circle cx={x} cy={32} r={7.5} className="fill-machine" />
-                  <path d={`M${x - 3.2} 32 l2.6 2.8 l4.2 -5.2`} className="fill-none stroke-fond" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x={REGISTRE_X} y={y} width={136} height={17} rx={8.5} className="fill-fond stroke-machine" strokeWidth={1.2} />
+                  <circle cx={REGISTRE_X + 10} cy={y + 8.5} r={3.2} className="fill-machine" />
+                  <text x={REGISTRE_X + 19} y={y + 12} className="fill-attenue font-mono" fontSize={9.5}>
+                    {r.heure}
+                  </text>
+                  <text x={REGISTRE_X + 52} y={y + 12} className="fill-machine font-mono" fontSize={9.5} fontWeight={600}>
+                    {r.avis}
+                  </text>
+                  <text x={REGISTRE_X + 128} y={y + 12} textAnchor="end" className="fill-machine font-mono" fontSize={8.5} opacity={0.8}>
+                    publié
+                  </text>
                 </motion.g>
               </g>
             );
           })}
-          <motion.circle
-            cx={14}
-            cy={62}
-            r={5}
-            className="fill-machine"
-            {...kf(sc, [0, 0.05, 0.85, 0.9, 1], { x: [0, 0, 198, 198, 0], opacity: [0, 1, 1, 0, 0] }, { ease: "linear", repos: 0 })}
-          />
-          <text x={226} y={20} textAnchor="end" className="fill-machine font-mono" fontSize={9}>
-            publié
-          </text>
         </>
       )}
     </Cadre>
@@ -677,112 +1002,165 @@ export function DecisionsCIA() {
    FACE À L'ASSEMBLÉE
    ===================================================================================== */
 
-/* ---------- Assemblée B : une vague grise d'un coup contre un compteur de votes ---------- */
+/* ---------- Assemblée B : une vague grise qui éteint l'hémicycle contre un compteur de votes ---------- */
 
-const SIEGES_B_HUMAIN = sieges(120, 82, [
-  { rayon: 22, nombre: 8 },
-  { rayon: 33, nombre: 12 },
-  { rayon: 44, nombre: 16 },
-  { rayon: 55, nombre: 20 },
-  { rayon: 66, nombre: 24 },
+const SIEGES_B_HUMAIN = sieges(120, 80, [
+  { rayon: 24, nombre: 8 },
+  { rayon: 35, nombre: 12 },
+  { rayon: 46, nombre: 16 },
+  { rayon: 57, nombre: 20 },
+  { rayon: 68, nombre: 24 },
 ]);
+/** La vague traverse l'hémicycle de gauche à droite entre ces deux instants du cycle. */
+const VAGUE_DEBUT = 0.14;
+const VAGUE_FIN = 0.46;
+const VAGUE_X0 = 30;
+const VAGUE_X1 = 214;
+const LARGEUR_VAGUE = 34;
+/** L'instant où le front de la vague atteint l'abscisse x. */
+const instantVague = (x: number) => VAGUE_DEBUT + ((VAGUE_FIN - VAGUE_DEBUT) * (x - VAGUE_X0)) / (VAGUE_X1 - VAGUE_X0);
 
 export function AssembleeBHumain() {
   const id = useIdSvg();
   return (
-    <Cadre label="Un hémicycle balayé d'un seul coup par une vague grise : tous les sièges disparaissent, le président peut dissoudre l'Assemblée.">
+    <Cadre label="Un hémicycle allumé, puis une vague grise le balaie de gauche à droite et éteint chaque siège : l'Assemblée est dissoute. Les sièges ne se rallument que lentement, après de nouvelles élections.">
       {(sc) => (
         <>
           <clipPath id={`${id}-hemi`}>
-            <path d="M40 86 A80 80 0 0 1 200 86 Z" />
+            <path d="M44 84 A76 76 0 0 1 196 84 Z" />
           </clipPath>
+          <linearGradient id={`${id}-vague`} x1={0} y1={0} x2={1} y2={0}>
+            <stop offset="0" style={{ stopColor: "var(--attenue)", stopOpacity: 0 }} />
+            <stop offset="0.85" style={{ stopColor: "var(--attenue)", stopOpacity: 0.28 }} />
+            <stop offset="1" style={{ stopColor: "var(--attenue)", stopOpacity: 0.55 }} />
+          </linearGradient>
           {SIEGES_B_HUMAIN.map((s, i) => (
             <circle key={i} cx={s.x} cy={s.y} r={3} className="fill-none stroke-trait" strokeWidth={1} />
           ))}
-          <motion.g {...kf(sc, [0, 0.4, 0.5, 0.9, 1], { opacity: [1, 1, 0, 0, 1] }, { ease: "linear", repos: 2 })}>
-            {SIEGES_B_HUMAIN.map((s, i) => (
-              <circle key={i} cx={s.x} cy={s.y} r={3} className="fill-attenue" />
-            ))}
-          </motion.g>
-          <g clipPath={`url(#${id}-hemi)`}>
-            <motion.g
-              {...kf(sc, [0, 0.32, 0.46, 0.6, 1], { x: [-170, -170, 0, 0, 0], opacity: [0, 1, 1, 0, 0] }, { ease: "easeIn", repos: 4 })}
-            >
-              <rect x={36} y={0} width={168} height={90} className="fill-trait" />
-              <rect x={200} y={0} width={4} height={90} className="fill-attenue" opacity={0.7} />
-            </motion.g>
-          </g>
-        </>
-      )}
-    </Cadre>
-  );
-}
-
-const SIEGES_B_IA = sieges(76, 82, [
-  { rayon: 16, nombre: 6 },
-  { rayon: 27, nombre: 10 },
-  { rayon: 38, nombre: 14 },
-  { rayon: 49, nombre: 18 },
-  { rayon: 60, nombre: 22 },
-]);
-const TOTAL_B = SIEGES_B_IA.length;
-
-/** Le compteur : sa valeur suit la même cadence que l'allumage des sièges. */
-function Compteur({ sc }: { sc: Scene }) {
-  const valeur = useMotionValue(sc.reduit ? TOTAL_B : 0);
-  const [n, setN] = useState(sc.reduit ? TOTAL_B : 0);
-  useMotionValueEvent(valeur, "change", (v) => setN(Math.round(v)));
-  useEffect(() => {
-    if (sc.reduit) {
-      valeur.set(TOTAL_B);
-      return;
-    }
-    if (!sc.joue) {
-      valeur.set(0);
-      return;
-    }
-    const lecture = animate(valeur, [0, 0, TOTAL_B, TOTAL_B, 0], {
-      times: [0, 0.06, 0.68, 0.9, 1],
-      duration: DUREE,
-      ease: "linear",
-      repeat: Infinity,
-    });
-    return () => lecture.stop();
-  }, [sc.joue, sc.reduit, valeur]);
-  return (
-    <>
-      <text x={188} y={56} textAnchor="middle" className="fill-machine font-mono" fontSize={34} fontWeight={600}>
-        {n}
-      </text>
-      <text x={188} y={74} textAnchor="middle" className="fill-attenue" fontSize={10}>
-        votes pour
-      </text>
-    </>
-  );
-}
-
-export function AssembleeBIA() {
-  return (
-    <Cadre label="Un hémicycle dont les sièges s'allument un par un, avec un compteur qui additionne les votes : l'Assemblée vote, texte par texte.">
-      {(sc) => (
-        <>
-          {SIEGES_B_IA.map((s, i) => (
-            <circle key={i} cx={s.x} cy={s.y} r={3} className="fill-none stroke-trait" strokeWidth={1} />
-          ))}
-          {SIEGES_B_IA.map((s, i) => {
-            const t0 = 0.06 + (0.62 * (i + 1)) / TOTAL_B;
+          {SIEGES_B_HUMAIN.map((s, i) => {
+            const eteint = instantVague(s.x);
+            // Le rallumage, lent et dans le désordre : un siège après l'autre, sur près d'un tiers du cycle.
+            const rallume = 0.6 + (0.24 * ((i * 29) % SIEGES_B_HUMAIN.length)) / (SIEGES_B_HUMAIN.length - 1);
             return (
               <motion.circle
                 key={i}
                 cx={s.x}
                 cy={s.y}
                 r={3}
-                className="fill-machine"
-                {...kf(sc, [0, t0 - 0.01, t0, 0.9, 1], { opacity: [0, 0, 1, 1, 0] }, { ease: "linear", repos: 3 })}
+                className="fill-attenue"
+                style={CENTRE}
+                {...cy(
+                  sc,
+                  [0, eteint, eteint + 0.03, rallume, rallume + 0.12, 1],
+                  { opacity: [1, 1, 0, 0, 1, 1], scale: [1, 1, 0.5, 0.5, 1, 1] },
+                  { repos: 3 },
+                )}
               />
             );
           })}
-          <Compteur sc={sc} />
+          <g clipPath={`url(#${id}-hemi)`}>
+            <motion.g
+              {...cy(
+                sc,
+                [0, VAGUE_DEBUT - 0.02, VAGUE_FIN, VAGUE_FIN + 0.05, 1],
+                { x: [0, 0, VAGUE_X1 - VAGUE_X0, VAGUE_X1 - VAGUE_X0, 0], opacity: [0, 1, 1, 0, 0] },
+                { ease: "linear", repos: 0 },
+              )}
+            >
+              <rect x={VAGUE_X0 - LARGEUR_VAGUE} y={0} width={LARGEUR_VAGUE} height={90} fill={`url(#${id}-vague)`} />
+              <rect x={VAGUE_X0 - 2} y={0} width={2} height={90} className="fill-attenue" opacity={0.6} />
+            </motion.g>
+          </g>
+          <motion.text
+            x={120}
+            y={81}
+            textAnchor="middle"
+            className="fill-attenue"
+            fontSize={9.5}
+            fontWeight={600}
+            {...cy(sc, [0, VAGUE_FIN, VAGUE_FIN + 0.05, 0.72, 0.8, 1], { opacity: [0, 0, 1, 1, 0, 0] }, { repos: 2 })}
+          >
+            dissoute
+          </motion.text>
+        </>
+      )}
+    </Cadre>
+  );
+}
+
+const SIEGES_B_IA_BRUTS = sieges(70, 80, [
+  { rayon: 18, nombre: 6 },
+  { rayon: 29, nombre: 10 },
+  { rayon: 40, nombre: 14 },
+  { rayon: 51, nombre: 18 },
+  { rayon: 62, nombre: 22 },
+]);
+const SIEGES_B_IA = SIEGES_B_IA_BRUTS.map((s, i) => ({
+  ...s,
+  /** Environ trois sièges sur dix votent contre : le résultat se lit, il n'est pas unanime. */
+  pour: (i * 7) % 10 >= 3,
+  /** L'instant du vote de ce siège, de la gauche vers la droite. */
+  t: 0.08 + (0.58 * i) / (SIEGES_B_IA_BRUTS.length - 1),
+}));
+const POUR_B = SIEGES_B_IA.filter((s) => s.pour).length;
+const RESULTAT = 0.7;
+const FIN_VOTE = 0.92;
+
+function votesPour(p: number): string {
+  if (p >= FIN_VOTE + 0.02) return "0";
+  return String(SIEGES_B_IA.filter((s) => s.pour && s.t <= p).length);
+}
+const numeroTexte = (_p: number, tour: number) => `texte n° ${tour + 1}`;
+
+export function AssembleeBIA() {
+  return (
+    <Cadre label="Un hémicycle dont les sièges votent un à un, de gauche à droite : le compteur additionne les votes pour, s'arrête sur le résultat, le texte est adopté, puis le vote du texte suivant commence.">
+      {(sc) => (
+        <>
+          {SIEGES_B_IA.map((s, i) => (
+            <circle key={i} cx={s.x} cy={s.y} r={3} className="fill-none stroke-trait" strokeWidth={1} />
+          ))}
+          {SIEGES_B_IA.map((s, i) => (
+            <motion.circle
+              key={i}
+              cx={s.x}
+              cy={s.y}
+              r={3}
+              className={s.pour ? "fill-machine" : "fill-abstention"}
+              style={CENTRE}
+              {...cy(
+                sc,
+                [0, s.t, s.t + 0.015, s.t + 0.05, FIN_VOTE, FIN_VOTE + 0.05, 1],
+                { opacity: [0, 0, 1, 1, 1, 0, 0], scale: [0.3, 0.3, 1.35, 1, 1, 0.6, 0.3] },
+                { repos: 4 },
+              )}
+            />
+          ))}
+          <TexteSuivi sc={sc} calcul={numeroTexte} repos="texte n° 1" x={186} y={18} textAnchor="middle" className="fill-attenue font-mono" fontSize={9} />
+          <TexteSuivi
+            sc={sc}
+            calcul={votesPour}
+            repos={String(POUR_B)}
+            x={186}
+            y={50}
+            textAnchor="middle"
+            className="fill-machine font-mono tabular-nums"
+            fontSize={30}
+            fontWeight={600}
+          />
+          <text x={186} y={63} textAnchor="middle" className="fill-attenue" fontSize={9.5}>
+            votes pour
+          </text>
+          <motion.g
+            style={CENTRE}
+            {...cy(sc, [0, RESULTAT, RESULTAT + 0.04, FIN_VOTE, FIN_VOTE + 0.04, 1], { opacity: [0, 0, 1, 1, 0, 0], scale: [0.7, 0.7, 1, 1, 0.9, 0.7] }, { repos: 3 })}
+          >
+            <rect x={158} y={71} width={56} height={16} rx={8} className="fill-machine" />
+            <path d="M168 79 l2.6 2.6 l4.6 -5.2" className="fill-none stroke-fond" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+            <text x={179} y={82.4} className="fill-fond" fontSize={9.5} fontWeight={600}>
+              adopté
+            </text>
+          </motion.g>
         </>
       )}
     </Cadre>

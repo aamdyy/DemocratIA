@@ -1,8 +1,10 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { motion, useInView } from "motion/react";
 import type { TargetAndTransition, Transition } from "motion/react";
 import { useRef } from "react";
+
+import { useMouvementReduit } from "@/components/accueil/hooks";
 
 /**
  * Huit petits schémas animés (un par colonne et par ligne du comparatif), en SVG de 220 × 72.
@@ -53,7 +55,8 @@ function Schema({
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const vu = useInView(ref, { once: true, amount: 0.5 });
-  const reduit = useReducedMotion() ?? false;
+  // Faux au rendu serveur comme au premier rendu client : pas d'écart d'hydratation.
+  const reduit = useMouvementReduit();
   const sc: Scene = { joue: vu && !reduit, reduit };
   return (
     <svg

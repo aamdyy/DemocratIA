@@ -59,7 +59,9 @@ export function PremierEcran() {
       aria-labelledby="titre-accueil"
       // Les marges négatives étirent la zone de découpe jusqu'aux bords de l'écran : sur téléphone,
       // les sphères voisines sortent de l'écran au lieu d'être coupées net à 16 px du bord.
-      className="relative -mx-4 flex min-h-[calc(100dvh-10rem)] flex-col items-center justify-center overflow-x-clip px-4 pb-20 pt-4 text-center sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+      // Sur grand écran, la section est un peu plus courte et suivie de près : le titre du comparatif
+      // affleure en bas de l'écran, pour qu'on devine la suite.
+      className="relative -mx-4 flex min-h-[calc(100dvh-10rem)] flex-col items-center justify-center overflow-x-clip px-4 pb-20 pt-4 text-center sm:-mx-6 sm:px-6 lg:-mx-8 lg:mb-7! lg:min-h-[calc(100dvh-12rem)] lg:px-8"
     >
       <motion.h1 id="titre-accueil" {...ENTREE}>
         <span className="sr-only">DemocratIA. </span>

@@ -1,16 +1,18 @@
 "use client";
 
+import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Element, FOCUS, Reveal, Serie } from "@/components/accueil/reveal";
+import { Element, FOCUS, Reveal, Serie, TITRE_SECTION } from "@/components/accueil/reveal";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
-import { CASCADE } from "@/lib/animation";
+import { CASCADE, ENTREE } from "@/lib/animation";
 import { CANDIDATES, candidateParId } from "@/lib/candidates";
 import type { Provenance } from "@/lib/types";
 import { EnTete } from "./commun";
 import {
+  LigneSynchro,
   AssembleeBHumain,
   AssembleeBIA,
   DecisionsBHumain,
@@ -75,7 +77,17 @@ const SOURCE_CONSTITUTION: Provenance = {
 function Comparatif() {
   return (
     <section aria-labelledby="titre-comparatif" className="mx-auto max-w-[1120px]">
-      <EnTete id="titre-comparatif" titre="Ce qu'un humain promet, une IA le tient." />
+      {/* Ce titre affleure en bas du premier écran : il apparaît dès qu'il touche l'écran, sans attendre d'y entrer. */}
+      <motion.h2
+        id="titre-comparatif"
+        className={TITRE_SECTION}
+        initial={ENTREE.initial}
+        whileInView={ENTREE.animate}
+        viewport={{ once: true }}
+        transition={ENTREE.transition}
+      >
+        Ce qu&apos;un humain promet, une IA le tient.
+      </motion.h2>
 
       <div className="mt-16">
         <div className="grid grid-cols-2 items-end gap-x-6 pb-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12">
@@ -101,20 +113,22 @@ function Comparatif() {
             const { humain: SchemaHumain, ia: SchemaIA } = SCHEMAS[c.id];
             return (
             <li key={c.id} className="border-t border-trait">
-              {/* Chaque ligne entre en trois temps : le critère, l'humain, puis l'IA. */}
-              <Serie className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12">
-                <Element className="col-span-2 sm:col-span-1">
-                  <h3 className="text-lg font-semibold tracking-[-0.02em]">{c.titre}</h3>
-                </Element>
-                <Element className="flex flex-col gap-3">
-                  <SchemaHumain />
-                  <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
-                </Element>
-                <Element className="flex flex-col gap-3">
-                  <SchemaIA />
-                  <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
-                </Element>
-              </Serie>
+              {/* Chaque ligne entre en trois temps : le critère, l'humain, puis l'IA. Ses deux schémas démarrent ensemble. */}
+              <LigneSynchro>
+                <Serie className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12">
+                  <Element className="col-span-2 sm:col-span-1">
+                    <h3 className="text-lg font-semibold tracking-[-0.02em]">{c.titre}</h3>
+                  </Element>
+                  <Element className="flex flex-col gap-3">
+                    <SchemaHumain />
+                    <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
+                  </Element>
+                  <Element className="flex flex-col gap-3">
+                    <SchemaIA />
+                    <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
+                  </Element>
+                </Serie>
+              </LigneSynchro>
             </li>
             );
           })}
