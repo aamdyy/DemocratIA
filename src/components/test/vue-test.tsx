@@ -213,7 +213,8 @@ export function VueTest() {
             <LayoutGroup>
               {/* Hauteur minimale : la plupart des écrans y tiennent, le bas de page ne bouge pas d'un écran à l'autre. */}
               <HauteurDouce className="mt-4 min-h-[36rem]">
-                <AnimatePresence mode="popLayout" initial={false}>
+                {/* « wait » : l'écran sortant disparaît avant que l'entrant arrive, les deux textes ne se superposent jamais. */}
+                <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={`${courant}-${intro ? "intro" : "questions"}`}
                     variants={ECRAN}
