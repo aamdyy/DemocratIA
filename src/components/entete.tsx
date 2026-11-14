@@ -54,11 +54,32 @@ function ApercuPouvoir({ couleur }: { couleur: string }) {
   );
 }
 
-/** Les trois temps du parcours, avec l'aperçu affiché au survol. */
+/** Aperçu de la page Honnêteté : les trois parties en barres, puis l'espoir. */
+function ApercuHonnetete() {
+  const parties = [
+    { libelle: "Les dangers", couleur: "bg-contre", largeur: "w-28" },
+    { libelle: "Les limites", couleur: "bg-abstention", largeur: "w-24" },
+    { libelle: "Notre autocritique", couleur: "bg-texte", largeur: "w-20" },
+  ];
+  return (
+    <div className="flex h-full flex-col justify-center gap-2.5 px-6">
+      {parties.map((p) => (
+        <div key={p.libelle} className="flex items-center gap-3">
+          <span className={cn("h-1.5 rounded-full", p.couleur, p.largeur)} />
+          <span className="text-[11px] text-attenue">{p.libelle}</span>
+        </div>
+      ))}
+      <p className="mt-1 text-[12px] font-semibold">Et pourtant.</p>
+    </div>
+  );
+}
+
+/** Les trois temps du parcours et la page Honnêteté, avec l'aperçu affiché au survol. */
 const LIENS = [
   { href: "/test", libelle: "Le test", aussi: ["/resultat"], phrase: "Tranchez de vrais textes de loi, découvrez l'IA faite pour vous." },
   { href: "/candidates", libelle: "Les candidates", aussi: [], phrase: "Sept IA, sept doctrines, aucun parti." },
   { href: "/seance", libelle: "Au pouvoir", aussi: [], phrase: "Votre IA tranche un vrai texte et rédige son amendement." },
+  { href: "/honnetete", libelle: "Honnêteté", aussi: [], phrase: "Les dangers, les limites et notre autocritique, sans détour." },
 ] as const;
 
 const correspond = (chemin: string, href: string) => chemin === href || chemin.startsWith(`${href}/`);
@@ -107,7 +128,8 @@ function Attente() {
 }
 
 /**
- * L'en-tête : l'état des données à gauche, la marque au centre, le parcours à droite.
+ * L'en-tête retenu (proposition 4 « République » de /maquettes/entete) : un liseré tricolore,
+ * la marque et la mention « République française, an 2050 » à gauche, le parcours à droite.
  * Au survol (ou au focus clavier) d'un lien, une petite présentation illustrée apparaît dessous.
  * Sous 1024 px, le parcours passe sur une seconde ligne pleine largeur, sans aperçu.
  */
@@ -119,12 +141,22 @@ export function Entete() {
   return (
     // Nommé pour les transitions de page : l'en-tête reste immobile pendant que le contenu change (transitions.css).
     <header className="relative z-40 border-b border-trait bg-fond" style={{ viewTransitionName: "entete" }}>
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
+      <div aria-hidden className="flex h-1">
+        <span className="flex-1 bg-pour" />
+        <span className="flex-1 bg-trait" />
+        <span className="flex-1 bg-contre" />
+      </div>
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte active:opacity-50 lg:col-start-2 lg:justify-self-center"
+          className="col-start-1 row-start-1 flex min-h-14 items-center gap-4 justify-self-start transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte active:opacity-50"
         >
           <Logo titre className="text-[22px]" />
+          <span className="border-l border-trait pl-4 text-xs leading-4 text-attenue max-sm:hidden">
+            République française
+            <br />
+            an 2050
+          </span>
           {candidate ? <span className="sr-only">Votre IA : {candidate.prenom}</span> : null}
         </Link>
 
@@ -132,7 +164,7 @@ export function Entete() {
 
         <nav
           aria-label="Navigation principale"
-          className="col-span-2 row-start-2 -mb-px lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:justify-self-end"
+          className="col-span-2 row-start-2 -mb-px lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:justify-self-end"
         >
           <ul role="list" className="flex lg:gap-1">
             {LIENS.map((lien) => {
@@ -167,6 +199,8 @@ export function Entete() {
                           <ApercuTest />
                         ) : lien.href === "/candidates" ? (
                           <ApercuCandidates />
+                        ) : lien.href === "/honnetete" ? (
+                          <ApercuHonnetete />
                         ) : (
                           <ApercuPouvoir couleur={teintes[1]} />
                         )}
@@ -195,7 +229,7 @@ function EtatDonnees() {
   return (
     <p
       role="status"
-      className="col-start-2 row-start-1 flex min-h-14 items-center gap-2 justify-self-end text-xs leading-4 text-attenue lg:col-start-1 lg:justify-self-start"
+      className="col-start-2 row-start-1 flex min-h-14 items-center gap-2 justify-self-end text-xs leading-4 text-attenue lg:hidden"
     >
       {/* L'état arrive après le premier affichage : il apparaît en fondu au lieu de surgir. */}
       <AnimatePresence mode="wait" initial={false}>
