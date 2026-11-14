@@ -322,6 +322,15 @@
   }
 }
 
+/*
+ * Veille : une sphère hors de l'écran (src/components/veille-spheres.tsx) ou cachée derrière le manège
+ * de l'accueil cesse de tourner. Elle reprend là où elle en était, sans saut.
+ */
+.sphere[data-veille] *,
+[data-cachee] .sphere * {
+  animation-play-state: paused !important;
+}
+
 /* Fin des styles de la sphère (matière ralentie). */
 
 /*
