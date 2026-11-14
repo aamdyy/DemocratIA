@@ -51,7 +51,11 @@ export function PremierEcran() {
         transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
       >
         <Logo titre className="text-[clamp(3rem,10vw,8.5rem)]" />
-        <span className="sr-only"> En 2050, la France élit une IA.</span>
+        {/* La phrase de la maquette 05, gardée par l'équipe : elle fait partie du titre de la page. */}
+        <span className="mx-auto mt-6 block max-w-[30ch] text-[clamp(1.5rem,3vw,2.4rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-texte">
+          <span className="sr-only">. </span>
+          En 2050, on ne vote plus pour un parti. <span className="block text-attenue">On règle une sphère.</span>
+        </span>
       </motion.h1>
 
       <div
