@@ -32,12 +32,12 @@ function ApercuTest() {
   );
 }
 
-/** Aperçu des candidates : les cinq sphères. */
+/** Aperçu des candidates : les sept sphères. */
 function ApercuCandidates() {
   return (
-    <div className="flex h-full items-center justify-center gap-2">
+    <div className="flex h-full items-center justify-center gap-1.5">
       {CANDIDATES.map((c, i) => (
-        <Sphere key={c.id} teintes={c.teintes} duree={10 + i * 2} className={i === 2 ? "size-12" : "size-9"} />
+        <Sphere key={c.id} teintes={c.teintes} duree={10 + i * 2} className={i === 3 ? "size-10" : "size-7"} />
       ))}
     </div>
   );
@@ -55,7 +55,7 @@ function ApercuPouvoir({ couleur }: { couleur: string }) {
 /** Les trois temps du parcours, avec l'aperçu affiché au survol. */
 const LIENS = [
   { href: "/test", libelle: "Le test", aussi: ["/resultat"], phrase: "Tranchez de vrais textes de loi, découvrez l'IA faite pour vous." },
-  { href: "/candidates", libelle: "Les candidates", aussi: [], phrase: "Cinq IA, cinq doctrines, aucun parti." },
+  { href: "/candidates", libelle: "Les candidates", aussi: [], phrase: "Sept IA, sept doctrines, aucun parti." },
   { href: "/seance", libelle: "Au pouvoir", aussi: [], phrase: "Votre IA tranche un vrai texte et rédige son amendement." },
 ] as const;
 

@@ -4,7 +4,7 @@ import { THEMES, themeDe, type ThemeId } from "@/lib/themes";
 import type { Position, Scrutin } from "@/lib/types";
 
 /**
- * Les IA candidates à la présidence de 2050. Toutes sont fictives : un prénom, une sphère,
+ * Les sept IA candidates à la présidence de 2050. Toutes sont fictives : un prénom, une sphère,
  * une doctrine et un poids par thème. Aucune n'est liée à une personne ou à un parti réels.
  * Leur position sur un vrai texte se déduit de leur poids sur le thème du texte (règle publique,
  * voir positionCandidate) : c'est ce qui les rend auditables, à la différence d'un humain.
@@ -73,6 +73,22 @@ export const CANDIDATES: Candidate[] = [
     portrait: "Noé priorise l'éducation, la recherche et le numérique. Il se méfie de la surveillance.",
     teintes: ["#dff3f7", "#0f9bb5", "#0a5f73", "#8bd5e4"],
     poids: poids({ numerique: 95, education: 90, institutions: 65, securite: 25, budget: 45 }),
+  },
+  {
+    id: "ines",
+    prenom: "Inès",
+    doctrine: "Le compromis d'abord.",
+    portrait: "Inès ne tranche fort sur rien : elle soutient ce qui protège le plus grand nombre et s'abstient sur le reste.",
+    teintes: ["#ece8fb", "#7a5cd6", "#4a3596", "#c2b3f2"],
+    poids: poids({ sante: 68, education: 68, institutions: 66, travail: 60, logement: 60, ecologie: 58, budget: 55, securite: 55, agriculture: 52, numerique: 52 }),
+  },
+  {
+    id: "jules",
+    prenom: "Jules",
+    doctrine: "La France des territoires.",
+    portrait: "Jules juge un texte à ce qu'il change pour les campagnes, les villes moyennes et les services publics de proximité.",
+    teintes: ["#f8e6dc", "#c2562f", "#7f3216", "#eba586"],
+    poids: poids({ agriculture: 95, logement: 72, institutions: 70, travail: 66, sante: 66, ecologie: 55, numerique: 32, budget: 50 }),
   },
 ];
 

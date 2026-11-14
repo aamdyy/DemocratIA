@@ -19,7 +19,7 @@ const PLACES = [
 ];
 
 /**
- * Premier écran (maquette 05) : le logo, qui est l'unique h1, puis le manège des cinq IA candidates,
+ * Premier écran (maquette 05) : le logo, qui est l'unique h1, puis le manège des sept IA candidates,
  * trois à la fois, et le bouton du test.
  */
 export function PremierEcran() {

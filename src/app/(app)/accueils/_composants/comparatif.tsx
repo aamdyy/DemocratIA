@@ -107,12 +107,12 @@ function Comparatif() {
   );
 }
 
-/** La grille des cinq candidates : sphère, prénom, doctrine, lien vers sa fiche. */
+/** La grille des sept candidates : sphère, prénom, doctrine, lien vers sa fiche. */
 function Grille() {
   return (
     <section aria-labelledby="titre-grille" className="mx-auto max-w-[1120px]">
-      <EnTete id="titre-grille" titre="Cinq IA, cinq doctrines." phrase="Chacune vote selon un programme public." />
-      <ul className="mt-16 grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-3 lg:grid-cols-5">
+      <EnTete id="titre-grille" titre="Sept IA, sept doctrines." phrase="Chacune vote selon un programme public." />
+      <ul className="mt-16 grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-4 lg:grid-cols-7">
         {CANDIDATES.map((c, i) => (
           <li key={c.id}>
             <Reveal delai={i * 0.08}>

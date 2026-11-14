@@ -30,14 +30,14 @@ export function PremierEcranGrandeSphere() {
           <Sphere
             teintes={TEINTES_MELEES}
             aquarelle
-            description="Une sphère aux couleurs mêlées des cinq IA candidates"
+            description="Une sphère aux couleurs mêlées des sept IA candidates"
           />
         </motion.div>
       </motion.div>
       <div className="mt-10">
         <TitreLogo id="titre-accueil" className="text-[clamp(3rem,10vw,8.5rem)]" />
       </div>
-      <p className="mt-4 text-lg text-attenue">Cinq IA se présentent à la présidence.</p>
+      <p className="mt-4 text-lg text-attenue">Sept IA se présentent à la présidence.</p>
       <div className="mt-8">
         <BoutonIA href="/test">
           Trouver mon IA

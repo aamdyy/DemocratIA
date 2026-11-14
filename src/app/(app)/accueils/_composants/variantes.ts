@@ -16,7 +16,7 @@ export const VARIANTES = [
     n: 3,
     titre: "Humain contre IA",
     phrase:
-      "Premier écran coupé en deux, un disque gris et une sphère ; suite : un comparatif animé, puis les cinq candidates.",
+      "Premier écran coupé en deux, un disque gris et une sphère ; suite : un comparatif animé, puis les sept candidates.",
   },
   {
     n: 4,

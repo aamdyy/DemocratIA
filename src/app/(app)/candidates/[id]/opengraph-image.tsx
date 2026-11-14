@@ -12,6 +12,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   return imagePartage({
     teintes: candidate?.teintes ?? TEINTES_MARQUE,
     titre: candidate ? candidate.prenom : "IA candidate",
-    sousTitre: candidate ? `IA candidate de 2050. ${candidate.doctrine}` : "Les cinq IA candidates de 2050.",
+    sousTitre: candidate ? `IA candidate de 2050. ${candidate.doctrine}` : "Les sept IA candidates de 2050.",
   });
 }

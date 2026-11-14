@@ -96,7 +96,7 @@ const AFFINITES: { id: string; valeur: number }[] = [
   { id: "leon", valeur: 26 },
 ];
 
-/** Étape 2 : les barres d'affinité des cinq candidates se remplissent. */
+/** Étape 2 : les barres d'affinité des sept candidates se remplissent. */
 function SchemaAffinites() {
   return (
     <div>
@@ -173,7 +173,7 @@ export function Recit() {
         <Etape rang={1} titre="Tranchez de vrais textes" phrase="Pour, contre ou abstention : une carte, un texte, une réponse.">
           <SchemaCarte />
         </Etape>
-        <Etape rang={2} titre="Découvrez votre IA" phrase="Chaque réponse rapproche l'une des cinq candidates de vous.">
+        <Etape rang={2} titre="Découvrez votre IA" phrase="Chaque réponse rapproche l'une des sept candidates de vous.">
           <SchemaAffinites />
         </Etape>
         <Etape rang={3} titre="Elle gouverne" phrase="Elle tranche à votre place et rédige ses amendements en direct.">
