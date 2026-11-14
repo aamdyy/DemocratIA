@@ -1,285 +1,184 @@
 "use client";
 
-import { MotionConfig, motion } from "motion/react";
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "motion/react";
+import { useMemo, useRef, useState } from "react";
 
-import { BoutonIA } from "@/components/bouton-ia";
 import { AvisExemple } from "@/components/avis-exemple";
 import { useScrutins } from "@/lib/api";
-import { CANDIDATES, classerCandidates, positionCandidate } from "@/lib/candidates";
-import { LIBELLE_POSITION, nombre, titreLisible } from "@/lib/format";
-import { DILEMMES, nombreDeDilemmes, selectionEnregistree, type ReponseDilemme } from "@/lib/dilemmes";
-import { mandat, useMandat } from "@/lib/mandat";
-import { MAX_PRIORITES, precision as calculerPrecision } from "@/lib/precision";
-import type { Position, Scrutin } from "@/lib/types";
+import { classerCandidates } from "@/lib/candidates";
+import { DILEMMES } from "@/lib/dilemmes";
+import { useMandat } from "@/lib/mandat";
+import { precision as calculerPrecision } from "@/lib/precision";
+import { AFFIRMATIONS } from "@/lib/questions/accords";
+import { CHAPITRES, TEXTES_CHAPITRE, TEXTES_PRONOSTIC, type ChapitreId } from "@/lib/questions/chapitres";
+import { resumeDuMandat } from "@/lib/questions/poids";
+import { SCENARIOS } from "@/lib/questions/scenarios";
+import type { Scrutin } from "@/lib/types";
 
+import { ChapitreAccords } from "./accords";
+import { ChapitreBudget } from "./budget";
+import { DOUX, IntroChapitre, Sommaire, type Avancement } from "./chapitre";
+import { ChapitreTextes } from "./chapitre-textes";
+import { ChapitreClassement } from "./classement";
 import { CourseIA } from "./course";
-import { Dilemmes, dernierDilemmeRepondu, dilemmeEnCours } from "./dilemmes";
+import { ChapitreDilemmes } from "./dilemmes";
+import { FinDuTest } from "./fin";
+import { PileEnAttente, PileEnErreur } from "./pile-textes";
 import { Precision } from "./precision";
-import {
-  DUREE_RETOUR,
-  PileEnAttente,
-  PileEnErreur,
-  PileTextes,
-  PileVide,
-  type Geste,
-  type Retour,
-} from "./pile-textes";
-import { Priorites } from "./priorites";
+import { ChapitrePronostics } from "./pronostics";
+import { ChapitreScenarios } from "./scenarios";
 
 const AUCUN_SCRUTIN: Scrutin[] = [];
 
-/** Nombre de textes à trancher avant de pouvoir découvrir son IA. */
+/** Nombre de textes tranchés à partir duquel on peut voir son IA sans finir le test. */
 const TEXTES_REQUIS = 5;
+/** Ou, à défaut, la précision à partir de laquelle le lien « Voir mon IA » apparaît. */
+const PRECISION_POUR_VOIR = 30;
 
-const TITRE = "font-titre text-[clamp(1.5rem,3vw,2rem)] font-semibold leading-[1.1] tracking-[-0.03em]";
+const ECRAN = {
+  entree: { opacity: 0, y: 28, filter: "blur(6px)" },
+  pose: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", bounce: 0, duration: 0.6 } },
+  sortie: { opacity: 0, y: -18, filter: "blur(4px)", transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
+} as const;
 
-
-const DOUX = [0.2, 0.8, 0.2, 1] as const;
-
-type Historique = { id: string; genre: "vote" | "passe" };
-
-/** Le test : la course des IA en haut, puis des textes à trancher, des dilemmes, et trois priorités à choisir. */
+/**
+ * Le test, en chapitres : la course des IA et la précision en haut, un sommaire, puis chaque chapitre
+ * (une carte d'introduction, puis ses questions). Toutes les réponses règlent le même mandat (lib/mandat),
+ * et classerCandidates reste la seule source du classement.
+ */
 export function VueTest() {
   const reglages = useMandat();
   const lecture = useScrutins();
   const scrutins = lecture.data?.data ?? AUCUN_SCRUTIN;
+  const textes = useMemo(() => scrutins.slice(0, TEXTES_CHAPITRE), [scrutins]);
+  const aDeviner = useMemo(() => scrutins.slice(TEXTES_CHAPITRE, TEXTES_CHAPITRE + TEXTES_PRONOSTIC), [scrutins]);
 
-  const [etape, setEtape] = useState<1 | 2 | 3>(1);
-  const [geste, setGeste] = useState<Geste>(null);
-  const [passes, setPasses] = useState<string[]>([]);
-  const [historique, setHistorique] = useState<Historique[]>([]);
-  const [retour, setRetour] = useState<Retour | null>(null);
+  const [courant, setCourant] = useState(0);
+  const [intro, setIntro] = useState(true);
   const [annonce, setAnnonce] = useState("");
-
-  const titreEtape = useRef<HTMLHeadingElement>(null);
-  const premierRendu = useRef(true);
-  useEffect(() => {
-    // Au changement d'étape, le clavier et les lecteurs d'écran suivent le nouveau titre.
-    if (premierRendu.current) {
-      premierRendu.current = false;
-      return;
-    }
-    titreEtape.current?.focus({ preventScroll: false });
-  }, [etape]);
-
-  const restants = scrutins.filter((s) => !reglages.votes[s.id] && !passes.includes(s.id));
-  const enCours = restants[0] ?? null;
-  const tranches = scrutins.filter((s) => reglages.votes[s.id]).length;
-  const traites = scrutins.length - restants.length;
-  const requis = Math.min(TEXTES_REQUIS, scrutins.length);
+  const zone = useRef<HTMLDivElement>(null);
 
   const classement = useMemo(() => classerCandidates(reglages, scrutins), [reglages, scrutins]);
-  const aCommence = tranches > 0 || Object.keys(reglages.priorites).length > 0;
-
-  const nbDilemmes = nombreDeDilemmes(reglages.dilemmes);
-  const nbPriorites = selectionEnregistree(reglages.priorites).length;
+  const resume = resumeDuMandat(reglages, scrutins);
+  const aCommence = resume.textes > 0 || Object.keys(reglages.priorites).length > 0;
   const precision = calculerPrecision({
-    textes: tranches,
-    textesProposes: scrutins.length,
-    dilemmes: nbDilemmes,
-    priorites: nbPriorites,
+    textes: resume.textes,
+    textesProposes: textes.length,
+    dilemmes: resume.dilemmes,
+    accords: resume.accords,
+    budget: resume.budget,
+    scenarios: resume.scenarios,
+    classement: resume.classement,
   });
-  const { dilemme: dilemmeCourant, numero: numeroDilemme } = dilemmeEnCours(reglages.dilemmes);
-  const dernierDilemme = dernierDilemmeRepondu(reglages.dilemmes);
 
-  function aller(vers: 1 | 2 | 3) {
-    setEtape(vers);
-    setAnnonce(
-      vers === 1
-        ? "Les textes."
-        : vers === 2
-          ? "Les dilemmes : choisissez ce qui compte le plus pour vous."
-          : `Vos priorités : choisissez-en ${MAX_PRIORITES} au plus.`,
-    );
-  }
+  const avancements: Record<ChapitreId, Avancement> = {
+    textes: { fait: textes.filter((s) => reglages.votes[s.id]).length, total: textes.length },
+    accords: { fait: resume.accords, total: AFFIRMATIONS.length },
+    budget: { fait: resume.budget ? 1 : 0, total: 1 },
+    scenarios: { fait: resume.scenarios, total: SCENARIOS.length },
+    dilemmes: { fait: resume.dilemmes, total: DILEMMES.length },
+    classement: { fait: resume.classement ? 1 : 0, total: 1 },
+    pronostics: { fait: aDeviner.filter((s) => reglages.pronostics?.[s.id]).length, total: aDeviner.length },
+  };
 
-  function repondreDilemme(reponse: ReponseDilemme) {
-    if (!dilemmeCourant) return;
-    mandat.repondreDilemme(dilemmeCourant.id, reponse);
-    const suivant = DILEMMES[numeroDilemme];
-    setAnnonce(
-      `Réponse enregistrée. ${suivant ? `Dilemme ${numeroDilemme + 1} sur ${DILEMMES.length} : ${suivant.question}` : "Les dilemmes sont terminés."}`,
-    );
-  }
-
-  function annulerDilemme() {
-    if (!dernierDilemme) return;
-    mandat.repondreDilemme(dernierDilemme.id, null);
-    setAnnonce(`Retour au dilemme : ${dernierDilemme.question}`);
-  }
-
-  function arbitrer(position: Position) {
-    if (retour) {
-      continuer();
-      return;
+  function aller(indice: number, avecIntro = true) {
+    setCourant(indice);
+    setIntro(avecIntro);
+    const chapitre = CHAPITRES[indice];
+    setAnnonce(chapitre ? `Chapitre ${indice + 1} sur ${CHAPITRES.length} : ${chapitre.titre}. ${chapitre.phrase}` : "Fin du test : votre IA est prête.");
+    // Si le haut du chapitre est sorti de l'écran, on y revient.
+    const haut = zone.current?.getBoundingClientRect().top ?? 0;
+    if (haut < 0) {
+      const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      zone.current?.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "start" });
     }
-    if (!enCours) return;
-    const comme = CANDIDATES.filter((c) => positionCandidate(c, enCours) === position);
-    const { pour, contre } = enCours.decompte;
-    setGeste(position);
-    setHistorique((h) => [...h, { id: enCours.id, genre: "vote" }]);
-    setRetour({ scrutin: enCours, position, comme });
-    setAnnonce(
-      `Réponse enregistrée : ${LIBELLE_POSITION[position].toLowerCase()}. L'Assemblée a ${
-        enCours.resultat === "adopte" ? "adopté" : "rejeté"
-      } ce texte : ${nombre(pour)} pour, ${nombre(contre)} contre. ${
-        comme.length ? `Comme vous : ${comme.map((c) => c.prenom).join(", ")}.` : "Aucune IA n'a voté comme vous."
-      }`,
-    );
-    mandat.voter(enCours.id, position);
   }
 
-  function continuer() {
-    setRetour(null);
-    if (restants.length === 0) aller(2);
-    else setAnnonce(`Texte suivant : ${titreLisible(restants[0].titre)}.`);
-  }
+  const suivant = () => aller(courant + 1);
+  const chapitre = CHAPITRES[courant] ?? null;
+  const peutVoir = aCommence && (resume.textes >= TEXTES_REQUIS || precision >= PRECISION_POUR_VOIR);
 
-  // Le retour part seul ; la minuterie repart à zéro à chaque nouveau retour.
-  const finDuRetour = useEffectEvent(() => continuer());
-  useEffect(() => {
-    if (!retour) return;
-    const minuterie = setTimeout(() => finDuRetour(), DUREE_RETOUR);
-    return () => clearTimeout(minuterie);
-  }, [retour]);
-
-  function passer() {
-    if (retour) {
-      continuer();
-      return;
+  function contenu() {
+    if (!chapitre) {
+      return (
+        <FinDuTest
+          precision={precision}
+          classement={classement}
+          resume={resume}
+          aCommence={aCommence}
+          avancements={avancements}
+          onAller={(i) => aller(i)}
+        />
+      );
     }
-    if (!enCours) return;
-    setGeste("passe");
-    setHistorique((h) => [...h, { id: enCours.id, genre: "passe" }]);
-    setPasses((p) => [...p, enCours.id]);
-    setAnnonce(`Texte passé. ${restants[1] ? `Texte suivant : ${titreLisible(restants[1].titre)}.` : "Tous les textes sont parcourus."}`);
+    if (intro) {
+      return (
+        <IntroChapitre
+          chapitre={chapitre}
+          numero={courant + 1}
+          dejaFait={avancements[chapitre.id]}
+          onCommencer={() => {
+            setIntro(false);
+            setAnnonce(`${chapitre.titre} : c'est parti.`);
+          }}
+          onPasser={suivant}
+        />
+      );
+    }
+    const commun = { chapitre, reglages, onAnnonce: setAnnonce, onFini: suivant };
+    switch (chapitre.id) {
+      case "textes":
+        if (lecture.error) {
+          return <PileEnErreur message={lecture.error instanceof Error ? lecture.error.message : null} onReessayer={() => void lecture.mutate()} />;
+        }
+        if (!lecture.data) return <PileEnAttente />;
+        return <ChapitreTextes {...commun} scrutins={textes} />;
+      case "accords":
+        return <ChapitreAccords {...commun} />;
+      case "budget":
+        return <ChapitreBudget {...commun} />;
+      case "scenarios":
+        return <ChapitreScenarios {...commun} />;
+      case "dilemmes":
+        return <ChapitreDilemmes {...commun} />;
+      case "classement":
+        return <ChapitreClassement {...commun} />;
+      case "pronostics":
+        if (!lecture.data) return <PileEnAttente />;
+        return <ChapitrePronostics {...commun} scrutins={aDeviner} />;
+    }
   }
-
-  function annuler() {
-    const dernier = historique[historique.length - 1];
-    if (!dernier) return;
-    setGeste(null);
-    setRetour(null);
-    setHistorique((h) => h.slice(0, -1));
-    if (dernier.genre === "vote") mandat.retirerVote(dernier.id);
-    else setPasses((p) => p.filter((id) => id !== dernier.id));
-    const scrutin = scrutins.find((s) => s.id === dernier.id);
-    setAnnonce(scrutin ? `Retour au texte « ${titreLisible(scrutin.titre)} ».` : "Retour au texte précédent.");
-  }
-
-  const erreur = lecture.error;
-  const progression =
-    etape === 1
-      ? `Textes ${Math.min(traites + (retour || !enCours ? 0 : 1), scrutins.length)} sur ${scrutins.length}`
-      : etape === 2
-        ? `Dilemmes ${nbDilemmes} sur ${DILEMMES.length}`
-        : "Priorités";
-  const avancement =
-    etape === 1
-      ? scrutins.length
-        ? traites / scrutins.length
-        : 0
-      : etape === 2
-        ? nbDilemmes / DILEMMES.length
-        : nbPriorites / MAX_PRIORITES;
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="mx-auto max-w-3xl">
         <AvisExemple meta={lecture.data?.meta} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: DOUX }}
-        >
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: DOUX }}>
           <CourseIA classement={classement} actif={aCommence} />
           <Precision valeur={precision} />
         </motion.div>
 
-        {/* Chaque étape se pose d'un court fondu ; au premier rendu, c'est l'entrée de la page. */}
-        <motion.div
-          key={etape}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1, ease: DOUX }}
-          className="mt-8"
-        >
-          <div className="flex items-baseline justify-between gap-4">
-            <h1 ref={titreEtape} tabIndex={-1} className={`text-balance outline-none ${TITRE}`}>
-              {etape === 1 ? "Pour ou contre ?" : etape === 2 ? "Lequel compte le plus ?" : "Choisissez vos trois priorités"}
-            </h1>
-            <p className="shrink-0 text-sm font-medium tabular-nums text-attenue">
-              {progression}
-            </p>
-          </div>
-          <div aria-hidden className="mt-3 h-0.5 overflow-hidden bg-trait">
-            <span
-              className="block h-full origin-left bg-texte transition-transform duration-300 ease-out motion-reduce:transition-none"
-              style={{ transform: `scaleX(${avancement})` }}
-            />
-          </div>
+        <div ref={zone} className="scroll-mt-4">
+          <Sommaire courant={courant} avancements={avancements} peutVoir={peutVoir} onAller={(i) => aller(i)} />
+          <h1 className="sr-only">Le test : trouvez l&apos;IA candidate qui vous ressemble</h1>
 
-          {etape === 1 ? (
-            <div className="mt-6">
-              {erreur ? (
-                <PileEnErreur message={erreur instanceof Error ? erreur.message : null} onReessayer={() => void lecture.mutate()} />
-              ) : !lecture.data ? (
-                <PileEnAttente />
-              ) : scrutins.length === 0 ? (
-                <PileVide onTerminer={() => aller(2)} />
-              ) : (
-                <PileTextes
-                  scrutin={enCours}
-                  retour={retour}
-                  geste={geste}
-                  peutAnnuler={historique.length > 0}
-                  onArbitrer={arbitrer}
-                  onPasser={passer}
-                  onAnnuler={annuler}
-                  onContinuer={continuer}
-                  onTerminer={() => aller(2)}
-                />
-              )}
-              {enCours && tranches >= requis && tranches > 0 ? (
-                <div className="mt-4 text-center">
-                  <BoutonIA variante="contour" onClick={() => aller(2)}>
-                    Passer aux dilemmes
-                  </BoutonIA>
-                </div>
-              ) : null}
+          <LayoutGroup>
+            <div className="relative mt-6">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.div
+                  key={`${courant}-${intro ? "intro" : "questions"}`}
+                  variants={ECRAN}
+                  initial="entree"
+                  animate="pose"
+                  exit="sortie"
+                >
+                  {contenu()}
+                </motion.div>
+              </AnimatePresence>
             </div>
-          ) : etape === 2 ? (
-            <div className="mt-6">
-              <Dilemmes
-                dilemme={dilemmeCourant}
-                numero={numeroDilemme}
-                peutAnnuler={dernierDilemme !== null}
-                onRepondre={repondreDilemme}
-                onAnnuler={annulerDilemme}
-                onTerminer={() => aller(3)}
-                onRevenir={() => aller(1)}
-              />
-              {dilemmeCourant ? (
-                <div className="mt-4 text-center">
-                  <BoutonIA variante="contour" onClick={() => aller(3)}>
-                    Mes priorités
-                  </BoutonIA>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-8">
-              <Priorites
-                reglages={reglages}
-                manquants={Math.max(0, requis - tranches)}
-                precision={precision}
-                onRevenir={() => aller(2)}
-              />
-            </div>
-          )}
-        </motion.div>
+          </LayoutGroup>
+        </div>
       </div>
 
       <p role="status" aria-live="polite" className="sr-only">

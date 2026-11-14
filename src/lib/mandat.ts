@@ -2,7 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 
-import { prioritesFinales, selectionEnregistree, type ReponseDilemme } from "@/lib/dilemmes";
+import type { ReponseDilemme } from "@/lib/dilemmes";
+import type { Repartition } from "@/lib/questions/budget";
+import { prioritesDuMandat } from "@/lib/questions/poids";
 import type { Position } from "@/lib/types";
 import { PRIORITE_PAR_DEFAUT, type ThemeId } from "@/lib/themes";
 
@@ -17,6 +19,16 @@ export interface Mandat {
   priorites: Partial<Record<ThemeId, number>>;
   /** Réponse du citoyen à chaque dilemme, par identifiant de dilemme. */
   dilemmes: Record<string, ReponseDilemme>;
+  /** « D'accord ou pas » : un cran de −2 à +2 par affirmation (lib/questions/accords). */
+  accords?: Record<string, number>;
+  /** « Le budget de la République » : milliards par poste, 100 au total (lib/questions/budget). */
+  budget?: Repartition;
+  /** « Scénarios 2050 » : l'option choisie par scénario (lib/questions/scenarios). */
+  scenarios?: Record<string, string>;
+  /** « Classez » : les six thèmes, du plus au moins important (lib/questions/classement). */
+  classement?: ThemeId[];
+  /** « Devinez l'Assemblée » : le pari du citoyen par scrutin. Bonus, sans poids sur le résultat. */
+  pronostics?: Record<string, "adopte" | "rejete">;
 }
 
 const CLE = "democratia:mandat:v1";
@@ -33,7 +45,12 @@ function lire(): Mandat {
       const brut = window.localStorage.getItem(CLE);
       if (brut) {
         const lu = JSON.parse(brut) as Partial<Mandat>;
-        memoire = { votes: lu.votes ?? {}, priorites: lu.priorites ?? {}, dilemmes: lu.dilemmes ?? {} };
+        memoire = {
+          ...lu,
+          votes: lu.votes ?? {},
+          priorites: lu.priorites ?? {},
+          dilemmes: lu.dilemmes ?? {},
+        };
       }
     } catch {
       // Navigation privée ou stockage bloqué : le mandat vit le temps de la session.
@@ -70,29 +87,60 @@ export const mandat = {
     ecrire({ ...lire(), priorites: { ...lire().priorites, [theme]: poids } });
   },
   /**
-   * Enregistre (ou retire, avec `null`) la réponse à un dilemme et règle les priorités en conséquence :
-   * +12 au thème choisi, −8 à l'autre, bornés à 0-100 (voir lib/dilemmes). Les poids sont recalculés depuis
-   * toutes les réponses, et les trois priorités déjà choisies, s'il y en a, restent en tête.
+   * Enregistre (ou retire, avec `null`) la réponse à un dilemme. Comme pour tous les formats, les priorités
+   * sont recalculées depuis toutes les réponses (voir TRADUCTION dans lib/questions/poids).
    */
   repondreDilemme(dilemmeId: string, reponse: ReponseDilemme | null) {
     const actuel = lire();
     const dilemmes = { ...actuel.dilemmes };
     if (reponse) dilemmes[dilemmeId] = reponse;
     else delete dilemmes[dilemmeId];
-    const choix = selectionEnregistree(actuel.priorites);
-    const priorites = { ...actuel.priorites };
-    if (choix.length === 0 && Object.keys(dilemmes).length === 0) {
-      // Plus aucune réponse : le mandat revient au neutre, comme avant le premier dilemme.
-      for (const theme of Object.keys(priorites) as ThemeId[]) delete priorites[theme];
-    } else {
-      for (const [theme, poids] of prioritesFinales(choix, dilemmes)) priorites[theme] = poids;
-    }
-    ecrire({ ...actuel, dilemmes, priorites });
+    recalculer({ ...actuel, dilemmes });
+  },
+  /** « D'accord ou pas » : un cran de −2 à +2, ou `null` pour retirer la réponse. */
+  accorder(affirmationId: string, cran: number | null) {
+    const accords = { ...lire().accords };
+    if (cran === null) delete accords[affirmationId];
+    else accords[affirmationId] = Math.max(-2, Math.min(2, Math.round(cran)));
+    recalculer({ ...lire(), accords });
+  },
+  /** « Le budget » : la répartition des 100 milliards, ou `null` pour la retirer. */
+  budgeter(repartition: Repartition | null) {
+    const suivant = { ...lire() };
+    if (repartition) suivant.budget = { ...repartition };
+    else delete suivant.budget;
+    recalculer(suivant);
+  },
+  /** « Scénarios 2050 » : l'option choisie, ou `null` pour retirer la réponse. */
+  choisirScenario(scenarioId: string, optionId: string | null) {
+    const scenarios = { ...lire().scenarios };
+    if (optionId === null) delete scenarios[scenarioId];
+    else scenarios[scenarioId] = optionId;
+    recalculer({ ...lire(), scenarios });
+  },
+  /** « Classez » : l'ordre des six thèmes, ou `null` pour le retirer. */
+  classer(ordre: ThemeId[] | null) {
+    const suivant = { ...lire() };
+    if (ordre) suivant.classement = [...ordre];
+    else delete suivant.classement;
+    recalculer(suivant);
+  },
+  /** « Devinez l'Assemblée » : un pari, sans effet sur les priorités. */
+  pronostiquer(scrutinId: string, pari: "adopte" | "rejete" | null) {
+    const pronostics = { ...lire().pronostics };
+    if (pari === null) delete pronostics[scrutinId];
+    else pronostics[scrutinId] = pari;
+    ecrire({ ...lire(), pronostics });
   },
   effacer() {
     ecrire(VIDE);
   },
 };
+
+/** Les priorités suivent toujours l'ensemble des réponses : sans aucune, le mandat revient au neutre. */
+function recalculer(suivant: Mandat) {
+  ecrire({ ...suivant, priorites: prioritesDuMandat(suivant) });
+}
 
 export function useMandat(): Mandat {
   return useSyncExternalStore(abonner, lire, () => VIDE);

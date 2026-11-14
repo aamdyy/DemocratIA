@@ -344,7 +344,7 @@ function CarteFin({ prendreLeFocus, onTerminer }: { prendreLeFocus: boolean; onT
         Tous les textes sont parcourus.
       </h3>
       <div className="mt-auto pt-8">
-        <BoutonIA onClick={onTerminer}>Passer aux dilemmes</BoutonIA>
+        <BoutonIA onClick={onTerminer}>Chapitre suivant</BoutonIA>
       </div>
     </motion.div>
   );
@@ -385,7 +385,7 @@ export function PileVide({ onTerminer }: { onTerminer: () => void }) {
     <div className={CADRE}>
       <h2 className={TITRE}>Aucun texte à trancher pour le moment.</h2>
       <div className="mt-auto pt-8">
-        <BoutonIA onClick={onTerminer}>Passer aux dilemmes</BoutonIA>
+        <BoutonIA onClick={onTerminer}>Chapitre suivant</BoutonIA>
       </div>
     </div>
   );

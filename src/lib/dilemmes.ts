@@ -1,7 +1,7 @@
 import { PRIORITE_PAR_DEFAUT, THEMES, type ThemeId } from "@/lib/themes";
 
 /**
- * Les dilemmes : six arbitrages rapides entre deux thèmes. Chaque réponse déplace les priorités du citoyen,
+ * Les dilemmes : cinq arbitrages rapides entre deux thèmes. Chaque réponse déplace les priorités du citoyen,
  * ce qui affine le classement sans lui demander de lire un texte de plus.
  */
 export interface Dilemme {
@@ -44,12 +44,6 @@ export const DILEMMES: Dilemme[] = [
     question: "Protéger l'emploi ou protéger l'environnement ?",
     a: { theme: "travail", libelle: "Protéger l'emploi" },
     b: { theme: "ecologie", libelle: "Protéger l'environnement" },
-  },
-  {
-    id: "referendum-fermete",
-    question: "Plus de référendums ou plus de fermeté de l'État ?",
-    a: { theme: "institutions", libelle: "Plus de référendums" },
-    b: { theme: "securite", libelle: "Plus de fermeté" },
   },
 ];
 
