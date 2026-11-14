@@ -27,6 +27,8 @@ export interface Provenance {
   /** Date de la pièce (ISO 8601). */
   date: string | null;
   nature: NatureDonnee;
+  /** Intermédiaire qui a fourni la pièce. Absent : Hémicycle. null : lue directement à la source. */
+  via?: string | null;
   /** Pour une donnée calculée : ce qui est mesuré, en une phrase. */
   definition?: string;
 }

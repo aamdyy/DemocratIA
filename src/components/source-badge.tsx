@@ -13,7 +13,7 @@ export function SourceBadge({ source, className }: { source: Provenance; classNa
 
   const origine =
     source.nature === "publiee"
-      ? `Source : ${source.editeur}, via Hémicycle`
+      ? `Source : ${source.editeur}${source.via === null ? "" : `, via ${source.via ?? "Hémicycle"}`}`
       : source.nature === "calculee"
         ? `Calculé par ${source.editeur}`
         : source.nature === "generee"

@@ -1,84 +1,98 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
-import { Barre } from "@/components/graphiques";
 import { FOCUS, Reveal } from "@/components/accueil/reveal";
 import { Sphere } from "@/components/sphere";
 import { SourceBadge } from "@/components/source-badge";
 import { CANDIDATES, candidateParId } from "@/lib/candidates";
-import { EnTete, Nombre, SOURCE_EXEMPLE } from "./commun";
+import type { Provenance } from "@/lib/types";
+import { EnTete } from "./commun";
 
-/** Critères satiriques : un élu imaginaire, jamais un élu réel, face à une IA candidate. Plus haut vaut mieux. */
+/**
+ * Le président de 2026 face à une IA candidate. Uniquement des faits vrais sur la fonction, sourcés :
+ * aucun chiffre ni aucune affirmation inventés sur la personne.
+ */
 const CRITERES = [
-  { id: "programme", titre: "Programme tenu", humain: 38, ia: 100 },
-  { id: "lecture", titre: "Textes lus en entier", humain: 9, ia: 100 },
-  { id: "verifiables", titre: "Votes vérifiables", humain: 41, ia: 100 },
-  { id: "lobbys", titre: "Indépendance face aux lobbys", humain: 46, ia: 92 },
+  {
+    id: "mandat",
+    titre: "Mandat",
+    humain: "Élu pour cinq ans, sans retour devant les électeurs avant la fin.",
+    ia: "Réglée à chaque vote des citoyens, à tout moment.",
+  },
+  {
+    id: "programme",
+    titre: "Programme",
+    humain: "Des promesses de campagne, sans aucune valeur juridique.",
+    ia: "Une règle publique, appliquée à chaque texte.",
+  },
+  {
+    id: "decisions",
+    titre: "Décisions",
+    humain: "Prises en Conseil des ministres, dont les délibérations ne sont pas publiques.",
+    ia: "Chaque position publiée et vérifiable.",
+  },
+  {
+    id: "assemblee",
+    titre: "Face à l'Assemblée",
+    humain: "Peut la dissoudre (article 12 de la Constitution).",
+    ia: "Ne dissout rien : elle vote, texte par texte.",
+  },
 ] as const;
 
 const MAELLE = candidateParId("maelle") ?? CANDIDATES[0];
 
-function Cellule({
-  qui,
-  critere,
-  valeur,
-  couleur,
-  delai,
-}: {
-  qui: string;
-  critere: string;
-  valeur: number;
-  couleur: string;
-  delai: number;
-}) {
-  return (
-    <div>
-      <p className="mb-2 flex items-baseline justify-between text-[15px] sm:mb-3 sm:justify-end">
-        <span className="text-attenue sm:sr-only">{qui}</span>
-        <Nombre valeur={valeur} suffixe=" %" className="text-2xl font-semibold tabular-nums tracking-[-0.03em]" />
-      </p>
-      <Barre
-        valeur={valeur}
-        couleur={couleur}
-        etiquette={`${critere}, ${qui} : ${valeur} % (exemple fictif)`}
-        delai={delai}
-        className="h-3"
-      />
-    </div>
-  );
-}
+const SOURCE_CONSTITUTION: Provenance = {
+  editeur: "Constitution du 4 octobre 1958, articles 6 et 12 ; portrait officiel, Présidence de la République",
+  url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000006071194",
+  licence: "Texte officiel ; photographie soumise aux droits de son auteur",
+  date: null,
+  nature: "publiee",
+  via: null,
+};
 
-/** Le comparatif : deux colonnes, un élu imaginaire et une IA, quatre critères. */
+/** Le comparatif : le président de 2026 et une IA candidate, quatre faits sur la fonction. */
 function Comparatif() {
   return (
     <section aria-labelledby="titre-comparatif" className="mx-auto max-w-[1120px]">
-      <EnTete id="titre-comparatif" titre="Ce qu'un humain promet, une IA le tient." phrase="Quatre critères, sur un élu imaginaire et une IA candidate." />
+      <EnTete id="titre-comparatif" titre="Ce qu'un humain promet, une IA le tient." />
 
       <div className="mt-16">
-        <div className="hidden items-end gap-x-12 pb-2 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <p className="text-sm text-attenue">Exemple fictif</p>
-          <div className="flex items-center gap-3">
-            <span aria-hidden className="size-9 rounded-full bg-[radial-gradient(circle_at_35%_30%,#eceef1,#b4b8c2)]" />
-            <p className="font-medium">Un élu imaginaire</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Sphere teintes={MAELLE.teintes} className="size-9" />
-            <p className="font-medium">Une IA candidate</p>
-          </div>
+        <div className="grid grid-cols-2 items-end gap-x-6 pb-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12">
+          <span className="hidden sm:block" />
+          <Reveal className="flex flex-col items-start gap-4">
+            <Image
+              src="/president-2026.png"
+              alt="Portrait officiel du président de la République en 2026"
+              width={640}
+              height={640}
+              className="size-24 rounded-full object-cover grayscale sm:size-32"
+            />
+            <p className="font-medium">Le président de 2026</p>
+          </Reveal>
+          <Reveal delai={0.15} className="flex flex-col items-start gap-4">
+            <Sphere teintes={MAELLE.teintes} className="size-24 sm:size-32" />
+            <p className="font-medium">Une IA candidate de 2050</p>
+          </Reveal>
         </div>
 
-        <ul className="divide-y-0">
+        <ul>
           {CRITERES.map((c, i) => (
-            <li key={c.id} className="grid gap-x-12 gap-y-4 py-7 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
-              <h3 className="text-xl font-semibold tracking-[-0.02em]">{c.titre}</h3>
-              <Cellule qui="Élu imaginaire" critere={c.titre} valeur={c.humain} couleur="var(--attenue)" delai={i * 0.1} />
-              <Cellule qui="IA candidate" critere={c.titre} valeur={c.ia} couleur="var(--machine)" delai={i * 0.1 + 0.2} />
+            <li key={c.id} className="border-t border-trait">
+              <Reveal
+                delai={i * 0.08}
+                className="grid grid-cols-2 gap-x-6 gap-y-3 py-6 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-12"
+              >
+                <h3 className="col-span-2 text-lg font-semibold tracking-[-0.02em] sm:col-span-1">{c.titre}</h3>
+                <p className="text-[15px] leading-6 text-attenue">{c.humain}</p>
+                <p className="text-[15px] font-medium leading-6 text-machine">{c.ia}</p>
+              </Reveal>
             </li>
           ))}
         </ul>
       </div>
-      <SourceBadge source={SOURCE_EXEMPLE} className="mt-10" />
+      <SourceBadge source={SOURCE_CONSTITUTION} className="mt-8" />
     </section>
   );
 }
