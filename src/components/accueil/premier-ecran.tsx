@@ -96,18 +96,24 @@ export function PremierEcran() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: DUREE.scene, ease: DOUX, delay: CASCADE * 3 }}
         drag="x"
+        // Au doigt : un geste vertical fait défiler la page, seul un geste horizontal fait tourner le manège.
+        dragDirectionLock
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.35}
+        dragMomentum={false}
         dragSnapToOrigin
         onDragStart={() => {
           glisse.current = true;
           setPause(true);
         }}
         onDragEnd={(_, info) => {
-          const elan = info.offset.x + info.velocity.x * 0.2;
-          if (elan < -60) suivante();
-          else if (elan > 60) precedente();
-          setTimeout(() => (glisse.current = false), 0);
+          // Un balayage court mais vif suffit sur téléphone : distance OU vitesse.
+          if (info.offset.x < -40 || info.velocity.x < -350) suivante();
+          else if (info.offset.x > 40 || info.velocity.x > 350) precedente();
+          // Sur écran tactile, le « clic » qui suit le geste arrive après coup : on l'ignore encore un instant,
+          // sinon la sphère sous le doigt passait au centre et le manège sautait d'une IA de trop.
+          setTimeout(() => (glisse.current = false), 350);
+          setPause(false);
         }}
         onKeyDown={(evenement) => {
           if (evenement.key === "ArrowRight") {

@@ -70,6 +70,8 @@ export function CourseIA({ classement, actif }: { classement: Affinite[]; actif:
                 >
                   <Sphere teintes={candidate.teintes} duree={11 + rang * 2.3} className="size-full" />
                 </motion.div>
+                {/* L'écart s'affiche au-dessus de la sphère, jamais sur le prénom. */}
+                {actif ? <Ecart valeur={valeur} /> : null}
               </div>
               <p
                 className={`mt-1 max-w-full truncate text-xs transition-colors duration-300 sm:text-base ${tete ? "font-semibold text-texte" : "font-medium text-attenue"}`}
@@ -78,7 +80,6 @@ export function CourseIA({ classement, actif }: { classement: Affinite[]; actif:
               </p>
               <p className={`relative text-xs tabular-nums sm:text-sm ${tete ? "text-texte" : "text-attenue"}`}>
                 {actif ? <Pourcent valeur={valeur} /> : <span aria-label="Pas encore calculé">–</span>}
-                {actif ? <Ecart valeur={valeur} /> : null}
               </p>
             </motion.li>
           );
@@ -142,7 +143,7 @@ function Ecart({ valeur }: { valeur: number }) {
         <motion.span
           key={ecart.tour}
           aria-hidden
-          className={`pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2 text-[11px] font-semibold tabular-nums sm:text-xs ${
+          className={`pointer-events-none absolute top-0 z-10 left-1/2 -translate-x-1/2 text-[11px] font-semibold tabular-nums sm:text-xs ${
             ecart.delta > 0 ? "text-texte" : "text-attenue"
           }`}
           initial={{ opacity: 0, y: 6 }}

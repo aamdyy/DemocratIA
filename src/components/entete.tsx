@@ -96,7 +96,7 @@ function Soulignement() {
     <motion.span
       layoutId="entete-soulignement"
       aria-hidden
-      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-texte sm:inset-x-4"
+      className="absolute inset-x-1.5 -bottom-px h-0.5 rounded-full bg-texte min-[400px]:inset-x-3 sm:inset-x-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -112,7 +112,7 @@ function Soulignement() {
 function Attente() {
   const { pending } = useLinkStatus();
   return (
-    <span aria-hidden className="pointer-events-none absolute inset-x-3 -bottom-px h-0.5 overflow-hidden sm:inset-x-4">
+    <span aria-hidden className="pointer-events-none absolute inset-x-1.5 -bottom-px h-0.5 overflow-hidden min-[400px]:inset-x-3 sm:inset-x-4">
       <motion.span
         className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-attenue"
         initial={false}
@@ -165,13 +165,13 @@ export function Entete() {
             {LIENS.map((lien) => {
               const active = correspond(chemin, lien.href) || lien.aussi.some((h) => correspond(chemin, h));
               return (
-                <li key={lien.href} className="group relative flex-1 lg:flex-none">
+                <li key={lien.href} className="group relative flex-auto lg:flex-none">
                   <Link
                     href={lien.href}
                     aria-current={active ? "page" : undefined}
                     aria-describedby={`apercu-${lien.href.slice(1)}`}
                     className={cn(
-                      "relative flex min-h-11 items-center justify-center whitespace-nowrap px-3 text-sm text-attenue transition-colors duration-150 ease-out hover:text-texte focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-texte active:text-texte sm:px-4 lg:min-h-14",
+                      "relative flex min-h-11 items-center justify-center whitespace-nowrap px-1.5 text-[13px] text-attenue min-[400px]:px-3 sm:text-sm transition-colors duration-150 ease-out hover:text-texte focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-texte active:text-texte sm:px-4 lg:min-h-14",
                       active && "text-texte",
                     )}
                   >

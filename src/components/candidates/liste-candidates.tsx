@@ -83,7 +83,7 @@ export function ListeCandidates() {
           {TITRE_CANDIDATES}
         </h1>
         <p className="mx-auto mt-1.5 max-w-2xl text-[15px] leading-6 text-balance text-attenue">
-          Touchez une sphère pour la placer au centre : sa doctrine à gauche, ses votes à droite.
+          Touchez une sphère pour la placer au centre<span className="max-lg:hidden"> : sa doctrine à gauche, ses votes à droite</span>.
         </p>
       </motion.header>
       <p aria-live="polite" className="sr-only">
