@@ -78,8 +78,7 @@ export function Entete() {
           href="/"
           className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte lg:col-start-2 lg:justify-self-center"
         >
-          <Sphere teintes={teintes} duree={12} className="size-6 shrink-0" />
-          <Logo className="text-[20px]" />
+          <Logo className="text-[22px]" />
           {candidate ? <span className="sr-only">Votre IA : {candidate.prenom}</span> : null}
         </Link>
 

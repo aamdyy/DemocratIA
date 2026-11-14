@@ -4,7 +4,6 @@ import Link from "next/link";
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-import { Logo } from "@/components/logo";
 import { Sphere } from "@/components/sphere";
 import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
@@ -50,10 +49,9 @@ export function PremierEcran() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        <Logo titre className="text-[clamp(1.75rem,3.6vw,3rem)]" />
+        <span className="sr-only">DemocratIA. </span>
         {/* La phrase de la maquette 05, gardée par l'équipe : c'est elle, en grand, qui porte la page. */}
-        <span className="mx-auto mt-6 block max-w-none text-[clamp(2.2rem,4.7vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
-          <span className="sr-only">. </span>
+        <span className="mx-auto block max-w-none text-[clamp(2.2rem,4.7vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
           En 2050, on ne vote plus pour un parti. <span className="block text-attenue">On règle une sphère.</span>
         </span>
       </motion.h1>
