@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Mono, Public_Sans } from "next/font/google";
 
+import { VeilleSpheres } from "@/components/veille-spheres";
+
 import { URL_SITE } from "./_og/site";
 import "./globals.css";
 
@@ -51,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="fr" className={`${publicSans.variable} ${dmMono.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
+        <VeilleSpheres />
         <script
           type="application/ld+json"
           // Le « < » est échappé pour qu'aucune valeur ne puisse refermer la balise.

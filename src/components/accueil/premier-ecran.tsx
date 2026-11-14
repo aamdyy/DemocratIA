@@ -42,9 +42,11 @@ export function PremierEcran() {
 
   useEffect(() => {
     if (pause || !visible || reduit) return;
-    const minuterie = setInterval(() => setActive((a) => (a + 1) % CANDIDATES.length), 4500);
-    return () => clearInterval(minuterie);
-  }, [pause, visible, reduit]);
+    // Le délai repart de zéro à chaque changement de sphère : après un glisser, le manège
+    // n'avance jamais tout seul dans la foulée, ce qui donnait l'impression d'un saut de deux IA.
+    const minuterie = setTimeout(() => setActive((a) => (a + 1) % CANDIDATES.length), 4500);
+    return () => clearTimeout(minuterie);
+  }, [pause, visible, reduit, active]);
 
   const candidate = CANDIDATES[active];
   const total = CANDIDATES.length;
@@ -136,6 +138,8 @@ export function PremierEcran() {
               aria-label={`Voir ${c.prenom}`}
               aria-pressed={i === active}
               tabIndex={-1}
+              // Les sphères cachées derrière le manège ne tournent pas pour rien.
+              data-cachee={place.opacity === 0 ? "" : undefined}
               onClick={() => {
                 if (!glisse.current) setActive(i);
               }}
