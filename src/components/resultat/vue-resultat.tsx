@@ -82,11 +82,11 @@ export function VueResultat() {
     return (
       <div role="alert" className="mx-auto max-w-2xl py-16 text-center">
         <h1 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h1>
-        <p className="mt-8">
+        <div className="mt-8">
           <BoutonIA variante="contour" onClick={() => void lecture.mutate()}>
             Réessayer
           </BoutonIA>
-        </p>
+        </div>
       </div>
     );
   }
@@ -95,9 +95,9 @@ export function VueResultat() {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
         <h1 className={TITRE}>Votre IA vous attend.</h1>
-        <p className="mt-10">
+        <div className="mt-10">
           <BoutonIA href="/test">Passer le test</BoutonIA>
-        </p>
+        </div>
       </div>
     );
   }

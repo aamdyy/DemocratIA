@@ -243,11 +243,11 @@ export function VueTest() {
                 />
               )}
               {enCours && tranches >= requis && tranches > 0 ? (
-                <p className="mt-4 text-center">
+                <div className="mt-4 text-center">
                   <BoutonIA variante="contour" onClick={() => aller(2)}>
                     Passer aux dilemmes
                   </BoutonIA>
-                </p>
+                </div>
               ) : null}
             </div>
           ) : etape === 2 ? (
@@ -262,11 +262,11 @@ export function VueTest() {
                 onRevenir={() => aller(1)}
               />
               {dilemmeCourant ? (
-                <p className="mt-4 text-center">
+                <div className="mt-4 text-center">
                   <BoutonIA variante="contour" onClick={() => aller(3)}>
                     Mes priorités
                   </BoutonIA>
-                </p>
+                </div>
               ) : null}
             </div>
           ) : (

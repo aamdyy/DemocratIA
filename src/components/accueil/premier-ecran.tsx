@@ -9,14 +9,21 @@ import { CANDIDATES } from "@/lib/candidates";
 import { useMouvementReduit } from "./hooks";
 import { FOCUS } from "./reveal";
 
-/** Places du manège : au centre, à droite en retrait, à gauche en retrait ; les deux autres attendent derrière. */
-const PLACES = [
-  { x: "0%", scale: 1, opacity: 1, zIndex: 2 },
-  { x: "78%", scale: 0.5, opacity: 0.55, zIndex: 1 },
-  { x: "30%", scale: 0.3, opacity: 0, zIndex: 0 },
-  { x: "-30%", scale: 0.3, opacity: 0, zIndex: 0 },
-  { x: "-78%", scale: 0.5, opacity: 0.55, zIndex: 1 },
-];
+/** Places du manège : au centre, à droite et à gauche en retrait ; toutes les autres attendent derrière, invisibles. */
+const CENTRE = { x: "0%", scale: 1, opacity: 1, zIndex: 2 };
+const DROITE = { x: "78%", scale: 0.5, opacity: 0.55, zIndex: 1 };
+const GAUCHE = { x: "-78%", scale: 0.5, opacity: 0.55, zIndex: 1 };
+const DERRIERE_DROITE = { x: "30%", scale: 0.3, opacity: 0, zIndex: 0 };
+const DERRIERE_GAUCHE = { x: "-30%", scale: 0.3, opacity: 0, zIndex: 0 };
+
+/** La place d'une sphère selon son écart avec la sphère au centre, quel que soit le nombre de candidates. */
+function placeDe(ecart: number, total: number) {
+  const e = ((ecart % total) + total) % total;
+  if (e === 0) return CENTRE;
+  if (e === 1) return DROITE;
+  if (e === total - 1) return GAUCHE;
+  return e <= total / 2 ? DERRIERE_DROITE : DERRIERE_GAUCHE;
+}
 
 /**
  * Premier écran (maquette 05) : le logo, qui est l'unique h1, puis le manège des sept IA candidates,
@@ -98,7 +105,7 @@ export function PremierEcran() {
         onPointerLeave={() => setPause(false)}
       >
         {CANDIDATES.map((c, i) => {
-          const place = PLACES[(i - active + CANDIDATES.length) % CANDIDATES.length];
+          const place = placeDe(i - active, CANDIDATES.length);
           return (
             <motion.button
               key={c.id}

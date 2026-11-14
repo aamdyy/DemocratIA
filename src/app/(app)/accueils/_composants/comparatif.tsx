@@ -9,7 +9,24 @@ import { SourceBadge } from "@/components/source-badge";
 import { CANDIDATES, candidateParId } from "@/lib/candidates";
 import type { Provenance } from "@/lib/types";
 import { EnTete } from "./commun";
-import { SCHEMAS } from "./schemas";
+import {
+  AssembleeBHumain,
+  AssembleeBIA,
+  DecisionsBHumain,
+  DecisionsBIA,
+  MandatCHumain,
+  MandatCIA,
+  ProgrammeCHumain,
+  ProgrammeCIA,
+} from "@/app/maquettes/schemas/variantes";
+
+/** Les schémas retenus par l'équipe sur /maquettes/schemas : Mandat C, Programme C, Décisions B, Assemblée B. */
+const SCHEMAS = {
+  mandat: { humain: MandatCHumain, ia: MandatCIA },
+  programme: { humain: ProgrammeCHumain, ia: ProgrammeCIA },
+  decisions: { humain: DecisionsBHumain, ia: DecisionsBIA },
+  assemblee: { humain: AssembleeBHumain, ia: AssembleeBIA },
+} as const;
 
 /**
  * Le président de 2026 face à une IA candidate. Uniquement des faits vrais sur la fonction, sourcés :

@@ -343,9 +343,9 @@ function CarteFin({ prendreLeFocus, onTerminer }: { prendreLeFocus: boolean; onT
       <h3 ref={titre} tabIndex={-1} className={`${TITRE} outline-none`}>
         Tous les textes sont parcourus.
       </h3>
-      <p className="mt-auto pt-8">
+      <div className="mt-auto pt-8">
         <BoutonIA onClick={onTerminer}>Passer aux dilemmes</BoutonIA>
-      </p>
+      </div>
     </motion.div>
   );
 }
@@ -371,11 +371,11 @@ export function PileEnErreur({ message, onReessayer }: { message: string | null;
     <div role="alert" className={CADRE}>
       <h2 className={TITRE}>Les textes de loi n&apos;ont pas pu être lus.</h2>
       <p className="mt-3 max-w-md text-base leading-7 text-attenue">{message ?? "Vérifiez votre connexion."}</p>
-      <p className="mt-auto pt-8">
+      <div className="mt-auto pt-8">
         <BoutonIA variante="contour" onClick={onReessayer}>
           Réessayer
         </BoutonIA>
-      </p>
+      </div>
     </div>
   );
 }
@@ -384,9 +384,9 @@ export function PileVide({ onTerminer }: { onTerminer: () => void }) {
   return (
     <div className={CADRE}>
       <h2 className={TITRE}>Aucun texte à trancher pour le moment.</h2>
-      <p className="mt-auto pt-8">
+      <div className="mt-auto pt-8">
         <BoutonIA onClick={onTerminer}>Passer aux dilemmes</BoutonIA>
-      </p>
+      </div>
     </div>
   );
 }

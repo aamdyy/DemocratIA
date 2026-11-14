@@ -139,9 +139,9 @@ function CarteFin({ onTerminer }: { onTerminer: () => void }) {
       <h2 id="titre-dilemme" ref={titre} tabIndex={-1} className={`${TITRE} outline-none`}>
         Vos six arbitrages sont enregistrés.
       </h2>
-      <p className="mt-auto pt-8">
+      <div className="mt-auto pt-8">
         <BoutonIA onClick={onTerminer}>Choisir mes priorités</BoutonIA>
-      </p>
+      </div>
     </motion.div>
   );
 }
