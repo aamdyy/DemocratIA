@@ -36,6 +36,11 @@ export function PremierEcran() {
   }, [pause, visible, reduit]);
 
   const candidate = CANDIDATES[active];
+  const total = CANDIDATES.length;
+  const suivante = () => setActive((a) => (a + 1) % total);
+  const precedente = () => setActive((a) => (a - 1 + total) % total);
+  // Vrai pendant un glisser : le clic qui le termine ne doit pas choisir une sphère.
+  const glisse = useRef(false);
 
   return (
     <section
@@ -56,8 +61,39 @@ export function PremierEcran() {
         </span>
       </motion.h1>
 
-      <div
-        className="relative mx-auto mt-8 size-[min(27vh,58vw,300px)]"
+      {/*
+        On fait défiler les IA en glissant le manège à gauche ou à droite (souris ou doigt), ou avec les flèches
+        du clavier. Le manège revient à sa place en souplesse : seule la sphère au centre change.
+      */}
+      <motion.div
+        role="group"
+        aria-roledescription="carrousel"
+        aria-label="Les IA candidates : glissez ou utilisez les flèches pour en voir une autre"
+        tabIndex={0}
+        className={`relative mx-auto mt-8 size-[min(27vh,58vw,300px)] cursor-grab touch-pan-y select-none active:cursor-grabbing ${FOCUS}`}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.35}
+        dragSnapToOrigin
+        onDragStart={() => {
+          glisse.current = true;
+          setPause(true);
+        }}
+        onDragEnd={(_, info) => {
+          const elan = info.offset.x + info.velocity.x * 0.2;
+          if (elan < -60) suivante();
+          else if (elan > 60) precedente();
+          setTimeout(() => (glisse.current = false), 0);
+        }}
+        onKeyDown={(evenement) => {
+          if (evenement.key === "ArrowRight") {
+            evenement.preventDefault();
+            suivante();
+          } else if (evenement.key === "ArrowLeft") {
+            evenement.preventDefault();
+            precedente();
+          }
+        }}
         onPointerEnter={() => setPause(true)}
         onPointerLeave={() => setPause(false)}
       >
@@ -69,8 +105,10 @@ export function PremierEcran() {
               type="button"
               aria-label={`Voir ${c.prenom}`}
               aria-pressed={i === active}
-              onClick={() => setActive(i)}
-              onFocus={() => setActive(i)}
+              tabIndex={-1}
+              onClick={() => {
+                if (!glisse.current) setActive(i);
+              }}
               className={`absolute inset-0 rounded-full ${FOCUS}`}
               style={{ zIndex: place.zIndex, pointerEvents: place.opacity === 0 ? "none" : "auto" }}
               // Dès le premier affichage, chaque sphère est à sa place : pas d'empilement au chargement.
@@ -82,7 +120,7 @@ export function PremierEcran() {
             </motion.button>
           );
         })}
-      </div>
+      </motion.div>
 
       <div className="mt-6 flex h-[6.5rem] flex-col items-center text-center" aria-live="polite">
         <AnimatePresence mode="wait">
