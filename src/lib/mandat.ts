@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
+import { prioritesFinales, selectionEnregistree, type ReponseDilemme } from "@/lib/dilemmes";
 import type { Position } from "@/lib/types";
 import { PRIORITE_PAR_DEFAUT, type ThemeId } from "@/lib/themes";
 
@@ -14,10 +15,12 @@ export interface Mandat {
   votes: Record<string, Position>;
   /** Poids de chaque thème, de 0 à 100. Un thème absent vaut 50. */
   priorites: Partial<Record<ThemeId, number>>;
+  /** Réponse du citoyen à chaque dilemme, par identifiant de dilemme. */
+  dilemmes: Record<string, ReponseDilemme>;
 }
 
 const CLE = "democratia:mandat:v1";
-const VIDE: Mandat = { votes: {}, priorites: {} };
+const VIDE: Mandat = { votes: {}, priorites: {}, dilemmes: {} };
 
 let memoire: Mandat = VIDE;
 let charge = false;
@@ -30,7 +33,7 @@ function lire(): Mandat {
       const brut = window.localStorage.getItem(CLE);
       if (brut) {
         const lu = JSON.parse(brut) as Partial<Mandat>;
-        memoire = { votes: lu.votes ?? {}, priorites: lu.priorites ?? {} };
+        memoire = { votes: lu.votes ?? {}, priorites: lu.priorites ?? {}, dilemmes: lu.dilemmes ?? {} };
       }
     } catch {
       // Navigation privée ou stockage bloqué : le mandat vit le temps de la session.
@@ -65,6 +68,26 @@ export const mandat = {
   },
   regler(theme: ThemeId, poids: number) {
     ecrire({ ...lire(), priorites: { ...lire().priorites, [theme]: poids } });
+  },
+  /**
+   * Enregistre (ou retire, avec `null`) la réponse à un dilemme et règle les priorités en conséquence :
+   * +12 au thème choisi, −8 à l'autre, bornés à 0-100 (voir lib/dilemmes). Les poids sont recalculés depuis
+   * toutes les réponses, et les trois priorités déjà choisies, s'il y en a, restent en tête.
+   */
+  repondreDilemme(dilemmeId: string, reponse: ReponseDilemme | null) {
+    const actuel = lire();
+    const dilemmes = { ...actuel.dilemmes };
+    if (reponse) dilemmes[dilemmeId] = reponse;
+    else delete dilemmes[dilemmeId];
+    const choix = selectionEnregistree(actuel.priorites);
+    const priorites = { ...actuel.priorites };
+    if (choix.length === 0 && Object.keys(dilemmes).length === 0) {
+      // Plus aucune réponse : le mandat revient au neutre, comme avant le premier dilemme.
+      for (const theme of Object.keys(priorites) as ThemeId[]) delete priorites[theme];
+    } else {
+      for (const [theme, poids] of prioritesFinales(choix, dilemmes)) priorites[theme] = poids;
+    }
+    ecrire({ ...actuel, dilemmes, priorites });
   },
   effacer() {
     ecrire(VIDE);

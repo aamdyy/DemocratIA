@@ -4,49 +4,40 @@ import { motion } from "motion/react";
 import { useState } from "react";
 
 import { BoutonIA } from "@/components/bouton-ia";
+import { POIDS_RANG, prioritesFinales, selectionEnregistree } from "@/lib/dilemmes";
 import { mandat, type Mandat } from "@/lib/mandat";
-import { PRIORITE_PAR_DEFAUT, THEMES, type ThemeId } from "@/lib/themes";
+import { SEUIL_PRECISION } from "@/lib/precision";
+import { THEMES, type ThemeId } from "@/lib/themes";
 
-/** Poids donné à la 1re, 2e et 3e priorité. Les autres thèmes pèsent AUTRES. */
-const POIDS_RANG = [95, 85, 75] as const;
-const AUTRES = 40;
 const MAXIMUM = POIDS_RANG.length;
 
 const FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-republique";
 
 /**
- * Traduit la sélection en mandat. Les dix thèmes sont réglés d'un coup : les anciens réglages
- * (curseurs d'une session précédente) sont ainsi effacés. Sans sélection, tout revient au neutre.
+ * Traduit la sélection en mandat. Les dix thèmes sont réglés d'un coup : les trois choisis passent en tête,
+ * les autres gardent la valeur que leur ont donnée les dilemmes (50 sans dilemme). Sans sélection, tout
+ * revient à cette base.
  */
-function appliquer(choix: ThemeId[]) {
-  for (const theme of THEMES) {
-    const rang = choix.indexOf(theme.id);
-    const poids = choix.length === 0 ? PRIORITE_PAR_DEFAUT : rang >= 0 ? POIDS_RANG[rang] : AUTRES;
-    mandat.regler(theme.id, poids);
-  }
-}
-
-/** Retrouve la sélection déjà enregistrée : les thèmes réglés à 95, 85 ou 75, dans cet ordre. */
-function selectionEnregistree(reglages: Mandat): ThemeId[] {
-  return POIDS_RANG.flatMap((poids) => {
-    const theme = THEMES.find((t) => reglages.priorites[t.id] === poids);
-    return theme ? [theme.id as ThemeId] : [];
-  });
+function appliquer(choix: ThemeId[], reponses: Mandat["dilemmes"]) {
+  for (const [theme, poids] of prioritesFinales(choix, reponses)) mandat.regler(theme, poids);
 }
 
 /** Dix pastilles de thèmes, trois au plus : l'ordre du toucher est l'ordre d'importance. */
 export function Priorites({
   reglages,
   manquants,
+  precision,
   onRevenir,
 }: {
   reglages: Mandat;
   /** Nombre de textes qu'il reste à trancher avant de pouvoir découvrir son IA. */
   manquants: number;
+  /** Précision du résultat, de 0 à 100 : sous le seuil, une ligne invite à continuer. */
+  precision: number;
   onRevenir: () => void;
 }) {
-  const [choix, setChoix] = useState<ThemeId[]>(() => selectionEnregistree(reglages));
+  const [choix, setChoix] = useState<ThemeId[]>(() => selectionEnregistree(reglages.priorites));
   const [annonce, setAnnonce] = useState("");
 
   function basculer(theme: ThemeId, libelle: string) {
@@ -57,7 +48,7 @@ export function Priorites({
     }
     const suivant = rang >= 0 ? choix.filter((c) => c !== theme) : [...choix, theme];
     setChoix(suivant);
-    appliquer(suivant);
+    appliquer(suivant, reglages.dilemmes);
     setAnnonce(
       rang >= 0
         ? `${libelle} retiré. ${suivant.length} priorité${suivant.length > 1 ? "s" : ""} sur ${MAXIMUM}.`
@@ -119,7 +110,12 @@ export function Priorites({
 
       <div className="mt-10 flex flex-col items-center gap-1">
         {pret ? (
-          <BoutonIA href="/resultat">Découvrir mon IA</BoutonIA>
+          <>
+            <BoutonIA href="/resultat">Découvrir mon IA</BoutonIA>
+            {precision < SEUIL_PRECISION ? (
+              <p className="text-sm text-attenue">Quelques réponses de plus rendraient le classement plus fiable.</p>
+            ) : null}
+          </>
         ) : (
           <>
             <button
@@ -140,7 +136,7 @@ export function Priorites({
           onClick={onRevenir}
           className={`inline-flex min-h-11 items-center px-3 text-[15px] text-attenue underline decoration-trait underline-offset-4 transition-colors duration-150 hover:text-texte hover:decoration-current ${FOCUS}`}
         >
-          Revenir aux textes
+          Revenir aux dilemmes
         </button>
       </div>
     </div>
@@ -148,4 +144,4 @@ export function Priorites({
 }
 
 /** Le nombre de priorités déjà choisies, lu depuis le mandat : 0 à 3. */
-export const nombreDePriorites = (reglages: Mandat) => selectionEnregistree(reglages).length;
+export const nombreDePriorites = (reglages: Mandat) => selectionEnregistree(reglages.priorites).length;

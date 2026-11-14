@@ -9,6 +9,7 @@ import type {
   ResultatScrutin,
   Scrutin,
 } from "@/lib/types";
+import { themeDe, type ThemeId } from "@/lib/themes";
 import { ErreurHemicycle, cleHemicycle, hemicycle, memoriserSolde, soldeMemorise, type ReponseHemicycle } from "./client";
 import {
   DEPUTES_EXEMPLE,
@@ -57,14 +58,33 @@ function exemple<T>(data: T): Enveloppe<T> {
 
 const estVoteSurUnTexte = (scrutin: Scrutin) => /^l['’]ensemble\b/i.test(scrutin.titre);
 
+/** Un même thème ne pèse pas plus de trois textes : le test couvre l'éventail des sujets. */
+const MAX_PAR_THEME = 3;
+
+/** Garde les premiers textes de chaque thème, dans l'ordre reçu, jusqu'à `nombre` textes. */
+function diversifier(scrutins: Scrutin[], nombre: number): Scrutin[] {
+  const compte = new Map<ThemeId, number>();
+  const retenus: Scrutin[] = [];
+  for (const scrutin of scrutins) {
+    const theme = themeDe(scrutin.titre);
+    const deja = compte.get(theme) ?? 0;
+    if (deja >= MAX_PAR_THEME) continue;
+    compte.set(theme, deja + 1);
+    retenus.push(scrutin);
+    if (retenus.length >= nombre) break;
+  }
+  return retenus;
+}
+
 /** Scrutins déjà lus dans la liste : sert à compléter un résultat qui ne répète pas l'intitulé. */
 const scrutinsConnus = new Map<string, Scrutin>();
 
 /**
  * Les scrutins que le citoyen arbitre dans la vue 1 : des votes sur l'ensemble d'un texte,
- * plus parlants qu'un amendement isolé. Quatre pages au plus, soit 4 crédits, une seule fois.
+ * plus parlants qu'un amendement isolé. On en vise vingt, trois par thème au plus, pris dans les pages
+ * déjà lues. Quatre pages au plus, soit 4 crédits, une seule fois.
  */
-export async function listerScrutinsDeTextes(nombre = 12): Promise<Enveloppe<Scrutin[]>> {
+export async function listerScrutinsDeTextes(nombre = 20): Promise<Enveloppe<Scrutin[]>> {
   try {
     const parId = new Map<string, Scrutin>();
     let curseur: string | undefined;
@@ -87,7 +107,7 @@ export async function listerScrutinsDeTextes(nombre = 12): Promise<Enveloppe<Scr
       for (const scrutin of donnees(reponse.corps).map(normaliserScrutin)) {
         if (scrutin.id && !parId.has(scrutin.id)) parId.set(scrutin.id, scrutin);
       }
-      if ([...parId.values()].filter(estVoteSurUnTexte).length >= nombre) break;
+      if (diversifier([...parId.values()].filter(estVoteSurUnTexte), nombre).length >= nombre) break;
       // Une page qui n'apporte rien de neuf (curseur ignoré) arrête la lecture : on ne paie pas pour des doublons.
       if (parId.size === avant) break;
       const suivant = reponse.corps?.next_cursor;
@@ -104,7 +124,7 @@ export async function listerScrutinsDeTextes(nombre = 12): Promise<Enveloppe<Scr
     }
     for (const scrutin of tous) scrutinsConnus.set(scrutin.id, scrutin);
     const textes = tous.filter(estVoteSurUnTexte);
-    const retenus = (textes.length >= 4 ? textes : tous).slice(0, nombre);
+    const retenus = diversifier(textes.length >= 4 ? textes : tous, nombre);
     return { data: retenus, meta: meta(derniere) };
   } catch (erreur) {
     return repli(SCRUTINS_EXEMPLE, erreur);

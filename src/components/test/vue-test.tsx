@@ -8,10 +8,14 @@ import { AvisExemple } from "@/components/avis-exemple";
 import { useScrutins } from "@/lib/api";
 import { CANDIDATES, classerCandidates, positionCandidate } from "@/lib/candidates";
 import { LIBELLE_POSITION, nombre, titreLisible } from "@/lib/format";
+import { DILEMMES, nombreDeDilemmes, selectionEnregistree, type ReponseDilemme } from "@/lib/dilemmes";
 import { mandat, useMandat } from "@/lib/mandat";
+import { MAX_PRIORITES, precision as calculerPrecision } from "@/lib/precision";
 import type { Position, Scrutin } from "@/lib/types";
 
 import { CourseIA } from "./course";
+import { Dilemmes, dernierDilemmeRepondu, dilemmeEnCours } from "./dilemmes";
+import { Precision } from "./precision";
 import {
   DUREE_RETOUR,
   PileEnAttente,
@@ -21,12 +25,12 @@ import {
   type Geste,
   type Retour,
 } from "./pile-textes";
-import { Priorites, nombreDePriorites } from "./priorites";
+import { Priorites } from "./priorites";
 
 const AUCUN_SCRUTIN: Scrutin[] = [];
 
 /** Nombre de textes à trancher avant de pouvoir découvrir son IA. */
-const TEXTES_REQUIS = 3;
+const TEXTES_REQUIS = 5;
 
 const TITRE = "font-titre text-[clamp(1.5rem,3vw,2rem)] font-semibold leading-[1.1] tracking-[-0.03em]";
 
@@ -35,20 +39,18 @@ const DOUX = [0.2, 0.8, 0.2, 1] as const;
 
 type Historique = { id: string; genre: "vote" | "passe" };
 
-/** Le test : la course des cinq IA en haut, puis des textes à trancher, puis trois priorités à choisir. */
+/** Le test : la course des IA en haut, puis des textes à trancher, des dilemmes, et trois priorités à choisir. */
 export function VueTest() {
   const reglages = useMandat();
   const lecture = useScrutins();
   const scrutins = lecture.data?.data ?? AUCUN_SCRUTIN;
 
-  const [etape, setEtape] = useState<1 | 2>(1);
+  const [etape, setEtape] = useState<1 | 2 | 3>(1);
   const [geste, setGeste] = useState<Geste>(null);
   const [passes, setPasses] = useState<string[]>([]);
   const [historique, setHistorique] = useState<Historique[]>([]);
   const [retour, setRetour] = useState<Retour | null>(null);
   const [annonce, setAnnonce] = useState("");
-  const [annonceTete, setAnnonceTete] = useState("");
-  const [teteVue, setTeteVue] = useState<string | null>(null);
 
   const titreEtape = useRef<HTMLHeadingElement>(null);
   const premierRendu = useRef(true);
@@ -70,16 +72,41 @@ export function VueTest() {
   const classement = useMemo(() => classerCandidates(reglages, scrutins), [reglages, scrutins]);
   const aCommence = tranches > 0 || Object.keys(reglages.priorites).length > 0;
 
-  // Quand une autre IA prend la tête, on le dit aux lecteurs d'écran. (Ajustement d'état au rendu.)
-  const tete = classement[0];
-  if (aCommence && tete.candidate.id !== teteVue) {
-    setTeteVue(tete.candidate.id);
-    setAnnonceTete(`${tete.candidate.prenom} passe en tête, ${Math.round(tete.score * 100)} % d'affinité avec vous.`);
+  const nbDilemmes = nombreDeDilemmes(reglages.dilemmes);
+  const nbPriorites = selectionEnregistree(reglages.priorites).length;
+  const precision = calculerPrecision({
+    textes: tranches,
+    textesProposes: scrutins.length,
+    dilemmes: nbDilemmes,
+    priorites: nbPriorites,
+  });
+  const { dilemme: dilemmeCourant, numero: numeroDilemme } = dilemmeEnCours(reglages.dilemmes);
+  const dernierDilemme = dernierDilemmeRepondu(reglages.dilemmes);
+
+  function aller(vers: 1 | 2 | 3) {
+    setEtape(vers);
+    setAnnonce(
+      vers === 1
+        ? "Les textes."
+        : vers === 2
+          ? "Les dilemmes : choisissez ce qui compte le plus pour vous."
+          : `Vos priorités : choisissez-en ${MAX_PRIORITES} au plus.`,
+    );
   }
 
-  function aller(vers: 1 | 2) {
-    setEtape(vers);
-    setAnnonce(vers === 1 ? "Les textes." : "Vos priorités : choisissez-en trois au plus.");
+  function repondreDilemme(reponse: ReponseDilemme) {
+    if (!dilemmeCourant) return;
+    mandat.repondreDilemme(dilemmeCourant.id, reponse);
+    const suivant = DILEMMES[numeroDilemme];
+    setAnnonce(
+      `Réponse enregistrée. ${suivant ? `Dilemme ${numeroDilemme + 1} sur ${DILEMMES.length} : ${suivant.question}` : "Les dilemmes sont terminés."}`,
+    );
+  }
+
+  function annulerDilemme() {
+    if (!dernierDilemme) return;
+    mandat.repondreDilemme(dernierDilemme.id, null);
+    setAnnonce(`Retour au dilemme : ${dernierDilemme.question}`);
   }
 
   function arbitrer(position: Position) {
@@ -142,12 +169,20 @@ export function VueTest() {
   }
 
   const erreur = lecture.error;
-  const nbPriorites = nombreDePriorites(reglages);
   const progression =
     etape === 1
-      ? `${Math.min(traites + (retour || !enCours ? 0 : 1), scrutins.length)} sur ${scrutins.length}`
-      : `${nbPriorites} sur 3`;
-  const avancement = etape === 1 ? (scrutins.length ? traites / scrutins.length : 0) : nbPriorites / 3;
+      ? `Textes ${Math.min(traites + (retour || !enCours ? 0 : 1), scrutins.length)} sur ${scrutins.length}`
+      : etape === 2
+        ? `Dilemmes ${nbDilemmes} sur ${DILEMMES.length}`
+        : "Priorités";
+  const avancement =
+    etape === 1
+      ? scrutins.length
+        ? traites / scrutins.length
+        : 0
+      : etape === 2
+        ? nbDilemmes / DILEMMES.length
+        : nbPriorites / MAX_PRIORITES;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -160,6 +195,7 @@ export function VueTest() {
           transition={{ duration: 0.5, ease: DOUX }}
         >
           <CourseIA classement={classement} actif={aCommence} />
+          <Precision valeur={precision} />
         </motion.div>
 
         {/* Chaque étape se pose d'un court fondu ; au premier rendu, c'est l'entrée de la page. */}
@@ -172,10 +208,9 @@ export function VueTest() {
         >
           <div className="flex items-baseline justify-between gap-4">
             <h1 ref={titreEtape} tabIndex={-1} className={`text-balance outline-none ${TITRE}`}>
-              {etape === 1 ? "Pour ou contre ?" : "Choisissez vos trois priorités"}
+              {etape === 1 ? "Pour ou contre ?" : etape === 2 ? "Lequel compte le plus ?" : "Choisissez vos trois priorités"}
             </h1>
             <p className="shrink-0 text-sm font-medium tabular-nums text-attenue">
-              <span className="sr-only">{etape === 1 ? "Texte " : "Priorités choisies : "}</span>
               {progression}
             </p>
           </div>
@@ -210,6 +245,25 @@ export function VueTest() {
               {enCours && tranches >= requis && tranches > 0 ? (
                 <p className="mt-4 text-center">
                   <BoutonIA variante="contour" onClick={() => aller(2)}>
+                    Passer aux dilemmes
+                  </BoutonIA>
+                </p>
+              ) : null}
+            </div>
+          ) : etape === 2 ? (
+            <div className="mt-6">
+              <Dilemmes
+                dilemme={dilemmeCourant}
+                numero={numeroDilemme}
+                peutAnnuler={dernierDilemme !== null}
+                onRepondre={repondreDilemme}
+                onAnnuler={annulerDilemme}
+                onTerminer={() => aller(3)}
+                onRevenir={() => aller(1)}
+              />
+              {dilemmeCourant ? (
+                <p className="mt-4 text-center">
+                  <BoutonIA variante="contour" onClick={() => aller(3)}>
                     Mes priorités
                   </BoutonIA>
                 </p>
@@ -217,7 +271,12 @@ export function VueTest() {
             </div>
           ) : (
             <div className="mt-8">
-              <Priorites reglages={reglages} manquants={Math.max(0, requis - tranches)} onRevenir={() => aller(1)} />
+              <Priorites
+                reglages={reglages}
+                manquants={Math.max(0, requis - tranches)}
+                precision={precision}
+                onRevenir={() => aller(2)}
+              />
             </div>
           )}
         </motion.div>
@@ -225,9 +284,6 @@ export function VueTest() {
 
       <p role="status" aria-live="polite" className="sr-only">
         {annonce}
-      </p>
-      <p role="status" aria-live="polite" className="sr-only">
-        {annonceTete}
       </p>
     </MotionConfig>
   );

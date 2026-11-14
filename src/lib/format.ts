@@ -40,3 +40,8 @@ export const LIBELLE_POSITION = {
   abstention: "Abstention",
   non_votant: "Non-votant",
 } as const;
+
+const CHIFFRES = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze"];
+
+/** Un petit nombre en toutes lettres (« sept »), pour que les phrases suivent le nombre réel d'éléments. */
+export const enLettres = (n: number) => CHIFFRES[n] ?? String(n);

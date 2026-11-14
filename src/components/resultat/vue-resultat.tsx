@@ -9,6 +9,7 @@ import { AvisExemple } from "@/components/avis-exemple";
 import { BoutonIA } from "@/components/bouton-ia";
 import { FiltreSphere, Sphere } from "@/components/sphere";
 import { useScrutins } from "@/lib/api";
+import { nombreDeDilemmes, selectionEnregistree } from "@/lib/dilemmes";
 import { pourcent } from "@/lib/format";
 import { useClassement } from "@/lib/ma-candidate";
 import { mandat, useMandat } from "@/lib/mandat";
@@ -19,6 +20,11 @@ import { Pourquoi } from "./pourquoi";
 const TITRE = "text-balance font-titre text-[clamp(1.875rem,4.2vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.03em]";
 
 const DOUX = [0.2, 0.8, 0.2, 1] as const;
+
+/** Sous cet écart, en points d'affinité, le classement est présenté comme serré. */
+const ECART_SERRE = 3;
+
+const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 
 /**
  * La révélation, une seule séquence : la sphère apparaît, puis le prénom, puis le pourcentage qui monte,
@@ -96,7 +102,30 @@ export function VueResultat() {
     );
   }
 
-  const [meilleure] = classement;
+  const [meilleure, deuxieme] = classement;
+
+  // Sur quoi repose le calcul, et ce qui sépare la première de la deuxième (en points d'affinité affichés).
+  const nbTextes = (lecture.data?.data ?? []).filter((s) => reglages.votes[s.id]).length;
+  const nbDilemmes = nombreDeDilemmes(reglages.dilemmes);
+  const nbPriorites = selectionEnregistree(reglages.priorites).length;
+  const elements = [
+    nbTextes > 0 ? pluriel(nbTextes, "texte") : null,
+    nbDilemmes > 0 ? pluriel(nbDilemmes, "dilemme") : null,
+    nbPriorites > 0 ? pluriel(nbPriorites, "priorité") : null,
+  ].filter((e): e is string => e !== null);
+  const calcule =
+    elements.length > 1
+      ? `${elements.slice(0, -1).join(", ")} et ${elements[elements.length - 1]}`
+      : (elements[0] ?? "vos priorités");
+  const ecart = deuxieme ? Math.round(meilleure.score * 100) - Math.round(deuxieme.score * 100) : null;
+  const phraseEcart =
+    ecart === null || !deuxieme
+      ? null
+      : ecart === 0
+        ? `À égalité avec ${deuxieme.candidate.prenom} : c'est très serré.`
+        : ecart < ECART_SERRE
+          ? `${pluriel(ecart, "point")} devant ${deuxieme.candidate.prenom} : c'est serré, d'autres réponses pourraient inverser le classement.`
+          : `${pluriel(ecart, "point")} devant ${deuxieme.candidate.prenom}`;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -137,6 +166,16 @@ export function VueResultat() {
             <PourcentQuiMonte valeur={meilleure.score} />
             <span className="sr-only">{pourcent(meilleure.score)}</span>
             <span className="text-base font-normal tracking-normal text-attenue">d&apos;affinité avec vous</span>
+          </motion.p>
+
+          <motion.p variants={ETAPE} className="mt-3 max-w-md text-balance text-[15px] leading-6 text-attenue">
+            Calculé sur {calcule}
+            {phraseEcart ? (
+              <>
+                <br />
+                <span className={ecart !== null && ecart < ECART_SERRE ? "text-texte" : undefined}>{phraseEcart}</span>
+              </>
+            ) : null}
           </motion.p>
 
           <motion.div variants={ETAPE} className="flex flex-col items-center lg:items-start">

@@ -66,6 +66,66 @@ const TEXTES: { titre: string; date: string; tendance: Tendance }[] = [
     date: "2026-07-08",
     tendance: ["pour", "pour", "pour", "contre", "contre", "abstention"],
   },
+  {
+    titre: "l'ensemble du projet de loi relatif à l'égalité des chances à l'école primaire",
+    date: "2026-07-01",
+    tendance: ["pour", "pour", "pour", "abstention", "pour", "abstention"],
+  },
+  {
+    titre: "l'ensemble de la proposition de loi visant à instaurer un référendum d'initiative citoyenne",
+    date: "2026-06-24",
+    tendance: ["pour", "contre", "abstention", "pour", "contre", "pour"],
+  },
+  {
+    titre: "l'ensemble du projet de loi relatif à la réduction de la dette publique",
+    date: "2026-06-17",
+    tendance: ["contre", "contre", "abstention", "pour", "pour", "pour"],
+  },
+  {
+    titre: "l'ensemble de la proposition de loi relative au droit à la déconnexion des salariés",
+    date: "2026-06-10",
+    tendance: ["pour", "pour", "pour", "abstention", "abstention", "contre"],
+  },
+  {
+    titre: "l'ensemble du projet de loi relatif à la prévention en santé mentale des jeunes",
+    date: "2026-06-03",
+    tendance: ["pour", "pour", "pour", "pour", "abstention", "abstention"],
+  },
+  {
+    titre: "l'ensemble de la proposition de loi visant à développer les énergies renouvelables",
+    date: "2026-05-27",
+    tendance: ["pour", "pour", "abstention", "contre", "pour", "contre"],
+  },
+  {
+    titre: "l'ensemble du projet de loi relatif à la lutte contre le narcotrafic",
+    date: "2026-05-20",
+    tendance: ["abstention", "pour", "pour", "pour", "pour", "pour"],
+  },
+  {
+    titre: "l'ensemble du projet de loi pour la rénovation de l'habitat dégradé",
+    date: "2026-05-13",
+    tendance: ["pour", "pour", "pour", "abstention", "contre", "abstention"],
+  },
+  {
+    titre: "l'ensemble de la proposition de loi relative à l'alimentation durable dans les cantines",
+    date: "2026-05-06",
+    tendance: ["pour", "abstention", "pour", "contre", "pour", "contre"],
+  },
+  {
+    titre: "l'ensemble du projet de loi relatif à la protection des données personnelles en ligne",
+    date: "2026-04-29",
+    tendance: ["pour", "contre", "abstention", "abstention", "pour", "pour"],
+  },
+  {
+    titre: "l'ensemble de la proposition de loi visant à revaloriser la rémunération des enseignants",
+    date: "2026-04-22",
+    tendance: ["pour", "pour", "pour", "contre", "abstention", "contre"],
+  },
+  {
+    titre: "l'ensemble du projet de loi organique relatif à la réforme des collectivités territoriales",
+    date: "2026-04-15",
+    tendance: ["abstention", "pour", "contre", "pour", "pour", "contre"],
+  },
 ];
 
 /** Répartition fictive mais stable : 80 % du groupe suit sa tendance, le reste se disperse. */

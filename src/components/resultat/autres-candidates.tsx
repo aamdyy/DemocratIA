@@ -7,7 +7,7 @@ import { DEFINITION_AFFINITE, type Affinite } from "@/lib/candidates";
 import { sourceCalcul } from "@/lib/concordance";
 import { pourcent } from "@/lib/format";
 
-/** L'affinité avec chacune des cinq candidates, en barres : la plus proche en tête. */
+/** L'affinité avec chacune des candidates, en barres : la plus proche en tête. */
 export function AutresCandidates({ classement }: { classement: Affinite[] }) {
   if (classement.length === 0) return null;
   return (
