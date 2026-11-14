@@ -50,16 +50,16 @@ export function PremierEcran() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        <Logo titre className="text-[clamp(3rem,10vw,8.5rem)]" />
-        {/* La phrase de la maquette 05, gardée par l'équipe : elle fait partie du titre de la page. */}
-        <span className="mx-auto mt-6 block max-w-[30ch] text-[clamp(1.5rem,3vw,2.4rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-texte">
+        <Logo titre className="text-[clamp(1.75rem,3.6vw,3rem)]" />
+        {/* La phrase de la maquette 05, gardée par l'équipe : c'est elle, en grand, qui porte la page. */}
+        <span className="mx-auto mt-6 block max-w-[24ch] text-[clamp(2.4rem,5.6vw,4.8rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-texte">
           <span className="sr-only">. </span>
           En 2050, on ne vote plus pour un parti. <span className="block text-attenue">On règle une sphère.</span>
         </span>
       </motion.h1>
 
       <div
-        className="relative mx-auto mt-8 size-[min(34vh,62vw,340px)]"
+        className="relative mx-auto mt-8 size-[min(27vh,58vw,300px)]"
         onPointerEnter={() => setPause(true)}
         onPointerLeave={() => setPause(false)}
       >
