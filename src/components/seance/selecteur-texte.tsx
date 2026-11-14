@@ -116,9 +116,18 @@ export function SelecteurTexte({
     fermer();
   };
 
-  // Le focus va dans le champ de recherche à l'ouverture.
+  // Le focus va dans le champ de recherche à l'ouverture ; sur un petit écran, le panneau entier remonte en vue.
   useEffect(() => {
-    if (ouvert) champ.current?.focus();
+    if (!ouvert) return;
+    champ.current?.focus({ preventScroll: true });
+    const minuterie = window.setTimeout(() => {
+      const panneau = cadre.current?.querySelector("[role=dialog]");
+      if (panneau && panneau.getBoundingClientRect().bottom > window.innerHeight) {
+        const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        panneau.scrollIntoView({ block: "end", behavior: reduit ? "auto" : "smooth" });
+      }
+    }, DUREE.etat * 1000);
+    return () => window.clearTimeout(minuterie);
   }, [ouvert]);
 
   // Un clic hors du panneau le ferme, sans voler le focus de ce qui a été cliqué.

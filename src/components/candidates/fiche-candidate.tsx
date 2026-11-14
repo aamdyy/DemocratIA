@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, ViewTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { BoutonIA } from "@/components/bouton-ia";
@@ -262,21 +262,18 @@ export function FicheCandidate({ candidate }: { candidate: Candidate }) {
           {...SCENE}
           className="mt-6 flex flex-col items-center gap-10 text-center lg:flex-row lg:gap-20 lg:text-left"
         >
-          <motion.div
-            variants={{
-              cache: { opacity: 0, scale: 0.9 },
-              visible: { opacity: 1, scale: 1, transition: { duration: DUREE.scene, ease: DOUX } },
-            }}
-            className="w-[min(64vw,18rem)] shrink-0 lg:w-80"
-          >
-            <Sphere
-              teintes={candidate.teintes}
-              aquarelle
-              duree={16}
-              description={`La sphère de ${candidate.prenom}`}
-              className="w-full"
-            />
-          </motion.div>
+          {/* Pas d'animation propre : en venant de la liste, la sphère y glisse depuis le centre (template.tsx). */}
+          <div className="w-[min(64vw,18rem)] shrink-0 lg:w-80">
+            <ViewTransition name={`sphere-${candidate.id}`} share="sphere-partagee" default="none">
+              <Sphere
+                teintes={candidate.teintes}
+                aquarelle
+                duree={16}
+                description={`La sphère de ${candidate.prenom}`}
+                className="w-full"
+              />
+            </ViewTransition>
+          </div>
           <div className="min-w-0">
             <motion.p {...ACTEUR} className="font-donnee text-[13px] leading-5 tracking-[0.04em] text-attenue uppercase">
               IA candidate · présidentielle 2050

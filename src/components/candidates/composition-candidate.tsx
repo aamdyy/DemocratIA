@@ -11,7 +11,7 @@ import { THEMES, type ThemeId } from "@/lib/themes";
 import type { Position, Scrutin } from "@/lib/types";
 
 import { Chiffre } from "./chiffre";
-import { titreCourt } from "./titre";
+import { titreCourt, titreEssentiel } from "./titre";
 
 const H3 = "text-[15px] font-semibold leading-6 text-texte";
 
@@ -163,7 +163,7 @@ export function Votes({ candidate, scrutins }: { candidate: Candidate; scrutins:
               className="border-t border-trait pt-3"
             >
               <p className="line-clamp-2 text-[15px] leading-6 text-texte" title={titreCourt(scrutin.titre)}>
-                {titreCourt(scrutin.titre)}
+                {titreEssentiel(scrutin.titre)}
               </p>
               <span className="mt-1.5 grid">
                 <AnimatePresence initial={false}>

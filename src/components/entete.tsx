@@ -124,7 +124,7 @@ export function Entete() {
           href="/"
           className="col-start-1 row-start-1 flex min-h-14 items-center gap-2.5 justify-self-start transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte active:opacity-50 lg:col-start-2 lg:justify-self-center"
         >
-          <Logo className="text-[22px]" />
+          <Logo titre className="text-[22px]" />
           {candidate ? <span className="sr-only">Votre IA : {candidate.prenom}</span> : null}
         </Link>
 

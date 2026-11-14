@@ -348,7 +348,13 @@ function TableauAffichage({
   const d = reel?.scrutin.decompte;
   const valeurs = en2050
     ? { pour: simulation.pour, contre: simulation.contre, abstention: simulation.abstention, absents: 0 }
-    : { pour: d?.pour ?? 0, contre: d?.contre ?? 0, abstention: d?.abstention ?? 0, absents: d?.non_votants ?? 0 };
+    : // Les sièges gris de l'arc : non-votants et députés absents du scrutin, comptés ensemble.
+      {
+        pour: d?.pour ?? 0,
+        contre: d?.contre ?? 0,
+        abstention: d?.abstention ?? 0,
+        absents: d ? Math.max(0, NOMBRE_SIEGES - d.pour - d.contre - d.abstention) : 0,
+      };
   const verdict = en2050 ? adopte(simulation.adopte ? "adopte" : "rejete") : reel ? adopte(reel.scrutin.resultat) : null;
   // En 2050, le verdict attend la fin de la vague ; en 2026, il suit les compteurs.
   const delaiVerdict = en2050 ? VAGUE * 0.85 : DUREE.etat;
@@ -356,7 +362,7 @@ function TableauAffichage({
     { cle: "pour", libelle: "Pour", valeur: valeurs.pour, fond: "bg-pour" },
     { cle: "contre", libelle: "Contre", valeur: valeurs.contre, fond: "bg-contre" },
     { cle: "abstention", libelle: valeurs.abstention > 1 ? "Abstentions" : "Abstention", valeur: valeurs.abstention, fond: "bg-abstention" },
-    { cle: "absents", libelle: "Non-votants", valeur: valeurs.absents, fond: "bg-absent" },
+    { cle: "absents", libelle: "Sans vote", valeur: valeurs.absents, fond: "bg-absent" },
   ];
   const annonce = verdict
     ? en2050
@@ -485,11 +491,11 @@ export function VueSeance() {
             Au pouvoir
           </h1>
         </div>
-        <p className="mt-3 text-lg leading-7 text-attenue">
+        <p className="mt-3 text-lg leading-7 text-balance text-attenue">
           {navigateur && testFait ? "Votre IA, " : null}
           <strong className="font-medium text-texte">{candidate.prenom}</strong>
           {navigateur && testFait ? ", préside. " : " préside en attendant la vôtre. "}
-          Choisissez un vrai texte de 2026, puis basculez en 2050.
+          Choisissez un texte de 2026, puis basculez en 2050.
         </p>
       </motion.header>
 

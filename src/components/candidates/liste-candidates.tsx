@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, ViewTransition } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import { AvisExemple } from "@/components/avis-exemple";
@@ -24,7 +24,7 @@ const LIEN =
   "inline-flex min-h-11 items-center text-[15px] text-attenue underline decoration-trait underline-offset-4 outline-none transition-colors duration-150 hover:text-texte hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texte";
 
 /** La grande sphère : assez grande pour régner, assez petite pour que la rangée du bas tienne sur un écran de portable. */
-const TAILLE_CENTRE = "w-[min(62vw,260px)] lg:w-[min(320px,34dvh)]";
+const TAILLE_CENTRE = "w-[min(52vw,220px)] sm:w-[min(62vw,260px)] lg:w-[min(320px,34dvh)]";
 
 const sansAbonnement = () => () => {};
 /** Faux pendant le rendu serveur : le classement vit dans le navigateur, on n'affiche personne au centre avant de l'avoir lu. */
@@ -81,7 +81,7 @@ export function ListeCandidates() {
         <h1 className="font-titre text-[clamp(1.75rem,3vw,2.25rem)] font-semibold leading-tight tracking-[-0.03em] text-texte">
           {TITRE_CANDIDATES}
         </h1>
-        <p className="mx-auto mt-1.5 max-w-xl text-[15px] leading-6 text-attenue">
+        <p className="mx-auto mt-1.5 max-w-2xl text-[15px] leading-6 text-balance text-attenue">
           Touchez une sphère pour la placer au centre : sa doctrine à gauche, ses votes à droite.
         </p>
       </motion.header>
@@ -99,14 +99,11 @@ export function ListeCandidates() {
               aria-labelledby="candidate-centre"
               className="flex flex-col items-center text-center lg:col-start-2 lg:row-start-1"
             >
-              <motion.div
-                layoutId={`sphere-${centre.id}`}
-                transition={RESSORT}
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={TAILLE_CENTRE}
-              >
-                <Sphere aquarelle teintes={centre.teintes} description={`Sphère de ${centre.prenom}`} className="w-full" />
+              <motion.div layoutId={`sphere-${centre.id}`} transition={RESSORT} className={TAILLE_CENTRE}>
+                {/* Nommée comme celle de la fiche : en ouvrant la fiche, cette sphère y glisse (template.tsx). */}
+                <ViewTransition name={`sphere-${centre.id}`} share="sphere-partagee" default="none">
+                  <Sphere aquarelle teintes={centre.teintes} description={`Sphère de ${centre.prenom}`} className="w-full" />
+                </ViewTransition>
               </motion.div>
               <div className="mt-4 grid">
                 <AnimatePresence initial={false}>
