@@ -11,9 +11,12 @@ export function Pied() {
           Fiction d&apos;anticipation. Les IA candidates sont fictives ; les scrutins et les parlementaires sont réels
           (Hémicycle).
         </p>
-        <nav aria-label="Liens complémentaires" className="shrink-0 md:-mt-3">
+        <nav aria-label="Liens complémentaires" className="flex shrink-0 gap-x-6 md:-mt-3">
           <Link href="/audit" className={LIEN}>
             Auditer un député
+          </Link>
+          <Link href="/maquettes" className={LIEN}>
+            Maquettes
           </Link>
         </nav>
       </div>
