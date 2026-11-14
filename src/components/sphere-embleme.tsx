@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { Embleme } from "@/components/emblemes";
 import { EmblemeVariante, type Lettre } from "@/components/emblemes-variantes";
 import type { Teintes } from "@/components/sphere";
@@ -27,16 +29,33 @@ const HALO = "drop-shadow(0 0 1px rgb(255 255 255 / 0.75)) drop-shadow(0 0 5px r
 /**
  * L'emblème noir d'une candidate, posé au centre de sa sphère. La candidate est reconnue à ses teintes :
  * une sphère aux couleurs mêlées (citoyen qui n'a pas passé le test) n'a pas d'emblème.
- * Masqué sur les petites sphères (moins de 72 px, voir .sphere-embleme dans globals.css).
+ * Absent des petites sphères (boutons, rangées, course du test) : il n'apparaît qu'à partir de 96 px,
+ * mesurés sur la sphère elle-même, là où le dessin se lit vraiment.
  */
+const TAILLE_MIN = 96;
+
 export function EmblemeDeSphere({ teintes }: { teintes: Teintes }) {
   const candidate = CANDIDATES.find((c) => c.teintes[1] === teintes[1] && c.teintes[2] === teintes[2]);
+  const repere = useRef<HTMLDivElement>(null);
+  const [assezGrande, setAssezGrande] = useState(false);
+
+  useEffect(() => {
+    const sphere = repere.current?.parentElement;
+    if (!sphere) return;
+    const observateur = new ResizeObserver(([entree]) => setAssezGrande(entree.contentRect.width >= TAILLE_MIN));
+    observateur.observe(sphere);
+    return () => observateur.disconnect();
+  }, []);
+
   if (!candidate) return null;
   const lettre = CHOIX[candidate.id] ?? "A";
   const couleur = candidate.teintes[2];
 
+  // Le repère invisible sert à mesurer la sphère ; le dessin n'est rendu que si elle est assez grande.
+  if (!assezGrande) return <div ref={repere} aria-hidden className="hidden" />;
+
   return (
-    <div aria-hidden className="sphere-embleme pointer-events-none absolute inset-0">
+    <div ref={repere} aria-hidden className="sphere-embleme pointer-events-none absolute inset-0">
       <div className="absolute inset-0" style={{ background: VOILE }} />
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-1/2" style={{ filter: HALO }}>
