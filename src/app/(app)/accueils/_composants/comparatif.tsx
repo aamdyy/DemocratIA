@@ -129,9 +129,10 @@ function Grille() {
   return (
     <section aria-labelledby="titre-grille" className="mx-auto max-w-[1120px]">
       <EnTete id="titre-grille" titre="Sept IA, sept doctrines." phrase="Chacune vote selon un programme public." />
-      <ul className="mt-16 grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-4 lg:grid-cols-7">
+      {/* Deux lignes centrées : quatre sphères, puis trois. */}
+      <ul className="mt-16 flex flex-wrap justify-center gap-x-6 gap-y-14">
         {CANDIDATES.map((c, i) => (
-          <li key={c.id}>
+          <li key={c.id} className="w-[calc(50%-0.75rem)] md:w-[calc(25%-1.125rem)]">
             <Reveal delai={i * 0.08}>
               <Link href={`/candidates/${c.id}`} className={`group flex flex-col items-center text-center ${FOCUS}`}>
                 <Sphere
